@@ -8,7 +8,7 @@
 [![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%205-C51A4A?logo=raspberry-pi)](https://www.raspberrypi.com/)
 [![Claude AI](https://img.shields.io/badge/Claude-AI%20Skill-5436DA)](https://www.anthropic.com/claude)
 
-*Entwickelt vom Schulamt der Stadt Zürich*
+*Entwickelt von Hayal*
 
 </div>
 
@@ -104,10 +104,10 @@ Proaktive Validierung kritischer Parameter:
 
 ## 🎓 Entwickelt für Bildung
 
-Dieses Skill wurde vom **Schulamt der Stadt Zürich** entwickelt, um:
+Dieses Skill wurde von **Hayal** entwickelt, um:
 
 - Lehrpersonen bei der Integration von Raspberry Pi im Unterricht zu unterstützen
-- Schüler:innen beim systematischen Lernen von Embedded Systems zu begleiten
+- Schüler*innen beim systematischen Lernen von Embedded Systems zu begleiten
 - Best Practices aus der professionellen Embedded-Entwicklung zugänglich zu machen
 - Die Brücke zwischen Theorie und Praxis zu schlagen
 
