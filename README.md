@@ -235,6 +235,6 @@ of this software and associated documentation files...
 
 **Made with ❤️ in Zürich**
 
-[Website](https://www.stadt-zuerich.ch/ssd/de/index/volksschule.html) • [Documentation](docs/) • [Contributing](CONTRIBUTING.md)
+[LinkedIn](https://www.linkedin.com/in/hayaloezkan/) • [Documentation](docs/) • [Contributing](CONTRIBUTING.md)
 
 </div>
