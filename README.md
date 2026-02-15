@@ -210,7 +210,7 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 MIT License - siehe [LICENSE](LICENSE)
 
 ```
-Copyright (c) 2025 Schulamt der Stadt Zürich
+Copyright (c) Hayal Oezkan
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files...
@@ -218,7 +218,7 @@ of this software and associated documentation files...
 
 ## 🙏 Credits
 
-- **Entwicklung:** Schulamt der Stadt Zürich, Abteilung Marketing und Kommunikation
+- **Entwicklung:** Hayal Oezkan
 - **AI Framework:** Anthropic Claude
 - **Hardware:** Raspberry Pi Foundation
 - **Community:** Raspberry Pi Forums, GitHub Contributors
