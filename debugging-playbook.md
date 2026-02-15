@@ -1,0 +1,573 @@
+# Debugging-Playbook für Raspberry Pi Projekte
+
+## Inhaltsverzeichnis
+1. [Isolationsmethode](#isolationsmethode)
+2. [Pi-5-spezifische Stolpersteine](#pi-5-spezifische-stolpersteine)
+3. [Software-Debugging](#software-debugging)
+4. [Hardware-Debugging](#hardware-debugging)
+5. [Edge-AI-Debugging](#edge-ai-debugging)
+6. [Eskalationspfade](#eskalationspfade)
+7. [Stalled-Projekt-Analyse](#stalled-projekt-analyse)
+8. [Pre-Flight Quick Checks](#pre-flight-quick-checks)
+
+---
+
+## Isolationsmethode
+
+Die zentrale Debugging-Strategie: Nie Hardware und Software gleichzeitig debuggen. Immer isolieren, dann integrieren.
+
+### Dreischritt-Verfahren
+
+**Schritt 1 – Hardware isoliert testen:**
+
+```bash
+# GPIO: LED-Blink-Test (ohne Anwendungscode)
+python3 -c "from gpiozero import LED; led = LED(17); led.blink()"
+
+# I2C: Bus scannen
+i2cdetect -y 1
+
+# SPI: Loopback-Test (MOSI → MISO verbinden)
+# Wenn Daten zurückkommen → SPI funktioniert
+
+# Kamera: Einzelbild aufnehmen
+rpicam-still -o test.jpg
+
+# Audio-Eingang: 5 Sekunden aufnehmen
+arecord -D plughw:1,0 -d 5 -f cd test.wav
+
+# Audio-Ausgang: Testton abspielen
+aplay test.wav
+speaker-test -t wav -c 2
+```
+
+**Schritt 2 – Software isoliert testen:**
+
+```bash
+# Script mit Mock-Daten laufen lassen (kein Hardware-Zugriff)
+python3 -c "import numpy; print(numpy.__version__)"
+
+# Libraries importierbar?
+python3 -c "import cv2; import tflite_runtime; print('OK')"
+
+# Ollama erreichbar?
+curl http://localhost:11434/api/tags
+
+# FastAPI/Webserver erreichbar?
+curl http://localhost:8000/health
+```
+
+**Schritt 3 – Schnittstelle testen:**
+
+```bash
+# Berechtigungen: User in richtigen Gruppen?
+groups $USER
+# Erwartung: gpio i2c spi video audio
+
+# Virtual Environment aktiv?
+which python3
+# Muss auf .venv/bin/python3 zeigen, nicht /usr/bin/python3
+
+# Device-Nodes vorhanden?
+ls -la /dev/i2c-* /dev/spidev* /dev/video* 2>/dev/null
+
+# udev-Regeln greifen? (z.B. USB-Audio)
+udevadm info --query=all --name=/dev/snd/controlC1
+```
+
+### Entscheidungsbaum
+
+```
+Problem aufgetreten
+├── Hardware-Vermutung?
+│   ├── Ja → Schritt 1 (Hardware isoliert)
+│   │   ├── Hardware OK → Schritt 3 (Schnittstelle)
+│   │   └── Hardware FAIL → Hardware-Debugging (Abschnitt 4)
+│   │
+│   └── Nein → Schritt 2 (Software isoliert)
+│       ├── Software OK → Schritt 3 (Schnittstelle)
+│       └── Software FAIL → Software-Debugging (Abschnitt 3)
+│
+└── Unsicher?
+    └── Schritt 1 → Schritt 2 → Schritt 3 (alle drei)
+```
+
+---
+
+## Pi-5-spezifische Stolpersteine
+
+Diese Probleme treten **nur** auf dem Pi 5 auf und sind die häufigsten Ursachen für unerklärliches Fehlverhalten.
+
+### 1. Mini-CSI-Kabelinkompatibilität
+
+**Symptom:** Kamera wird nicht erkannt, `rpicam-hello --list-cameras` zeigt keine Kamera.
+
+**Ursache:** Pi 5 verwendet Mini-CSI-Anschlüsse (22-Pin, schmal), Pi 4 verwendet Standard-CSI (15-Pin, breit). Standard-HQ-Kamerakabel passen physisch nicht.
+
+**Lösung:**
+```bash
+# Kamera-Anschluss prüfen
+rpicam-hello --list-cameras
+
+# Falls "No cameras available":
+# → 22-Pin-auf-15-Pin-Adapterkabel verwenden
+# → Oder Kamera mit nativem Mini-CSI-Kabel (Camera Module 3)
+```
+
+### 2. RP1 I/O-Controller Treiber-Inkompatibilitäten
+
+**Symptom:** HAT funktioniert auf Pi 4, aber nicht auf Pi 5. GPIO-Libraries werfen Fehler.
+
+**Ursache:** Pi 5 verwendet den RP1-Chip als separaten I/O-Controller (nicht mehr im SoC integriert). Ältere Treiber und Libraries kennen den RP1 nicht.
+
+**Lösung:**
+```bash
+# Kernel-Version prüfen (mindestens 6.6 erforderlich)
+uname -r
+
+# gpiozero statt RPi.GPIO verwenden (RPi.GPIO ist inkompatibel mit Pi 5)
+python3 -c "from gpiozero import Device; print(Device.pin_factory)"
+# Erwartung: lgpio oder rpigpio
+
+# lgpio installiert?
+dpkg -l | grep lgpio
+```
+
+### 3. PEP 668 – Systemweite pip-Blockade
+
+**Symptom:** `pip install` schlägt fehl mit "externally-managed-environment".
+
+**Ursache:** Raspberry Pi OS Bookworm folgt PEP 668 und blockiert systemweite pip-Installationen.
+
+**Lösung:**
+```bash
+# RICHTIG: Virtual Environment erstellen
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install <package>
+
+# FALSCH (nie verwenden auf Bookworm):
+# pip install --break-system-packages <package>
+# sudo pip install <package>
+```
+
+### 4. PCIe Gen 3 nicht aktiviert
+
+**Symptom:** Hailo-8L NPU oder NVMe SSD langsamer als erwartet.
+
+**Ursache:** Pi 5 bootet standardmässig mit PCIe Gen 2. Gen 3 muss explizit aktiviert werden.
+
+**Lösung:**
+```bash
+# PCIe Gen 3 aktivieren
+echo "dtparam=pciex1_gen=3" | sudo tee -a /boot/firmware/config.txt
+sudo reboot
+
+# Verifikation
+sudo lspci -vv | grep -i "LnkSta:"
+# Erwartung: Speed 8GT/s (Gen3), Width x1
+```
+
+### 5. Wayland vs. X11 Grafikprobleme
+
+**Symptom:** PyGame zeigt schwarzes Fenster, Latenz bei Display-Output, Fenster wird nicht gerendert.
+
+**Ursache:** Bookworm verwendet standardmässig Wayland (labwc). PyGame und ältere SDL-Anwendungen haben Kompatibilitätsprobleme.
+
+**Lösung:**
+```bash
+# Aktuellen Display-Server prüfen
+echo $XDG_SESSION_TYPE
+# "wayland" oder "x11"
+
+# Auf X11 zurückschalten (falls nötig)
+sudo raspi-config
+# → Advanced Options → Wayland → X11
+
+# Oder: SDL-Backend explizit setzen
+export SDL_VIDEODRIVER=x11
+```
+
+### 6. HAT-Stacking-Konflikte mit M.2 HAT+
+
+**Symptom:** Audio-HAT + M.2 HAT+ (NVMe/Hailo) funktionieren einzeln, aber nicht zusammen.
+
+**Ursache:** Physische Stapelhöhe, thermische Probleme, GPIO-Pin-Konflikte, RP1-Treiber-Interferenzen.
+
+**Lösung:**
+- USB-Audio (ReSpeaker USB Array v2.0) statt GPIO-Audio-HAT bevorzugen
+- I2C-Adressen auf Kollisionen prüfen: `i2cdetect -y 1`
+- SPI Chip-Select-Leitungen verifizieren
+
+---
+
+## Software-Debugging
+
+### Python-Abhängigkeitskonflikte auf ARM64
+
+```bash
+# Package auf aarch64 verfügbar?
+pip install <package> --dry-run
+
+# Vorkompilierte Wheels auf piwheels.org prüfen
+pip install <package> -i https://www.piwheels.org/simple
+
+# Fallback: Aus Source kompilieren (dauert lang)
+pip install <package> --no-binary :all:
+
+# Systemweite Packages in venv verfügbar machen
+python3 -m venv .venv --system-site-packages
+```
+
+### Ollama / LLM-Debugging
+
+```bash
+# Ollama-Service-Status
+sudo systemctl status ollama
+journalctl -u ollama --since "10 min ago"
+
+# RAM-Situation vor Modell-Loading
+free -h
+# "available" Spalte beachten, nicht "free"
+
+# Modell lädt nicht? → RAM-Budget prüfen
+# 7B q4_0 ≈ 4GB, 3B q4_K_M ≈ 2GB
+# Total aller Prozesse + OS < 7.5GB (bei 8GB Pi)
+
+# OOM-Killer zugeschlagen?
+dmesg | grep -i "oom\|killed"
+
+# Swap-Nutzung (Swap = massiver Performance-Einbruch)
+swapon --show
+free -h | grep Swap
+```
+
+### Systemd-Service-Debugging
+
+```bash
+# Service-Status mit Details
+sudo systemctl status <service> -l
+
+# Letzte Logs
+journalctl -u <service> --since "30 min ago" --no-pager
+
+# Service startet nicht? → ExecStart manuell testen
+cat /etc/systemd/system/<service>.service | grep ExecStart
+# Befehl manuell ausführen und auf Fehler prüfen
+
+# Nach Änderung am Service-File:
+sudo systemctl daemon-reload
+sudo systemctl restart <service>
+```
+
+### Netzwerk-Debugging
+
+```bash
+# WLAN-Status
+nmcli device status
+nmcli connection show
+
+# DNS-Auflösung
+nslookup google.com
+
+# Port offen?
+ss -tlnp | grep <port>
+
+# Firewall blockiert?
+sudo ufw status verbose
+```
+
+---
+
+## Hardware-Debugging
+
+### Stromversorgung validieren
+
+```bash
+# Throttling-Status (wichtigster Einzelbefehl)
+vcgencmd get_throttled
+
+# Bit-Interpretation:
+# 0x0     = Alles OK
+# 0x50005 = Under-voltage jetzt UND seit Boot
+# 0x80008 = Thermal Throttling
+
+# Kernel-Meldungen zu Spannungsproblemen
+dmesg | grep -i "voltage\|under"
+
+# Live-Spannung messen (Pi 5)
+vcgencmd pmic_read_adc
+```
+
+**Strombudget-Berechnung:**
+
+| Komponente | Typischer Verbrauch |
+|------------|---------------------|
+| Pi 5 unter Last | ~2.5A @ 5V = 12.5W |
+| Hailo-8L NPU | ~2.5W |
+| NVMe SSD | ~3-5W |
+| Kamera Module 3 | ~1.5W |
+| USB-Peripherie | ~2-4W |
+| **TOTAL** | **~22-25W** |
+| **Netzteil (27W)** | **Reserve: 2-5W (≥20%)** |
+
+### Thermal-Debugging
+
+```bash
+# Aktuelle Temperatur
+vcgencmd measure_temp
+
+# Throttling-Grenzen:
+# 80°C → Soft-Throttling (Frequenz reduziert)
+# 85°C → Hard-Throttling (massive Reduktion)
+
+# Kontinuierliches Monitoring
+watch -n 1 vcgencmd measure_temp
+
+# CPU-Frequenz unter Last (zeigt Throttling)
+watch -n 1 vcgencmd measure_clock arm
+# Erwartung Pi 5: 2400000000 (2.4GHz)
+# Wenn niedriger → Thermal Throttling aktiv
+```
+
+### GPIO-Debugging
+
+```bash
+# Aktuellen GPIO-Zustand lesen (alle Pins)
+pinout
+
+# Einzelnen Pin-Zustand prüfen (gpiozero)
+python3 -c "
+from gpiozero import DigitalInputDevice
+pin = DigitalInputDevice(17, pull_up=True)
+print(f'GPIO17: {pin.value}')
+"
+
+# I2C-Bus scannen
+i2cdetect -y 1
+
+# I2C-Register eines Geräts lesen (z.B. Adresse 0x76)
+i2cdump -y 1 0x76
+
+# SPI-Verfügbarkeit
+ls -la /dev/spidev*
+```
+
+### USB-Gerät nicht erkannt
+
+```bash
+# USB-Baum anzeigen
+lsusb -t
+
+# Detaillierte USB-Info
+lsusb -v 2>/dev/null | grep -A 5 "<Gerätename>"
+
+# Kernel-Meldungen bei USB-Einstecken
+dmesg --follow
+# → USB-Gerät einstecken und Ausgabe beobachten
+
+# Audio-Geräte (USB-Mikrofon)
+arecord -l
+aplay -l
+```
+
+---
+
+## Edge-AI-Debugging
+
+### Hailo-8L NPU
+
+```bash
+# 1. Hardware erkannt?
+hailortcli fw-control identify
+# Erwartung: Hailo-8L, Firmware-Version
+
+# 2. PCIe-Link aktiv?
+lspci | grep Hailo
+# Erwartung: Co-processor: Hailo Technologies Ltd.
+
+# 3. PCIe-Geschwindigkeit (Gen 3?)
+sudo lspci -vv | grep -A 2 "Hailo"
+# LnkSta: Speed 8GT/s = Gen3 ✓, Speed 5GT/s = Gen2 ✗
+
+# 4. Hailo-Runtime funktional?
+hailortcli run /usr/share/hailo-models/yolov8n.hef
+# Muss ohne Fehler durchlaufen
+
+# 5. GStreamer-Pipeline testen
+gst-launch-1.0 videotestsrc ! videoconvert ! autovideosink
+# Erst ohne Hailo testen, dann mit hailonet Element
+
+# 6. Temperatur des Hailo-Chips
+hailortcli fw-control measure-temperature
+```
+
+**Häufige Hailo-Fehler:**
+
+| Fehler | Ursache | Lösung |
+|--------|---------|--------|
+| "Failed to identify" | PCIe nicht verbunden | FFC-Kabel prüfen, `hailo-all` installieren, Reboot |
+| "HEF parsing failed" | Falsches Modell-Format | .hef für Hailo-8L (nicht Hailo-8) verwenden |
+| Niedrige FPS | Gen 2 statt Gen 3 | `dtparam=pciex1_gen=3` in config.txt |
+| Crash bei Start | Thermal | Active Cooler prüfen, Gehäuse-Lüftung |
+
+### Whisper (Speech-to-Text)
+
+```bash
+# Mikrofon-Eingang testen (vor Whisper-Test)
+arecord -D plughw:1,0 -d 3 -f cd /tmp/test.wav
+aplay /tmp/test.wav
+
+# Whisper-Modell-Grösse vs. RAM
+# tiny: ~200MB, base: ~500MB, small: ~1GB
+# Auf Pi 5 8GB: maximal "small" neben anderen Prozessen
+
+# ALSA-Device-Index für USB-Mikrofon fixieren
+cat /proc/asound/cards
+# → udev-Regel erstellen für konsistente Zuordnung
+```
+
+### Ollama + LangGraph Orchestrierung
+
+```bash
+# Ollama API erreichbar?
+curl -s http://localhost:11434/api/tags | python3 -m json.tool
+
+# Modell geladen?
+curl -s http://localhost:11434/api/ps
+
+# LangGraph-Agent-Health
+curl -s http://localhost:8000/health
+
+# Prozess-Übersicht (alle AI-Prozesse)
+ps aux | grep -E "ollama|whisper|piper|fastapi|uvicorn"
+
+# Gesamter RAM-Verbrauch aller AI-Prozesse
+ps aux --sort=-%mem | head -20
+```
+
+---
+
+## Eskalationspfade
+
+### Zeitbasierte Eskalation
+
+| Zeitraum | Aktion |
+|----------|--------|
+| 0–15 Min | Isolationsmethode anwenden, Logs lesen |
+| 15–30 Min | Claude/Gemini mit Fehlermeldung + Kontext konsultieren |
+| 30–60 Min | Raspberry Pi Forum, GitHub Issues des betroffenen Projekts |
+| 60+ Min | Alternatives Bauteil/Library evaluieren, Workaround suchen |
+
+### Effektive Fehlerberichte erstellen
+
+Beim Eskalieren an Claude, Forum oder GitHub Issues immer diese Infos mitliefern:
+
+```
+1. Was ist das Ziel? (Was soll passieren?)
+2. Was passiert stattdessen? (Fehlermeldung vollständig)
+3. Hardware: Pi-Version, RAM, Peripherie
+4. Software: OS-Version, Python-Version, Library-Versionen
+5. Was wurde bereits versucht? (inkl. Ergebnisse)
+6. Seit wann tritt das Problem auf? (Was hat sich geändert?)
+```
+
+```bash
+# System-Info für Fehlerberichte sammeln
+cat /etc/os-release | head -3
+uname -a
+python3 --version
+pip list 2>/dev/null | head -20
+vcgencmd get_throttled
+vcgencmd measure_temp
+free -h
+df -h /
+```
+
+---
+
+## Stalled-Projekt-Analyse
+
+Wenn ein Projekt seit >14 Tagen keine Aktivität zeigt (Is Stalled = true in Notion), systematische Ursachenanalyse durchführen:
+
+### Ursachen-Kategorien
+
+| Kategorie | Indikatoren | Massnahme |
+|-----------|-------------|-----------|
+| Technischer Blocker | Blocker/Risks-Feld gefüllt, Next Action = "Blocked" | Eskalation: Forum, alternatives Bauteil, Workaround |
+| Fehlende Komponenten | Components Ordered = false, Next Action = "Procurement" | Bestellung auslösen, Alternative suchen |
+| Skills-Lücke | Required Skills enthält unbekannte Technologie | Lernzeit einplanen, Tutorial durcharbeiten |
+| Scope Creep | Progress stagniert trotz Aktivität | Scope reduzieren auf MVP, Success Criteria vereinfachen |
+| Motivationsverlust | Keine offensichtliche technische Blockade | Projekt auf Micro-Milestone herunterbrechen (30-Min-Einheiten) |
+
+### Wiederbelebungs-Protokoll
+
+1. Notion-Eintrag öffnen, Blocker/Risks und Learnings lesen
+2. Letzten bekannten funktionierenden Zustand identifizieren
+3. Einen einzigen nächsten Schritt definieren (max. 30 Min)
+4. Next Action-Feld aktualisieren
+5. Last Activity-Datum setzen
+
+---
+
+## Pre-Flight Quick Checks
+
+Vor Projektstart die passende Checkliste durchlaufen (basierend auf Difficulty-Level).
+
+### Beginner (15–30 Min)
+
+```
+☐ Netzteil korrekt (Pi 5 = 27W USB-C PD)
+☐ Active Cooler montiert
+☐ OS geflasht & aktualisiert (apt update && upgrade)
+☐ SSH aktiviert
+☐ Notion-Eintrag erstellt
+```
+
+### Intermediate (30–60 Min)
+
+Alles aus Beginner, PLUS:
+
+```
+☐ Pi 5 Mini-CSI-Kabel (nicht Pi 4 Kabel!)
+☐ GPIO-Pinout auf pinout.xyz verifiziert
+☐ HAT-Kompatibilität: RP1-Chip, Kernel 6.6+ Treiber
+☐ Spannungslogik: 3.3V vs. 5V → Logic Level Converter?
+☐ Strombudget berechnet (Pi + Peripherie < 80% Netzteil)
+☐ Python venv konfiguriert (PEP 668 auf Bookworm!)
+☐ Packages auf aarch64 verfügbar? (piwheels.org prüfen)
+☐ Inkrementeller Aufbauplan definiert
+```
+
+### Advanced (1–2 Std)
+
+Alles aus Beginner + Intermediate, PLUS:
+
+```
+☐ Architekturdiagramm erstellt (Module, Kommunikation)
+☐ RAM-Budget berechnet (alle Prozesse)
+☐ Latenz-Budget definiert (z.B. Kamera → Erkennung → Display < 200ms)
+☐ HAT-Stacking/PCIe-Konflikte geprüft
+☐ I2C-Adressen kollisionsfrei?
+☐ PCIe Gen 3 aktiviert (falls NVMe/Hailo)
+☐ Wayland vs. X11 entschieden
+☐ Thermal-Monitoring eingerichtet (vcgencmd measure_temp)
+☐ Fehlerszenarien durchgespielt
+```
+
+### Expert / Edge AI (2–4 Std)
+
+Alles aus Beginner + Intermediate + Advanced, PLUS:
+
+```
+☐ RAM-Budget berechnet (alle Modelle + OS < 7.5 GB)
+☐ hailortcli fw-control identify erfolgreich
+☐ PCIe Gen 3 verifiziert (lspci → 8GT/s)
+☐ Alle AI-Modelle einzeln getestet (Whisper, Ollama, YOLO)
+☐ Audio-Subsystem: USB-Mikrofon statt GPIO-HAT (Stacking-Konflikt!)
+☐ udev-Regel für USB-Audio erstellt
+☐ Multi-Prozess-Architektur dokumentiert (Ports, IPC, Restart-Policy)
+☐ systemd Unit-Files vorbereitet
+☐ GDPR/DSG-Konformität geprüft (Gesichter, Stimmen → lokal, kein Cloud)
+☐ Logging-Konfiguration definiert
+```
