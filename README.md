@@ -227,7 +227,6 @@ of this software and associated documentation files...
 
 - **Issues:** [GitHub Issues](https://github.com/malkreide/raspberry-pi-ai-skill/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/malkreide/raspberry-pi-ai-skill/discussions)
-- **E-Mail:** [Deine Kontakt-E-Mail hier einfügen]
 
 ---
 
