@@ -232,13 +232,16 @@ export SDL_VIDEODRIVER=x11
 schliesst nicht, Netzwerkstecker lässt sich nicht einstecken.
 
 **Ursache:**
-- Der offizielle **TPE-Bumper** hebt die Platine um ~2,2 mm an und vergrössert den
-  Fussabdruck auf 89,6 × 60,6 mm. Standoffs und Ausschnitte passen dann nicht mehr.
+- Der offizielle **Bumper** vergrössert den Fussabdruck auf 89,6 × 60,6 mm bei 10 mm
+  Nennhöhe und hebt die Platine um die Bodenstärke (2,20 mm) an. Ausschnitte und
+  Stapelhöhe stimmen dann nicht mehr. Die Befestigungsbohrungen bleiben zugänglich.
 - Die **USB-/Ethernet-Buchsen ragen 3 mm** über die 85-mm-Kante hinaus. Gehäuse, die auf
   85 mm konstruiert wurden, sind zu kurz.
 
 **Lösung:**
-- Bumper vor der HAT-Montage entfernen oder längere Standoffs verwenden
+- Bumper-Bodenstärke in die Standoff-Länge einrechnen (die Bohrungen bleiben zugänglich,
+  der Stapel wird aber höher) – oder den Bumper für den HAT-Aufbau abnehmen
+- **SD-Karte vor dem Einsetzen in den Bumper entfernen** (offizielle Warnung)
 - Gehäuse-Innenmass gegen **88 × 56 mm** (ohne Bumper) bzw. **89,6 × 60,6 mm** (mit) prüfen
 - Details und Ausschnittmasse: `mechanical.md`
 

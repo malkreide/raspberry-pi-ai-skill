@@ -172,7 +172,7 @@ Die verbreiteten 16 mA stammen vom Pi 4. Siehe `rp1-gpio.md`.
 |--------|------|------------|
 | Platine Pi 5 | 85 × 56 mm | – |
 | Realer Fussabdruck (Buchsen ragen 3 mm über) | **88 × 56 mm** | [Gehäuse-Innenmass] |
-| Mit offiziellem Bumper | **89,6 × 60,6 mm** | [ja/nein] |
+| Mit offiziellem Bumper | **89,6 × 60,6 × 10 mm** | [ja/nein] |
 | Bohrbild | 58 × 49 mm, Ø 2,7 mm (M2.5) | [Standoff-Typ] |
 | Bauhöhe des Stapels | Platine + HAT + Cooler | [gemessen: __ mm] |
 
@@ -532,7 +532,7 @@ def check_health():
 4. **ESD-Schutz:** Antistatik-Armband bei Montage verwenden; Platine im Betrieb nur an den
    Kanten anfassen
 5. **Aufstellung:** Stabil, eben, **nicht leitfähig** (offizielle Herstellerwarnung).
-   Der TPE-Bumper erfüllt diese Anforderung für offene Aufbauten.
+   Der offizielle Bumper erfüllt diese Anforderung für offene Aufbauten.
 
 ### Thermal Management
 
