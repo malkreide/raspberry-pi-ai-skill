@@ -3,10 +3,8 @@
 # Build Script für raspberry-pi-ai.skill
 # Erstellt eine .skill-Datei (ZIP) aus den Markdown-Dokumenten.
 #
-# Paket-Layout (muss zu den Pfaden in SKILL.md passen):
-#   raspberry-pi-ai/SKILL.md
-#   raspberry-pi-ai/references/*.md
-#   raspberry-pi-ai/assets/*.md
+# Das Paket-Layout steht in skill-manifest.txt im Projekt-Root – dort und
+# nur dort werden Dateien hinzugefügt oder umbenannt.
 
 set -euo pipefail
 
@@ -15,21 +13,18 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_ROOT/build"
 SKILL_NAME="raspberry-pi-ai"
 OUTPUT_FILE="$PROJECT_ROOT/${SKILL_NAME}.skill"
+MANIFEST="$PROJECT_ROOT/skill-manifest.txt"
 
-# Quellpfade, die als references/ bzw. assets/ ins Paket wandern
-REFERENCES=(
-    "debugging-playbook.md"
-    "docs/hardware-specs.md"
-    "docs/mechanical.md"
-    "docs/edge-ai.md"
-    "docs/component-catalog.md"
-)
-ASSETS=(
-    "templates/plan-template.md"
-)
+# Fester Zeitstempel für alle Archiv-Einträge (siehe ZIP-Schritt unten)
+SOURCE_TIMESTAMP="202401010000.00"
 
 echo "🔨 Building ${SKILL_NAME}.skill..."
 echo ""
+
+if [ ! -f "$MANIFEST" ]; then
+    echo "❌ Error: skill-manifest.txt not found in $PROJECT_ROOT!"
+    exit 1
+fi
 
 # Aufräumen
 if [ -d "$BUILD_DIR" ]; then
@@ -37,37 +32,40 @@ if [ -d "$BUILD_DIR" ]; then
     rm -rf "$BUILD_DIR"
 fi
 
-mkdir -p "$BUILD_DIR/$SKILL_NAME/references" "$BUILD_DIR/$SKILL_NAME/assets"
+mkdir -p "$BUILD_DIR/$SKILL_NAME"
 
-# SKILL.md
-echo "📄 Copying SKILL.md..."
-if [ ! -f "$PROJECT_ROOT/SKILL.md" ]; then
-    echo "❌ Error: SKILL.md not found in $PROJECT_ROOT!"
+# Dateien gemäss Manifest kopieren
+echo "📄 Copying files from skill-manifest.txt..."
+COUNT=0
+while IFS='=' read -r target source; do
+    # Kommentare und Leerzeilen überspringen
+    [ -z "${target// }" ] && continue
+    case "$target" in \#*) continue ;; esac
+
+    if [ -z "${source:-}" ]; then
+        echo "❌ Error: Manifest-Zeile ohne Quellpfad: '$target'"
+        exit 1
+    fi
+    if [ ! -f "$PROJECT_ROOT/$source" ]; then
+        echo "❌ Error: Quelldatei '$source' (→ $target) nicht gefunden!"
+        exit 1
+    fi
+
+    mkdir -p "$(dirname "$BUILD_DIR/$SKILL_NAME/$target")"
+    cp "$PROJECT_ROOT/$source" "$BUILD_DIR/$SKILL_NAME/$target"
+    echo "   $source → $target"
+    COUNT=$((COUNT + 1))
+done < "$MANIFEST"
+
+if [ "$COUNT" -eq 0 ]; then
+    echo "❌ Error: Manifest enthält keine Dateien!"
     exit 1
 fi
-cp "$PROJECT_ROOT/SKILL.md" "$BUILD_DIR/$SKILL_NAME/"
 
-# Referenzen
-echo "📚 Copying references..."
-for src in "${REFERENCES[@]}"; do
-    if [ ! -f "$PROJECT_ROOT/$src" ]; then
-        echo "❌ Error: reference '$src' not found!"
-        exit 1
-    fi
-    cp "$PROJECT_ROOT/$src" "$BUILD_DIR/$SKILL_NAME/references/"
-    echo "   → references/$(basename "$src")"
-done
-
-# Assets
-echo "📎 Copying assets..."
-for src in "${ASSETS[@]}"; do
-    if [ ! -f "$PROJECT_ROOT/$src" ]; then
-        echo "❌ Error: asset '$src' not found!"
-        exit 1
-    fi
-    cp "$PROJECT_ROOT/$src" "$BUILD_DIR/$SKILL_NAME/assets/"
-    echo "   → assets/$(basename "$src")"
-done
+if [ ! -f "$BUILD_DIR/$SKILL_NAME/SKILL.md" ]; then
+    echo "❌ Error: Das Manifest muss SKILL.md enthalten!"
+    exit 1
+fi
 
 # Validierung: Verweist SKILL.md auf Dateien, die nicht im Paket liegen?
 echo ""
@@ -75,7 +73,7 @@ echo "🔎 Validating references in SKILL.md..."
 MISSING=0
 while read -r ref; do
     [ -z "$ref" ] && continue
-    rel="${ref#/mnt/skills/user/${SKILL_NAME}/}"
+    rel="${ref#/mnt/skills/user/"${SKILL_NAME}"/}"
     if [ ! -f "$BUILD_DIR/$SKILL_NAME/$rel" ]; then
         echo "❌ SKILL.md verweist auf '$rel' – Datei fehlt im Paket."
         MISSING=1
@@ -91,10 +89,16 @@ fi
 echo "   ✓ Alle in SKILL.md referenzierten Dateien sind im Paket."
 
 # ZIP erstellen
+#
+# Der Build ist bit-identisch reproduzierbar: alle Einträge bekommen einen
+# festen Zeitstempel und -X unterdrückt die zusätzlichen Dateiattribute.
+# Dadurch erzeugt gleicher Inhalt immer dasselbe Archiv – nur so lässt sich
+# in der CI prüfen, ob das eingecheckte Archiv zu den Quellen passt.
 echo ""
 echo "📦 Creating .skill archive..."
+find "$BUILD_DIR" -exec touch -t "$SOURCE_TIMESTAMP" {} +
 rm -f "$OUTPUT_FILE"
-(cd "$BUILD_DIR" && zip -r "$OUTPUT_FILE" "$SKILL_NAME" > /dev/null)
+(cd "$BUILD_DIR" && find "$SKILL_NAME" -type f | LC_ALL=C sort | zip -X -q -@ "$OUTPUT_FILE")
 
 # Aufräumen
 rm -rf "$BUILD_DIR"

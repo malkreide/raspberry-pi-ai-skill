@@ -4,6 +4,7 @@
 
 **Claude AI Skill für professionelle Raspberry Pi Entwicklung mit Edge AI Integration**
 
+[![CI](https://github.com/malkreide/raspberry-pi-ai-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/malkreide/raspberry-pi-ai-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%205-C51A4A?logo=raspberry-pi)](https://www.raspberrypi.com/)
 [![Claude AI](https://img.shields.io/badge/Claude-AI%20Skill-5436DA)](https://www.anthropic.com/claude)
@@ -200,7 +201,8 @@ cd raspberry-pi-ai-skill
 # Output: raspberry-pi-ai.skill
 ```
 
-Der Build erzeugt genau das Layout, auf das der Skill selbst verweist:
+Das Paket-Layout steht in [`skill-manifest.txt`](skill-manifest.txt) – dort und nur dort
+werden Dateien hinzugefügt oder umbenannt:
 
 ```
 raspberry-pi-ai/
@@ -215,7 +217,41 @@ raspberry-pi-ai/
     └── plan-template.md
 ```
 
-Das Script bricht ab, wenn `SKILL.md` auf eine Datei verweist, die nicht im Paket liegt.
+Der Build ist bit-identisch reproduzierbar: alle Archiv-Einträge bekommen einen festen
+Zeitstempel, gleicher Inhalt ergibt also immer dieselbe `.skill`-Datei.
+
+### Validierung
+
+```bash
+python3 scripts/validate-skill.py
+```
+
+Geprüft wird:
+
+1. Das Manifest ist wohlgeformt und alle Quelldateien existieren
+2. `SKILL.md` hat gültiges Frontmatter (`name`, `description`)
+3. Alle in `SKILL.md` referenzierten Skill-Pfade sind im Manifest abgedeckt
+4. Das eingecheckte `raspberry-pi-ai.skill` entspricht den Quelldateien
+5. Keine toten relativen Links in den Markdown-Dokumenten
+
+Punkt 4 ist der wichtigste: Das Archiv liegt im Repository und veraltet still, sobald eine
+Referenz bearbeitet, aber nicht neu gebaut wird.
+
+### CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) läuft bei jedem Push auf `main` und
+bei jedem Pull Request:
+
+| Job | Prüft |
+|-----|-------|
+| **Build & Validate Skill** | Validiert das eingecheckte Archiv, baut es neu, prüft die Reproduzierbarkeit, lädt die `.skill` als Artefakt hoch |
+| **Shellcheck** | Lintet `scripts/*.sh` |
+
+Vor einem Pull Request lokal ausführen:
+
+```bash
+./scripts/build-skill.sh && python3 scripts/validate-skill.py && shellcheck scripts/*.sh
+```
 
 ### Beitragen
 

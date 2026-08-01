@@ -4,6 +4,7 @@
 
 **Claude AI Skill for Professional Raspberry Pi Development with Edge AI Integration**
 
+[![CI](https://github.com/malkreide/raspberry-pi-ai-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/malkreide/raspberry-pi-ai-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%205-C51A4A?logo=raspberry-pi)](https://www.raspberrypi.com/)
 [![Claude AI](https://img.shields.io/badge/Claude-AI%20Skill-5436DA)](https://www.anthropic.com/claude)
@@ -201,7 +202,8 @@ cd raspberry-pi-ai-skill
 # Output: raspberry-pi-ai.skill
 ```
 
-The build produces the layout the skill itself references:
+The package layout is defined in [`skill-manifest.txt`](skill-manifest.txt) — the single
+place where files are added or renamed:
 
 ```
 raspberry-pi-ai/
@@ -216,7 +218,41 @@ raspberry-pi-ai/
     └── plan-template.md
 ```
 
-The script fails the build if `SKILL.md` references a file that is not packaged.
+The build is bit-for-bit reproducible: all archive entries get a fixed timestamp, so
+identical content always yields an identical `.skill` file.
+
+### Validation
+
+```bash
+python3 scripts/validate-skill.py
+```
+
+Checks:
+
+1. The manifest is well-formed and every source file exists
+2. `SKILL.md` has valid frontmatter (`name`, `description`)
+3. Every skill path referenced in `SKILL.md` is covered by the manifest
+4. The committed `raspberry-pi-ai.skill` matches the source files
+5. No dead relative links in any Markdown document
+
+Check 4 is the important one: the archive is committed to the repository, so it silently
+goes stale whenever a reference is edited without rebuilding.
+
+### CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and on
+every pull request:
+
+| Job | Does |
+|-----|------|
+| **Build & Validate Skill** | Validates the committed archive, rebuilds it, verifies the build is reproducible, uploads the `.skill` as an artifact |
+| **Shellcheck** | Lints `scripts/*.sh` |
+
+Run both locally before opening a pull request:
+
+```bash
+./scripts/build-skill.sh && python3 scripts/validate-skill.py && shellcheck scripts/*.sh
+```
 
 ### Contributing
 
