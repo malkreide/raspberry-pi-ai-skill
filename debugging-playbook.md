@@ -100,6 +100,7 @@ Diese Probleme treten **nur** auf dem Pi 5 auf und sind die häufigsten Ursachen
 
 PCIe-Details (Pinout, FFC-Anforderungen, Sideband-Signale, M.2 HAT+): `pcie.md`.
 RP1-Pads, Latenzverhalten und Alternativfunktionen: `rp1-gpio.md`.
+Boot-Medium, Netzteilwahl, Headless-Provisionierung und erster Start: `setup-provisioning.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -376,6 +377,68 @@ Entprellung in Hardware anbietet.
 High/Low** und **Filtered Edge High/Low**. In `gpiozero` deckt der Parameter
 `bounce_time` den Anwendungsfall ab; für eigene Treiber steht die Filterzeit in
 `IO_BANK0_GPIOn_CTRL.F_M`. Details: `rp1-gpio.md`.
+
+### 14. Pi bootet nicht – die 5-Minuten-Regel
+
+**Symptom:** Nach dem Einschalten passiert nichts, kein Bild, kein Netzwerk.
+
+**Vorgehen:**
+
+1. **5 Minuten warten.** Bootet der Pi bis dahin nicht, den **Status-LED** prüfen –
+   blinkt sie, geben die **LED-Blinkcodes** die Ursache an.
+2. Wurde von einem **anderen Medium als der SD-Karte** gebootet (USB, NVMe)? Zum Test
+   mit einer SD-Karte starten.
+3. SD-Karte **neu beschreiben** und dabei den **Verify-Schritt vollständig durchlaufen
+   lassen** – nicht überspringen. Eine unvollständig geschriebene Karte ist die
+   häufigste Ursache.
+4. Mit dem Imager den **Bootloader neu flashen**, danach das OS erneut schreiben.
+
+**Häufige Ursachen vor dem Karten-Tausch prüfen:**
+- Netzteil zu schwach oder Kabel zu dünn (Spannung gilt **am Stecker**, nicht am Netzteil)
+- Monitor nicht an **HDMI0**
+- Bei Pi 5: EEPROM so konfiguriert, dass auf den Power-Button gewartet wird
+
+### 15. Headless-Pi ist nach dem ersten Boot nicht erreichbar
+
+**Symptom:** Der Pi läuft (LED an), antwortet aber nicht auf SSH.
+
+**Ursachen und Prüfreihenfolge:**
+
+1. **Kein Fernzugriff konfiguriert.** Beim **ersten** Boot sind nur **SSH** und
+   **Raspberry Pi Connect** verfügbar – **VNC erst danach**, und mit den Lite-Varianten
+   gar nicht. Mindestens eines von beiden muss im Imager aktiviert worden sein.
+2. **`wpa_supplicant.conf` verwendet.** Ab Bookworm gibt es diese Funktion **nicht mehr**.
+   WLAN über den Imager oder später über `nmcli` konfigurieren.
+3. **5-GHz-Netz, aber Modell kann nur 2,4 GHz** (Zero W, Zero 2 W, Pi 3B).
+4. **Falscher Hostname.** Der Pi meldet sich per mDNS als `<hostname>.local` bzw.
+   `<hostname>.lan`.
+5. **Benutzername ungültig.** Muss mit einem Buchstaben beginnen, nur Kleinbuchstaben,
+   Ziffern, Unterstriche, Bindestriche, max. 31 Zeichen.
+
+```bash
+# Erreichbarkeit prüfen
+ping -c3 hostname.local
+ssh benutzer@hostname.local
+
+# SSH von Hand nachrüsten (Partition bootfs, Karte am anderen Rechner)
+touch /pfad/zu/bootfs/ssh
+openssl passwd -6            # Hash erzeugen, auf macOS ggf. brew install openssl
+# Ergebnis in userconf.txt: benutzer:$6$...
+```
+
+Details: `setup-provisioning.md`.
+
+### 16. Peripherie fällt aus, ohne Unterspannungswarnung
+
+**Symptom:** USB-SSD wird nicht erkannt, Kamera fällt sporadisch aus, Hub funktioniert
+nicht – `vcgencmd get_throttled` meldet aber nichts.
+
+**Ursache:** Am **Pi 5 mit einem 5 V / 3 A Netzteil** wird die Peripherieversorgung auf
+**600 mA** begrenzt. Das Board läuft normal, nur die angeschlossenen Geräte bekommen zu
+wenig. Ein 15-W-Netzteil vom Pi 4 ist deshalb kein vollwertiger Ersatz.
+
+**Lösung:** 27-W-Netzteil (5 V / 5 A) verwenden. Zusätzlich das Kabel prüfen – die
+Spannungsangabe gilt **am Stecker**, dünne oder lange USB-C-Kabel fallen hier auf.
 
 ---
 
@@ -697,8 +760,9 @@ Vor Projektstart die passende Checkliste durchlaufen (basierend auf Difficulty-L
 ```
 ☐ Netzteil korrekt (Pi 5 = 27W USB-C PD)
 ☐ Active Cooler montiert
-☐ OS geflasht & aktualisiert (apt update && upgrade)
-☐ SSH aktiviert
+☐ OS geflasht & aktualisiert (apt update && upgrade), Verify-Schritt durchgelaufen
+☐ SSH oder Raspberry Pi Connect im Imager aktiviert (VNC geht beim ersten Boot nicht)
+☐ Netzteil passt zum Modell (Pi 5: 5 V/5 A – mit 3 A nur 600 mA für Peripherie)
 ☐ Aufstellung stabil, eben, nicht leitfähig; Gehäuse nicht abgedeckt
 ☐ Umgebungstemperatur im Einsatzbereich 0–70 °C
 ☐ Notion-Eintrag erstellt

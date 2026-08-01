@@ -10,6 +10,7 @@ Grundlage dieser Referenz sind die offiziellen Raspberry-Pi-Dokumente:
 | Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) | Offizielles Gehäuse mit Aktivlüfter |
 | Raspberry Pi Bumper Product Brief | RP-008144-DS-1 (Oktober 2024) | Bumper: Nennmasse, Material, Preis, Warnungen |
 | Pi 5 Bumper 3D CAD Data | RP-006236-DD-1 (STEP, 28.06.2024) | 3D-Modell des Bumpers |
+| Raspberry Pi 5 3D STEP (with graphics) | RP-010082-CA-1 (STEP AP214, 27.05.2026) | 3D-Modell des kompletten Boards, MIT-Lizenz |
 
 > ⚠️ **Verbindlichkeitshinweis (aus den Zeichnungen selbst):**
 > Alle Masse sind Näherungswerte und dienen nur als Referenz. Sie dürfen **nicht** als
@@ -25,6 +26,7 @@ Grundlage dieser Referenz sind die offiziellen Raspberry-Pi-Dokumente:
 4. [Offizieller Bumper](#offizieller-bumper)
 5. [Offizielles Raspberry Pi Case](#offizielles-raspberry-pi-case)
 6. [Stapelhöhen & HAT-Kompatibilität](#stapelhöhen--hat-kompatibilität)
+7. [3D-CAD-Modell des Raspberry Pi 5](#3d-cad-modell-des-raspberry-pi-5)
 6. [Umgebungsbedingungen & Gehäusebelüftung](#umgebungsbedingungen--gehäusebelüftung)
 7. [Offizielle Sicherheits- und Handhabungshinweise](#offizielle-sicherheits--und-handhabungshinweise)
 8. [Checkliste Gehäusedesign / 3D-Druck](#checkliste-gehäusedesign--3d-druck)
@@ -318,6 +320,83 @@ Aufbau von unten nach oben (x-y-Fussabdruck):
 
 ---
 
+## 3D-CAD-Modell des Raspberry Pi 5
+
+Raspberry Pi stellt ein **STEP-Modell des kompletten Boards** bereit
+(`rpi-5b_with_graphics.step`, AP214, ~140 MB, Stand 27.05.2026) – inklusive aller
+Bauteile. Es steht unter **MIT-Lizenz** und darf weitergegeben werden.
+
+> ⚠️ **Was die beigelegte Lizenzdatei ausdrücklich sagt:** Das Modell ist
+> *«provided here for guidance only and without guarantee of accuracy»* und
+> *«may not reflect the most current version(s)»*. Wer es für Passform verwendet, muss
+> auf Herstellerangaben zurückgreifen und **am physischen Produkt nachmessen**.
+> Das ist kein Formalismus – siehe die Abweichung weiter unten.
+
+### Was das Modell bestätigt
+
+Gegen die bemasste Zeichnung RP-008347-DS-1 geprüft:
+
+| Mass | Zeichnung | CAD-Modell | |
+|------|-----------|------------|---|
+| Platinenkontur | 85 × 56 mm | 85,00 × 56,00 mm | ✓ exakt |
+| USB-C, Mitte ab linker Kante | 11,2 mm | 11,20 mm | ✓ |
+| Ethernet, Mitte ab Unterkante | 10,2 mm | 10,25 mm | ✓ |
+| USB-Stapel, Mitten ab Unterkante | 29,1 / 47 mm | 29,0 / 47,0 mm | ✓ |
+| Steckerüberstand über die 85-mm-Kante | 3 mm | 3,05 mm | ✓ |
+| Überstand an der linken Kante | 0,45 mm | 0,45 mm | ✓ |
+| Höchstes Bauteil an der Anschlusskante | 4,4 mm | 4,33 mm | ✓ |
+
+Sieben unabhängig bestätigte Masse – für diese Werte ist die Datenlage gut.
+
+### 🔴 Wo Modell und Zeichnung sich widersprechen
+
+| Anschluss | Zeichnung | CAD-Modell |
+|-----------|-----------|------------|
+| Micro-HDMI 0, Mitte ab linker Kante | **25,8 mm** | 19,0 mm |
+| Micro-HDMI 1, Mitte ab linker Kante | **39,2 mm** | 32,5 mm |
+
+Die Abweichung beträgt rund 6,8 mm. Im Modell sitzen die beiden Körper ausserdem
+2,5–3,3 mm von der Platinenkante zurückgesetzt, während reale Micro-HDMI-Buchsen bündig
+mit der Kante abschliessen – die Darstellung im CAD wirkt vereinfacht.
+
+➜ **Für Frontplatten und Gehäuseausschnitte gelten die Werte der bemassten Zeichnung
+(25,8 / 39,2 mm), nicht die des CAD-Modells.** Und in beiden Fällen gilt: vor dem
+finalen Zuschnitt am physischen Board nachmessen.
+
+Das ist zugleich das beste Beispiel dafür, warum der Lizenz-Disclaimer ernst zu nehmen
+ist: Das Modell stimmt bei sieben Massen exakt und liegt bei zweien deutlich daneben.
+
+### Was das Modell ergänzt
+
+Diese Werte sind in keiner Zeichnung bemasst. Sie stammen aus dem Modell und sind
+**Anhaltswerte, keine Spezifikation**:
+
+| Mass | Modellwert |
+|------|-----------|
+| **40-Pin-Header, Pin-Oberkante über der Platinenoberseite** | **8,57 mm** |
+| 40-Pin-Header, Isolierkörper | 50,80 × 5,08 × 2,54 mm, Oberkante 2,57 mm |
+| Header-Position | X 7,10–57,90 mm, Y 49,96–55,04 mm ab linker/unterer Kante |
+| Header-Raster | 2,54 mm; Pinreihen-Mitten bei 51,23 und 53,77 mm |
+| Leiterplattendicke | 1,276 mm |
+| **Höchster Punkt über der Platinenoberseite** | **16,22 mm** (USB-Doppelbuchse) |
+| Ethernet-Buchse, Höhe über Platinenoberseite | 13,33 mm |
+| Tiefster Punkt unter der Platinenunterseite | 1,48 mm |
+| **Gesamtbauhöhe der nackten Platine** | **18,98 mm** |
+
+➜ **Für Gehäusehöhen** ist damit gerechnet: knapp **19 mm** für die nackte Platine,
+plus Active Cooler oder HAT-Stapel obendrauf.
+
+### Praktischer Umgang
+
+1. **Für Passform und Kollisionsprüfung:** Modell importieren (FreeCAD, Fusion,
+   SolidWorks, Onshape – AP214 ist Standard).
+2. **Für bemasste Ausschnitte:** Werte aus der Zeichnung nehmen, nicht aus dem Modell
+   abgreifen.
+3. **Vor der Fertigung:** am physischen Board nachmessen. Beide Quellen sind
+   ausdrücklich Referenzmaterial ohne Produktionsfreigabe.
+
+---
+
 ## Umgebungsbedingungen & Gehäusebelüftung
 
 ### Offizielle Werte aus dem Product Brief
@@ -388,6 +467,9 @@ Direkt aus dem Product Brief – diese Punkte gehören in jede Projektdokumentat
 - [ ] Ausschnitte Anschlusskante: USB-C 11,2 mm / HDMI 0 25,8 mm / HDMI 1 39,2 mm ab links
 - [ ] Ausschnitte rechte Kante: Ethernet 10,2 mm / USB 29,1 mm / USB 47 mm ab unten
 - [ ] Ausschnitthöhe an der Anschlusskante ≥ 4,4 mm über der Platinenoberseite
+- [ ] Innenhöhe ≥ **19 mm** für die nackte Platine (Anhaltswert aus dem CAD-Modell),
+      zuzüglich Active Cooler oder HAT-Stapel
+- [ ] Bei GPIO-Durchführung: 40-Pin-Header ragt ca. **8,6 mm** über die Platine
 - [ ] Toleranzzugabe +0,5 mm (Spritzguss) bzw. +0,8–1,0 mm (FDM) pro Seite
 - [ ] Lüftungsöffnungen vorhanden, Gehäuse nicht abgedeckt (offizielle Warnung)
 - [ ] Luftweg für Active Cooler frei (Ansaugung oben, Auslass seitlich)
@@ -400,19 +482,21 @@ Direkt aus dem Product Brief – diese Punkte gehören in jede Projektdokumentat
 
 ## Was die Zeichnungen NICHT enthalten
 
-Diese Werte sind in RP-008347-DS-1 und RP-006237-DD-1 **nicht** bemasst und müssen am
-physischen Board oder beim Zubehörhersteller ermittelt werden:
+Diese Werte sind in RP-008347-DS-1 und RP-006237-DD-1 **nicht** bemasst.
 
-- Leiterplattendicke
-- Höhe des 40-Pin-Headers und der Bauteile auf der Platinenoberseite ausserhalb der
-  Anschlusskante
+**Aus dem CAD-Modell als Anhaltswert verfügbar** (siehe Abschnitt oben):
+Leiterplattendicke, Höhe des 40-Pin-Headers, Bauteilhöhen ober- und unterhalb der
+Platine, Gesamtbauhöhe.
+
+**Weiterhin nirgends dokumentiert:**
+
 - Höhe und Fussabdruck des Active Coolers
 - Position und Höhe des Lüfter-Anschlusses sowie des PoE+-Headers
-- Höhe der Bauteile auf der Platinenunterseite (Micro-SD-Slot)
 - Gewicht
 
 ➜ Wenn ein Projekt auf einen dieser Werte angewiesen ist: **nachmessen und den Messwert
-im `plan.md` dokumentieren**, nicht schätzen.
+im `plan.md` dokumentieren**, nicht schätzen. Das gilt auch für die CAD-Anhaltswerte,
+sobald es eng wird.
 
 ---
 

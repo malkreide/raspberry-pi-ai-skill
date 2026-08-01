@@ -14,6 +14,7 @@ Mechanische Masse, Bohrbild und Gehäusethemen: siehe [`mechanical.md`](mechanic
 
 PCIe-Stecker, FFC-Anforderungen und M.2 HAT+: [`pcie.md`](pcie.md).
 RP1-Pads, Latenzverhalten und Alternativfunktionen: [`rp1-gpio.md`](rp1-gpio.md).
+Boot-Medium, Netzteilwahl, Headless-Setup und erster Start: [`setup-provisioning.md`](setup-provisioning.md).
 
 ---
 
@@ -207,6 +208,15 @@ die Alternativfunktionen statt der Griff zum Multiplexer. Tabelle und Regeln:
 - Offiziell: 27W USB-C PD (5.1V/5A)
 - Minimum: 15W (für Idle-Betrieb ohne Peripherie)
 - Empfohlen: 27W für alle Szenarien
+
+⚠️ **Am Pi 5 mit 5 V / 3 A wird die Peripherieversorgung auf 600 mA begrenzt.**
+Das Board läuft, aber USB-SSDs, Kameras und Hubs fallen aus, ohne dass Unterspannung
+gemeldet wird. Ein 15-W-Netzteil vom Pi 4 ist damit kein vollwertiger Ersatz.
+
+⚠️ **Die Spannungsangaben gelten am Stecker, nicht am Netzteil.** Spannungsabfall im
+Kabel einrechnen – ein dünnes oder langes USB-C-Kabel ist eine häufige Fehlerquelle.
+
+Netzteiltabelle für alle Modelle: [`setup-provisioning.md`](setup-provisioning.md).
 
 **Leistungsaufnahme (typisch):**
 
