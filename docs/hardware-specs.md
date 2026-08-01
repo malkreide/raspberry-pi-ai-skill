@@ -13,6 +13,7 @@ Mechanische Masse, Bohrbild und Gehäusethemen: siehe [`mechanical.md`](mechanic
 7. [Modellwahl & Beschaffung](#modellwahl--beschaffung)
 
 PCIe-Stecker, FFC-Anforderungen und M.2 HAT+: [`pcie.md`](pcie.md).
+RP1-Pads, Latenzverhalten und Alternativfunktionen: [`rp1-gpio.md`](rp1-gpio.md).
 
 ---
 
@@ -28,7 +29,7 @@ PCIe-Stecker, FFC-Anforderungen und M.2 HAT+: [`pcie.md`](pcie.md).
 | **GPU** | VideoCore VII @ 800 MHz, OpenGL ES 3.1, Vulkan 1.2 |
 | **Video** | Dual 4Kp60 HDMI mit HDR, 4Kp60 HEVC-Decoder |
 | **RAM** | 1, 2, 4, 8 **oder 16 GB** LPDDR4X-4267 |
-| **I/O-Controller** | RP1 (separater Chip!) |
+| **I/O-Controller** | RP1 (separater Chip, via chipinternem PCIe 2.0 **x4**) |
 | **PCIe** | 1× PCIe **2.0** x1 (via FFC) – Gen 3 nur inoffiziell, siehe unten |
 | **USB** | 2× USB 3.0 (gleichzeitig 5 Gbps), 2× USB 2.0 |
 | **Kamera/Display** | 2× 4-Lane MIPI-Transceiver @ 1.5 Gbps/Lane, beliebige Kombination aus bis zu 2 Kameras oder Displays |
@@ -48,9 +49,13 @@ Details, Steckerpositionen und Gehäuse-Checkliste: [`mechanical.md`](mechanical
 ### Kritische Unterschiede zu Pi 4
 
 **RP1 I/O-Controller:**
-- Separater Chip für alle Peripherie (GPIO, I2C, SPI, UART, PWM)
+- Separater Chip für alle Peripherie (GPIO, I2C, SPI, UART, PWM, USB, MIPI, Ethernet)
+- Angebunden über chipinternes **PCIe 2.0 x4** – nicht zu verwechseln mit dem externen
+  PCIe-Stecker (x1) für M.2 HAT+
 - Erfordert Kernel 6.6+ und angepasste Treiber
 - `RPi.GPIO` ist **inkompatibel** → Verwende `gpiozero` mit lgpio
+- **Jeder GPIO-Zugriff läuft über PCIe (~1 µs Latenz).** Software-getaktete Protokolle
+  (Bit-Banging) verhalten sich deshalb anders als auf dem Pi 4 → [`rp1-gpio.md`](rp1-gpio.md)
 
 **Mini-CSI-Anschlüsse:**
 - 22-Pin-Stecker (schmal), nicht 15-Pin wie Pi 4
@@ -87,11 +92,20 @@ Details, Steckerpositionen und Gehäuse-Checkliste: [`mechanical.md`](mechanical
 ### GPIO-Besonderheiten Pi 5
 
 ```
-RP1-Chip Limitationen:
-- Max. 16 mA pro Pin (wie Pi 4)
-- Pull-Up/Pull-Down: 50 kΩ (schwächer als Pi 4: 50-65 kΩ)
-- Neue GPIO-Nummern für zusätzliche Pins (GPIO 27, 28)
+RP1-Pad-Grenzwerte (Quelle: RP1 Peripherals, RP-008370-DS-1):
+- Treiberstrom: 2 / 4 / 8 / 12 mA wählbar -> Maximum 12 mA
+  (NICHT 16 mA wie auf Pi 4 - Pi-4-Anleitungen sind hier nicht uebertragbar)
+- Voreinstellung: 4 mA
+- Schmitt-Trigger am Eingang: per Reset aktiv
+- Slew-Rate-Begrenzung: per Reset langsam
+- Pull-Up / Pull-Down / Bus-Keeper / hochohmig waehlbar
+- ESD: 4 kV HBM, 500 V CDM, 200 V MM
+- 28 GPIO (0-27) in einer einzigen Bank (VDDIO0), Timings bei 3,3 V spezifiziert
+- Ein Summenstrom pro Bank ist im Datenblatt NICHT angegeben
 ```
+
+⚠️ **Der oft zitierte Wert «16 mA pro Pin» stammt vom Pi 4 und gilt auf dem Pi 5 nicht.**
+Details, Latenz-Verhalten und die vollständige Peripherie-Übersicht: [`rp1-gpio.md`](rp1-gpio.md).
 
 ---
 
@@ -148,6 +162,22 @@ BCM2711 SoC Limitationen:
 ```
 
 ### Spezialfunktionen
+
+Die folgenden Zuordnungen sind die **Standardbelegung**. Der Pi 5 bietet über die
+Alternativfunktionen des RP1 deutlich mehr Instanzen, als hier aufgeführt sind:
+
+| Funktion | Pi 4 (üblich genutzt) | **Pi 5 / RP1 am Header verfügbar** |
+|----------|----------------------|-------------------------------------|
+| UART | 2 | **5** |
+| SPI | 2 | **6** |
+| I2C | 2 | **4** |
+| I2S | 1 | **2** |
+| PWM | 2 Kanäle | **4 Kanäle** |
+| PIO | – | **vorhanden** (wie RP2040) |
+
+➜ Bei I2C-Adresskonflikten oder zu wenigen Chip-Selects lohnt auf dem Pi 5 der Blick in
+die Alternativfunktionen statt der Griff zum Multiplexer. Tabelle und Regeln:
+[`rp1-gpio.md`](rp1-gpio.md).
 
 **I2C:**
 - I2C1: GPIO 2 (SDA), GPIO 3 (SCL) – Standard für HATs
@@ -398,8 +428,9 @@ und für Projekte, die den Pi in ein eigenes Produkt integrieren.
 
 ⚠️ **Kritisch:**
 - GPIO sind **nicht 5V-tolerant**
-- Max. 16 mA pro Pin
-- Max. ~50 mA pro GPIO-Bank
+- Max. Treiberstrom pro Pin: **Pi 5 (RP1) 12 mA**, Pi 4 (BCM2711) 16 mA
+- Bank-Summenstrom: Pi 4 ~50 mA; für Pi 5 **im Datenblatt nicht angegeben** → konservativ
+  rechnen und Lasten nicht aus GPIO speisen
 - Induktive Lasten **immer** via Transistor/Relais
 
 ### Unterspannung

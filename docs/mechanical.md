@@ -7,6 +7,7 @@ Grundlage dieser Referenz sind die offiziellen Raspberry-Pi-Dokumente:
 | Raspberry Pi 5 Product Brief | RP-008348-DS (April 2026) | Spezifikation, Umgebungsbedingungen, Sicherheitshinweise |
 | Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 | Platinenmasse, Bohrbild, Steckerpositionen, Höhenprofil |
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1, 28.06.2024) | Offizieller Bumper (Unterschale), Teil RP-006236-DD-1 |
+| Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) | Offizielles Gehäuse mit Aktivlüfter |
 
 > ⚠️ **Verbindlichkeitshinweis (aus den Zeichnungen selbst):**
 > Alle Masse sind Näherungswerte und dienen nur als Referenz. Sie dürfen **nicht** als
@@ -20,7 +21,8 @@ Grundlage dieser Referenz sind die offiziellen Raspberry-Pi-Dokumente:
 2. [Steckerpositionen für Gehäuseausschnitte](#steckerpositionen-für-gehäuseausschnitte)
 3. [Höhenprofil & Überstände](#höhenprofil--überstände)
 4. [Offizieller Bumper](#offizieller-bumper)
-5. [Stapelhöhen & HAT-Kompatibilität](#stapelhöhen--hat-kompatibilität)
+5. [Offizielles Raspberry Pi Case](#offizielles-raspberry-pi-case)
+6. [Stapelhöhen & HAT-Kompatibilität](#stapelhöhen--hat-kompatibilität)
 6. [Umgebungsbedingungen & Gehäusebelüftung](#umgebungsbedingungen--gehäusebelüftung)
 7. [Offizielle Sicherheits- und Handhabungshinweise](#offizielle-sicherheits--und-handhabungshinweise)
 8. [Checkliste Gehäusedesign / 3D-Druck](#checkliste-gehäusedesign--3d-druck)
@@ -182,6 +184,57 @@ Aussenmasse verändert.
    bei Dauerlast (Hailo, Ollama) ist der Active Cooler damit noch wichtiger.
 5. **Nicht mit Kühlkörper-Cases kombinieren:** Alu-Gehäuse (Flirc, Argon) setzen auf der
    nackten Platine auf.
+
+---
+
+## Offizielles Raspberry Pi Case
+
+Quelle: **Raspberry Pi Case for Raspberry Pi 5, RP-008159-DS-1 (April 2024)**.
+
+Vierteiliges Klickgehäuse (Basis, Rahmen, Deckel, Lüftereinheit) mit integriertem,
+temperaturgeregeltem Lüfter.
+
+| Eigenschaft | Wert |
+|-------------|------|
+| **Aussenmasse** | **98,5 × 70,3 × 33 mm** |
+| Material | ABS (Basis, Rahmen, Deckel), PC (Lüftereinheit) |
+| Lüfter-Versorgung | 5 V über den **4-Pin-FAN-Header** des Pi 5 |
+| Lüfterregelung | PWM mit Tachosignal |
+| Max. Luftstrom | **2,79 CFM** |
+| Max. Drehzahl | **8000 U/min ± 15 %** |
+| Kühlkörper | **12 × 17 × 4 mm**, selbstklebend, auf den CPU-Absatz |
+| Zubehör | vier Silikonfüsse |
+| Produktionszusage | mindestens bis **Januar 2036** |
+
+### Was das Gehäuse kann – und was nicht
+
+- **Deckel abnehmbar:** legt Lüfter, Montagepunkte und einen Durchbruch für Kabel
+  (u.a. GPIO) frei. Ein Flachbandkabel nach aussen ist also vorgesehen.
+- **Stapelbar:** Montagepunkte in der transparenten Lüfterabdeckung und auf der
+  Unterseite der Basis erlauben, mehrere Gehäuse zu stapeln.
+- **HATs möglich, aber nicht ohne Zukauf:** Nur mit **Abstandshaltern und
+  GPIO-Header-Verlängerungen**, die *nicht* im Lieferumfang sind.
+- **Lüftereinheit entnehmbar:** Die Lüftereinheit lässt sich aus dem weissen Rahmen
+  ausklipsen, wenn das Gehäuse ohne Lüfter genutzt werden soll.
+- **Power-Button** des Gehäuses bedient den Power-Button des Pi 5.
+- **Für M.2:** Dafür gibt es den **M.2 HAT+ Compact**, der den Gehäuselüfter frei lässt –
+  unterstützt aber nur 2230. Siehe `pcie.md`.
+
+### Montagehinweise aus der Anleitung
+
+1. Kühlkörper auf den erhöhten Abschnitt der CPU kleben und **andrücken**.
+2. Die Platine sitzt **unter der Kunststofflasche an der SD-Karten-Seite**. Sie muss flach
+   in der Basis liegen und die Anschlüsse müssen zu den Öffnungen fluchten.
+3. **Beim Anschluss des Lüfterkabels auf die Steckrichtung achten** – der Stecker muss
+   richtig herum in den mit `FAN` beschrifteten 4-Pin-Anschluss.
+4. Lüfterkabel vollständig einstecken.
+
+### Warnungen
+
+- **Nur für den Raspberry Pi 5.**
+- Nur in gut belüfteter Umgebung betreiben, das Gehäuse **nicht abdecken**.
+- Keine Feuchtigkeit, keine leitfähige Unterlage im Betrieb, keine externe Wärmequelle.
+- **Den Lüfter im Betrieb nicht berühren.**
 
 ---
 

@@ -30,6 +30,8 @@ This Claude AI Skill supports the systematic development of robust, secure, and 
   product brief and mechanical drawings
 - **PCIe & M.2**: Connector pinout, FFC requirements, sideband signals for custom boards,
   M.2 HAT+ variants and the stacked ambient-temperature limit
+- **RP1 & GPIO**: Pad limits (12 mA, not 16 mA), PCIe latency on every GPIO access,
+  four I2C and six SPI instances, PIO, hardware debouncing
 
 ## 🚀 Quick Start
 
@@ -59,6 +61,7 @@ The skill is automatically activated when you say things like:
 "Create a build plan for an AI camera"
 "What inner dimensions does my Pi 5 enclosure need?"
 "My Hailo NPU doesn't show up in lspci"
+"Why do my WS2812 LEDs flicker on the Pi 5?"
 ```
 
 ## 📚 Documentation
@@ -73,6 +76,7 @@ The skill is automatically activated when you say things like:
 - **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 specifications, GPIO pinouts, power budgets, RAM variant selection
 - **[mechanical.md](docs/mechanical.md)** – Board dimensions, mounting pattern, connector positions, official bumper, enclosure and 3D-print checklist
 - **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
+- **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1 pad limits, GPIO latency, alternate functions, PIO, hardware debouncing
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite setup and best practices
 - **[component-catalog.md](docs/component-catalog.md)** – Recommended components with suppliers
 
@@ -91,6 +95,8 @@ Hardware and mechanical figures are taken from the official Raspberry Pi documen
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
 | Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
 | Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
+| Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) |
+| Raspberry Pi RP1 Peripherals | RP-008370-DS-1 |
 
 Mechanical figures are reference values with tolerances and are explicitly not released as
 production data — measure against a physical board for production work.
@@ -329,6 +335,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - **PCIe Gen 3:** Officially the Pi 5 provides PCIe 2.0 x1; Gen 3 is an out-of-spec opt-in
 - **PCIe FFC:** Max 50 mm, impedance-controlled, opposite-sides-contact — a wrong cable can destroy hardware
 - **M.2 HAT+ ambient limit:** 0 °C to 50 °C, lower than the Pi 5 itself — the stack is limited by the HAT
+- **GPIO drive strength:** The Pi 5 maxes out at 12 mA per pin — Pi 4 guides quoting 16 mA do not carry over
+- **GPIO latency:** Every access goes over PCIe (~1 µs); bit-banged Pi 4 code is unreliable
 - **Mechanical dimensions:** Raspberry Pi's drawings are reference values with tolerances
   and are explicitly not released for production data
 

@@ -99,6 +99,7 @@ Problem aufgetreten
 Diese Probleme treten **nur** auf dem Pi 5 auf und sind die häufigsten Ursachen für unerklärliches Fehlverhalten.
 
 PCIe-Details (Pinout, FFC-Anforderungen, Sideband-Signale, M.2 HAT+): `pcie.md`.
+RP1-Pads, Latenzverhalten und Alternativfunktionen: `rp1-gpio.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -319,6 +320,59 @@ while true; do echo "$(date -Is) $(vcgencmd measure_temp)"; sleep 60; done | tee
 **Verwandter Fall – falsche Variante beschafft:** Der **M.2 HAT+ Compact** unterstützt
 **nur 2230**. Ein 2242-Modul passt mechanisch nicht. Die Standard-Variante unterstützt
 2230 und 2242 und bringt den 16-mm-Stacking-Header mit, der über den Active Cooler passt.
+
+### 11. Bit-Banging und Timing: der PCIe-Umweg des RP1
+
+**Symptom:** Ein Skript, das auf dem Pi 4 lief, erzeugt auf dem Pi 5 falsche Signale –
+WS2812-LEDs flackern, Software-1-Wire schlägt fehl, Software-SPI liefert Müll, oder eine
+Polling-Schleife reagiert unregelmässig.
+
+**Ursache:** Der GPIO sitzt beim Pi 5 nicht mehr im SoC, sondern im RP1 hinter einer
+PCIe-Verbindung. Jeder Zugriff kostet typisch **~1 µs**, ein Lesezugriff mindestens das
+Doppelte (Request + Response). Bei aktivem ASPM kommen 2–5 µs Aufwachzeit dazu.
+
+**Lösung – in dieser Reihenfolge:**
+
+1. **Hardware-Peripherie statt Software-Takt.** Der Pi 5 bietet am Header 6× SPI, 4× I2C,
+   5× UART, 2× I2S und 4 PWM-Kanäle. Was in Hardware geht, gehört in Hardware.
+2. **PIO nutzen.** RP1 hat denselben programmierbaren I/O-Block wie der RP2040. Er taktet
+   im Chip, ohne PCIe-Round-Trip pro Flanke – die richtige Antwort für WS2812 und
+   ähnliche Protokolle.
+3. **ASPM abschalten**, wenn die Schleife eng ist. Das Datenblatt nennt ausdrücklich
+   Polling-Schleifen mit 10–100 µs Verzögerung als Fall, in dem der Link in L0 bleiben soll.
+4. **Write-Barrier vor dem Lesen** setzen, wenn der eigene Code Pins umschaltet und
+   danach zurückliest.
+5. **ADC-Statusregister nicht pollen**, während RIO genutzt wird – beide teilen sich einen
+   APB-Splitter. Für den ADC DMA oder FIFO verwenden.
+
+Hintergrund und Zahlen: `rp1-gpio.md`.
+
+### 12. Treiberstrom: 16 mA gelten auf dem Pi 5 nicht
+
+**Symptom:** LED zu dunkel, Pegel bricht unter Last ein, oder – umgekehrt – Sorge, ob eine
+aus einer Pi-4-Anleitung übernommene Dimensionierung zulässig ist.
+
+**Ursache:** Die RP1-Pads bieten **2 / 4 / 8 / 12 mA**. Das Maximum ist **12 mA**, nicht
+16 mA wie beim BCM2711 des Pi 4. Die **Voreinstellung liegt bei 4 mA**, nicht am Maximum –
+wer 12 mA erwartet, aber nichts umgestellt hat, hat ein Drittel davon.
+
+**Lösung:**
+- Vorwiderstände für den Pi 5 gegen **12 mA** rechnen, nicht gegen 16 mA
+- Bei zu schwachem Ausgang die Treiberstärke setzen statt den Widerstand zu verkleinern
+- Lasten grundsätzlich über Transistor/Treiber, nicht aus dem GPIO speisen
+- Ein Summenstrom pro Bank ist für den Pi 5 **nicht dokumentiert** → konservativ rechnen
+
+### 13. Taster prellt – obwohl RP1 das in Hardware kann
+
+**Symptom:** Ein Taster löst mehrfach aus, `sleep()`-Workarounds im Callback.
+
+**Ursache:** Software-Entprellung aus Pi-4-Zeiten wird weiterverwendet, obwohl RP1
+Entprellung in Hardware anbietet.
+
+**Lösung:** RP1 kennt acht Interrupt-Szenarien pro Pin, darunter **Debounced Level
+High/Low** und **Filtered Edge High/Low**. In `gpiozero` deckt der Parameter
+`bounce_time` den Anwendungsfall ab; für eigene Treiber steht die Filterzeit in
+`IO_BANK0_GPIOn_CTRL.F_M`. Details: `rp1-gpio.md`.
 
 ---
 
@@ -656,6 +710,8 @@ Alles aus Beginner, PLUS:
 ☐ GPIO-Pinout auf pinout.xyz verifiziert
 ☐ HAT-Kompatibilität: RP1-Chip, Kernel 6.6+ Treiber
 ☐ Spannungslogik: 3.3V vs. 5V → Logic Level Converter?
+☐ Treiberstrom gegen 12 mA gerechnet (Pi 5), nicht gegen 16 mA (Pi 4)
+☐ Zeitkritische Protokolle: Hardware-Peripherie oder PIO statt Bit-Banging
 ☐ Strombudget berechnet (Pi + Peripherie < 80% Netzteil)
 ☐ Python venv konfiguriert (PEP 668 auf Bookworm!)
 ☐ Packages auf aarch64 verfügbar? (piwheels.org prüfen)
