@@ -264,10 +264,17 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
+Der Weg über die GitHub-Oberfläche funktioniert ebenfalls («Create new tag on publish»).
+Der Workflow findet das Release dann bereits vor und hängt nur noch das Asset an – Titel und
+Notes, die du geschrieben hast, bleiben unverändert.
+
 Vor der Veröffentlichung läuft die vollständige Validierung erneut, das Paket wird neu
 gebaut, die Reproduzierbarkeit geprüft, und es wird kontrolliert, dass der Tag auf einem
 Commit liegt, der in `main` enthalten ist – so kann kein ungeprüfter Feature-Branch zu
-`latest` werden. Die Release Notes entstehen aus den Commits seit dem vorherigen Tag.
+`latest` werden.
+
+Ist ein Lauf fehlgeschlagen oder stammt ein Tag aus der Zeit vor diesem Workflow, lässt er
+sich manuell nachziehen: **Actions → Release → Run workflow → Tag eintragen**.
 
 ### Beitragen
 

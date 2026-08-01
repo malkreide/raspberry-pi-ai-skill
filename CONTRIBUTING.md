@@ -45,8 +45,14 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
+Creating the release through the web UI works as well — the workflow detects the existing
+release and only attaches the asset.
+
 The release workflow re-runs the validation, rebuilds the package, verifies the build is
 reproducible, and refuses tags that do not point at a commit contained in `main`.
+
+To publish a tag whose run failed, or one created before this workflow existed:
+**Actions → Release → Run workflow → enter the tag**.
 
 ### Areas for Contributions
 
