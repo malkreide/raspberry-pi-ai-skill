@@ -254,6 +254,22 @@ Run both locally before opening a pull request:
 ./scripts/build-skill.sh && python3 scripts/validate-skill.py && shellcheck scripts/*.sh
 ```
 
+### Releases
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) publishes a GitHub Release
+whenever a `v*` tag is pushed, with the built `raspberry-pi-ai.skill` attached as an asset.
+That is what makes the download link at the top of this README resolve.
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+Before publishing, the workflow re-runs the full validation, rebuilds the package, verifies
+the build is reproducible, and checks that the tag points at a commit contained in `main` —
+so an unreviewed feature branch cannot become `latest`. Release notes are generated from the
+commits since the previous tag.
+
 ### Contributing
 
 Contributions are welcome! Please:
