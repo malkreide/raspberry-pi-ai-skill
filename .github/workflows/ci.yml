@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Validate Skill
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Prüft das eingecheckte Archiv gegen die Quelldateien, bevor
+      # der Build es überschreibt. Schlägt fehl, wenn jemand eine
+      # Referenz geändert, aber build-skill.sh nicht ausgeführt hat.
+      - name: Validate committed skill archive
+        run: python3 scripts/validate-skill.py
+
+      - name: Build skill package
+        run: ./scripts/build-skill.sh
+
+      # Nach dem Build muss der Arbeitsbaum sauber sein. Ist er es nicht,
+      # war das eingecheckte Archiv nicht reproduzierbar.
+      - name: Verify build is reproducible
+        run: |
+          if ! git diff --quiet -- raspberry-pi-ai.skill; then
+            echo "::error::Der Build erzeugt ein anderes Archiv als das eingecheckte."
+            echo "Bitte './scripts/build-skill.sh' ausführen und das Ergebnis committen."
+            git diff --stat -- raspberry-pi-ai.skill
+            exit 1
+          fi
+          echo "Archiv ist reproduzierbar."
+
+      - name: Upload skill artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: raspberry-pi-ai-skill
+          path: raspberry-pi-ai.skill
+          if-no-files-found: error
+
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run shellcheck
+        run: shellcheck scripts/*.sh

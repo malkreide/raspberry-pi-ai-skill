@@ -21,7 +21,14 @@ If you find a bug or have a suggestion:
    git checkout -b feature/your-feature-name
    ```
 3. **Make your changes** with clear, descriptive commit messages
-4. **Test your changes** thoroughly
+4. **Rebuild and validate** — CI runs the same checks:
+   ```bash
+   ./scripts/build-skill.sh          # rebuild raspberry-pi-ai.skill
+   python3 scripts/validate-skill.py # manifest, frontmatter, links, archive freshness
+   shellcheck scripts/*.sh
+   ```
+   Commit the rebuilt `raspberry-pi-ai.skill` together with your changes — it is checked
+   into the repository, and CI fails if it does not match the sources.
 5. **Submit a Pull Request** with:
    - Clear description of what you changed and why
    - Reference to related issues
@@ -42,6 +49,8 @@ We are particularly interested in contributions in these areas:
 
 - Follow the existing code style and documentation format
 - Keep changes focused and atomic
+- Add or rename packaged files only in [`skill-manifest.txt`](skill-manifest.txt) — the
+  build script and the validator both read it
 - Write clear commit messages
 - Update documentation according to your changes
 - Be respectful and constructive in discussions

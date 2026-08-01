@@ -1,0 +1,20 @@
+# Paketmanifest für raspberry-pi-ai.skill
+#
+# Einzige Quelle der Wahrheit für den Aufbau des .skill-Archivs.
+# Gelesen von scripts/build-skill.sh und scripts/validate-skill.py.
+#
+# Format:  <Zielpfad im Paket>=<Quellpfad im Repository>
+# Der Zielpfad ist relativ zum Verzeichnis raspberry-pi-ai/ im Archiv.
+#
+# Die Pfade unter references/ und assets/ müssen zu den Pfaden passen,
+# die SKILL.md unter /mnt/skills/user/raspberry-pi-ai/ referenziert.
+
+SKILL.md=SKILL.md
+
+references/debugging-playbook.md=debugging-playbook.md
+references/hardware-specs.md=docs/hardware-specs.md
+references/mechanical.md=docs/mechanical.md
+references/edge-ai.md=docs/edge-ai.md
+references/component-catalog.md=docs/component-catalog.md
+
+assets/plan-template.md=templates/plan-template.md
