@@ -51,7 +51,7 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 - [ ] Netzteil dimensioniert (Pi 5 = 27W USB-C **PD**; mit nur 3 A sind Peripheriegeräte auf 600 mA begrenzt)
 - [ ] Active Cooler montiert (Pi 5 obligatorisch bei Dauerlast)
 - [ ] Strombudget: Pi + Peripherie < 80% Netzteil-Kapazität
-- [ ] Python venv (PEP 668 auf Bookworm!)
+- [ ] Python venv (PEP 668 – gilt seit Bookworm, also auch unter Trixie)
 - [ ] Umgebungstemperatur im Betrieb bleibt in **0 °C bis 70 °C**
 - [ ] Aufstellung stabil, eben, **nicht leitfähig**; Gehäuse nicht abgedeckt
 

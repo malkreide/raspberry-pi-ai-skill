@@ -27,10 +27,10 @@ Grundlage dieser Referenz sind die offiziellen Raspberry-Pi-Dokumente:
 5. [Offizielles Raspberry Pi Case](#offizielles-raspberry-pi-case)
 6. [Stapelhöhen & HAT-Kompatibilität](#stapelhöhen--hat-kompatibilität)
 7. [3D-CAD-Modell des Raspberry Pi 5](#3d-cad-modell-des-raspberry-pi-5)
-6. [Umgebungsbedingungen & Gehäusebelüftung](#umgebungsbedingungen--gehäusebelüftung)
-7. [Offizielle Sicherheits- und Handhabungshinweise](#offizielle-sicherheits--und-handhabungshinweise)
-8. [Checkliste Gehäusedesign / 3D-Druck](#checkliste-gehäusedesign--3d-druck)
-9. [Was die Zeichnungen NICHT enthalten](#was-die-zeichnungen-nicht-enthalten)
+8. [Umgebungsbedingungen & Gehäusebelüftung](#umgebungsbedingungen--gehäusebelüftung)
+9. [Offizielle Sicherheits- und Handhabungshinweise](#offizielle-sicherheits--und-handhabungshinweise)
+10. [Checkliste Gehäusedesign / 3D-Druck](#checkliste-gehäusedesign--3d-druck)
+11. [Was die Zeichnungen NICHT enthalten](#was-die-zeichnungen-nicht-enthalten)
 
 ---
 
