@@ -150,7 +150,60 @@ Pin 11 (GPIO 17) ───[220Ω]─── LED (+) ───[GND]
 
 ---
 
-## 6. Software-Stack
+## 6. Mechanik & Aufbau
+
+> Referenz: `mechanical.md` (Masse aus RP-008347-DS-1 und RP-006237-DD-1).
+> Alle Herstellermasse sind Referenzwerte mit Toleranz – für passgenaue Teile nachmessen.
+
+### Platzbedarf
+
+| Grösse | Wert | Im Projekt |
+|--------|------|------------|
+| Platine Pi 5 | 85 × 56 mm | – |
+| Realer Fussabdruck (Buchsen ragen 3 mm über) | **88 × 56 mm** | [Gehäuse-Innenmass] |
+| Mit offiziellem Bumper | **89,6 × 60,6 mm** | [ja/nein] |
+| Bohrbild | 58 × 49 mm, Ø 2,7 mm (M2.5) | [Standoff-Typ] |
+| Bauhöhe des Stapels | Platine + HAT + Cooler | [gemessen: __ mm] |
+
+### Gehäuse & Montage
+
+| Punkt | Entscheidung | Begründung |
+|-------|--------------|------------|
+| Gehäusetyp | [offen / Bumper / Alu / 3D-Druck] | [Thermik, Schutz, Optik] |
+| Montageart | [Standoffs / DIN-Schiene / VESA / frei] | |
+| Standoff-Material | [Nylon / Messing + Isolierscheibe] | Leiterbahnen um die Bohrungen |
+| Belüftung | [Öffnungen, Luftweg] | Gehäuse darf nie abgedeckt sein |
+| Kabelmanagement | [Zugentlastung USB-C, FFC-Biegeradius ≥ 10 mm] | |
+
+### Ausschnitte (Mittenmasse)
+
+| Anschluss | Position | Ausschnitt geplant |
+|-----------|----------|--------------------|
+| USB-C (Power) | 11,2 mm ab linker Kante | [ ] |
+| Micro-HDMI 0 | 25,8 mm ab linker Kante | [ ] |
+| Micro-HDMI 1 | 39,2 mm ab linker Kante | [ ] |
+| Ethernet | 10,2 mm ab Unterkante (rechte Kante) | [ ] |
+| USB 3.0 (unten) | 29,1 mm ab Unterkante | [ ] |
+| USB 3.0 (oben) | 47 mm ab Unterkante | [ ] |
+
+Ausschnitthöhe an der Anschlusskante ≥ 4,4 mm über der Platinenoberseite.
+Toleranzzugabe: +0,5 mm (Spritzguss) bzw. +0,8–1,0 mm (FDM-Druck) pro Seite.
+
+### Umgebungsbedingungen
+
+| Parameter | Anforderung | Projektwert |
+|-----------|-------------|-------------|
+| Umgebungstemperatur (Spezifikation) | 0 °C bis 70 °C | [erwarteter Bereich] |
+| Aufstellung | stabil, eben, nicht leitfähig | [ ] |
+| Feuchtigkeit / Kondensation | keine | [Massnahme] |
+| Erwartete Innentemperatur im Gehäuse | < 70 °C | [gemessen: __ °C] |
+
+⚠️ Bei Aussenaufstellung oder Schaltschrank: Umgebungsgrenze zuerst prüfen – sie wird
+verletzt, bevor `vcgencmd measure_temp` auffällig wird.
+
+---
+
+## 7. Software-Stack
 
 ### Betriebssystem
 
@@ -200,7 +253,7 @@ pip install numpy opencv-python pillow
 
 ---
 
-## 7. Implementierungsschritte
+## 8. Implementierungsschritte
 
 ### Phase 1: OS-Grundkonfiguration (Difficulty 1)
 
@@ -228,7 +281,7 @@ pip install numpy opencv-python pillow
 3. **Hardware aktivieren (config.txt):**
    ```bash
    sudo nano /boot/firmware/config.txt
-   # [Änderungen einfügen siehe Abschnitt 6]
+   # [Änderungen einfügen siehe Abschnitt 7]
    sudo reboot
    ```
 
@@ -444,7 +497,7 @@ def check_health():
 
 ---
 
-## 8. Sicherheitshinweise
+## 9. Sicherheitshinweise
 
 ### Elektrische Sicherheit
 
@@ -452,15 +505,20 @@ def check_health():
 1. **GPIO-Spannung:** Alle Sensoren/Aktoren müssen 3.3V-tolerant sein
 2. **Strombudget:** Pi 5 + Hailo = ~12W → 27W PSU obligatorisch
 3. **Induktive Lasten:** Keine Motoren/Relays direkt an GPIO
-4. **ESD-Schutz:** Antistatik-Armband bei Montage verwenden
+4. **ESD-Schutz:** Antistatik-Armband bei Montage verwenden; Platine im Betrieb nur an den
+   Kanten anfassen
+5. **Aufstellung:** Stabil, eben, **nicht leitfähig** (offizielle Herstellerwarnung).
+   Der TPE-Bumper erfüllt diese Anforderung für offene Aufbauten.
 
 ### Thermal Management
 
 ⚠️ **Überhitzungsgefahr:**
 - Hailo-8L + Pi 5 = ~15W TDP
 - Active Cooler ist **obligatorisch** für Dauerbetrieb
-- Monitoring: `vcgencmd measure_temp` < 80°C
+- Monitoring: `vcgencmd measure_temp` < 80°C (SoC)
 - Bei >85°C: System drosselt automatisch
+- **Umgebungstemperatur** zusätzlich in 0–70 °C halten (Spezifikation Product Brief)
+- Gehäuse gut belüftet und **nie abgedeckt** betreiben
 
 ### Software-Sicherheit
 
@@ -480,7 +538,7 @@ def check_health():
 
 ---
 
-## 9. Testing & Validierung
+## 10. Testing & Validierung
 
 ### Unit Tests
 
@@ -517,7 +575,7 @@ def test_bird_classification():
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 ### Häufige Probleme
 
@@ -556,7 +614,7 @@ vcgencmd get_throttled
 
 ---
 
-## 11. Erweiterungsmöglichkeiten
+## 12. Erweiterungsmöglichkeiten
 
 ### Kurzfristig (Difficulty +1)
 - [ ] Webinterface zur Live-Ansicht (Flask)
@@ -575,7 +633,7 @@ vcgencmd get_throttled
 
 ---
 
-## 12. Dokumentation & Code
+## 13. Dokumentation & Code
 
 ### Repository-Struktur
 
@@ -604,7 +662,7 @@ vogel-kamera/
 
 ---
 
-## 13. Ressourcen & Referenzen
+## 14. Ressourcen & Referenzen
 
 ### Hardware-Dokumentation
 - [Raspberry Pi 5 Datasheet](https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf)

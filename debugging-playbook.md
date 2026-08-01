@@ -151,11 +151,11 @@ pip install <package>
 # sudo pip install <package>
 ```
 
-### 4. PCIe Gen 3 nicht aktiviert
+### 4. PCIe: Gen 3 nicht aktiviert – oder zu Unrecht aktiviert
 
-**Symptom:** Hailo-8L NPU oder NVMe SSD langsamer als erwartet.
+**Symptom A:** Hailo-8L NPU oder NVMe SSD langsamer als erwartet.
 
-**Ursache:** Pi 5 bootet standardmässig mit PCIe Gen 2. Gen 3 muss explizit aktiviert werden.
+**Ursache:** Pi 5 bootet mit PCIe Gen 2. Gen 3 muss explizit aktiviert werden.
 
 **Lösung:**
 ```bash
@@ -167,6 +167,28 @@ sudo reboot
 sudo lspci -vv | grep -i "LnkSta:"
 # Erwartung: Speed 8GT/s (Gen3), Width x1
 ```
+
+**Symptom B (häufiger übersehen):** Gerät verschwindet sporadisch, I/O-Fehler,
+`dmesg`-Meldungen mit `AER`, `link training` oder `Bus error`.
+
+**Ursache:** Der Product Brief spezifiziert für den Pi 5 nur **PCIe 2.0 x1**. Gen 3 ist ein
+Opt-in ausserhalb der Spezifikation – Signalintegrität ist nicht zugesichert und hängt von
+Kabel, HAT und Exemplar ab.
+
+**Lösung – immer als erstes prüfen, bevor Treiber oder Hardware verdächtigt werden:**
+```bash
+# Gen-3-Zeile entfernen bzw. auskommentieren
+sudo sed -i 's/^dtparam=pciex1_gen=3/#dtparam=pciex1_gen=3/' /boot/firmware/config.txt
+sudo reboot
+
+# Verifikation: Gen 2 = 5GT/s, stabil
+sudo lspci -vv | grep -i "LnkSta:"
+
+# PCIe-Fehler im Kernel-Log
+dmesg | grep -iE "pcie|aer|hailo|nvme" | tail -30
+```
+Läuft das Gerät auf Gen 2 stabil, war Gen 3 die Ursache. Lieber stabil mit Gen 2 als
+sporadisch schnell mit Gen 3.
 
 ### 5. Wayland vs. X11 Grafikprobleme
 
@@ -198,6 +220,49 @@ export SDL_VIDEODRIVER=x11
 - USB-Audio (ReSpeaker USB Array v2.0) statt GPIO-Audio-HAT bevorzugen
 - I2C-Adressen auf Kollisionen prüfen: `i2cdetect -y 1`
 - SPI Chip-Select-Leitungen verifizieren
+- Stapelhöhen prüfen: Bohrbild 58 × 49 mm, Standoff-Längen der Kits sind auf die **nackte**
+  Platine ausgelegt (siehe `mechanical.md`)
+
+### 7. Mechanik: Bumper, Gehäuse und Steckerüberstand
+
+**Symptom:** HAT sitzt schief oder rastet nicht ein, Header greift zu kurz, Gehäusedeckel
+schliesst nicht, Netzwerkstecker lässt sich nicht einstecken.
+
+**Ursache:**
+- Der offizielle **TPE-Bumper** hebt die Platine um ~2,2 mm an und vergrössert den
+  Fussabdruck auf 89,6 × 60,6 mm. Standoffs und Ausschnitte passen dann nicht mehr.
+- Die **USB-/Ethernet-Buchsen ragen 3 mm** über die 85-mm-Kante hinaus. Gehäuse, die auf
+  85 mm konstruiert wurden, sind zu kurz.
+
+**Lösung:**
+- Bumper vor der HAT-Montage entfernen oder längere Standoffs verwenden
+- Gehäuse-Innenmass gegen **88 × 56 mm** (ohne Bumper) bzw. **89,6 × 60,6 mm** (mit) prüfen
+- Details und Ausschnittmasse: `mechanical.md`
+
+### 8. Umgebungstemperatur ausserhalb der Spezifikation
+
+**Symptom:** Instabilität, Abstürze oder Nicht-Booten bei Aussen-, Dachboden- oder
+Schaltschrankaufstellung – ohne auffällige Werte in `vcgencmd`.
+
+**Ursache:** Der Pi 5 ist für **0 °C bis 70 °C Umgebungstemperatur** spezifiziert. Diese
+Grenze ist unabhängig von den SoC-Throttling-Schwellen (80/85 °C) und wird im Winter oder
+in geschlossenen Gehäusen verletzt, ohne dass die SoC-Temperatur auffällt.
+
+**Diagnose:**
+```bash
+# SoC-Temperatur (nicht Umgebung!)
+vcgencmd measure_temp
+
+# Verlauf mitschreiben und mit einem externen Thermometer im Gehäuse vergleichen
+while true; do echo "$(date -Is) $(vcgencmd measure_temp)"; sleep 60; done | tee thermal.log
+```
+
+**Lösung:**
+- Umgebungstemperatur am Einsatzort messen, nicht schätzen
+- Unter 0 °C: Innenaufstellung mit Aussensensor, beheiztes Gehäuse oder Mikrocontroller
+  (Pico W / ESP32) als Aussenknoten
+- Über 70 °C bzw. schlecht belüftet: Öffnungen vergrössern, Gehäuse nie abdecken
+- Kondenswasser bei Temperaturwechseln berücksichtigen
 
 ---
 
@@ -521,6 +586,8 @@ Vor Projektstart die passende Checkliste durchlaufen (basierend auf Difficulty-L
 ☐ Active Cooler montiert
 ☐ OS geflasht & aktualisiert (apt update && upgrade)
 ☐ SSH aktiviert
+☐ Aufstellung stabil, eben, nicht leitfähig; Gehäuse nicht abgedeckt
+☐ Umgebungstemperatur im Einsatzbereich 0–70 °C
 ☐ Notion-Eintrag erstellt
 ```
 
@@ -536,6 +603,8 @@ Alles aus Beginner, PLUS:
 ☐ Strombudget berechnet (Pi + Peripherie < 80% Netzteil)
 ☐ Python venv konfiguriert (PEP 668 auf Bookworm!)
 ☐ Packages auf aarch64 verfügbar? (piwheels.org prüfen)
+☐ RAM-Variante passend gewählt (1/2/4/8/16 GB)
+☐ Platzbedarf geprüft: 88 × 56 mm, mit Bumper 89,6 × 60,6 mm
 ☐ Inkrementeller Aufbauplan definiert
 ```
 
@@ -547,9 +616,10 @@ Alles aus Beginner + Intermediate, PLUS:
 ☐ Architekturdiagramm erstellt (Module, Kommunikation)
 ☐ RAM-Budget berechnet (alle Prozesse)
 ☐ Latenz-Budget definiert (z.B. Kamera → Erkennung → Display < 200ms)
-☐ HAT-Stacking/PCIe-Konflikte geprüft
+☐ HAT-Stacking/PCIe-Konflikte geprüft (Bohrbild 58 × 49 mm, Standoff-Längen)
 ☐ I2C-Adressen kollisionsfrei?
-☐ PCIe Gen 3 aktiviert (falls NVMe/Hailo)
+☐ PCIe-Modus bewusst gewählt (Gen 2 = Spezifikation, Gen 3 = Opt-in ohne Garantie)
+☐ Gehäuseausschnitte gegen Steckerpositionen geprüft (mechanical.md)
 ☐ Wayland vs. X11 entschieden
 ☐ Thermal-Monitoring eingerichtet (vcgencmd measure_temp)
 ☐ Fehlerszenarien durchgespielt
@@ -560,9 +630,10 @@ Alles aus Beginner + Intermediate, PLUS:
 Alles aus Beginner + Intermediate + Advanced, PLUS:
 
 ```
-☐ RAM-Budget berechnet (alle Modelle + OS < 7.5 GB)
+☐ RAM-Budget berechnet (8-GB-Pi: alle Modelle + OS < 7.5 GB; 16-GB-Pi: < 15 GB)
 ☐ hailortcli fw-control identify erfolgreich
-☐ PCIe Gen 3 verifiziert (lspci → 8GT/s)
+☐ PCIe-Link verifiziert (lspci → 5GT/s Gen 2 bzw. 8GT/s Gen 3)
+☐ Gehäuse-Innentemperatur unter Volllast gemessen (< 70 °C)
 ☐ Alle AI-Modelle einzeln getestet (Whisper, Ollama, YOLO)
 ☐ Audio-Subsystem: USB-Mikrofon statt GPIO-HAT (Stacking-Konflikt!)
 ☐ udev-Regel für USB-Audio erstellt
