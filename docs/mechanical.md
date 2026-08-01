@@ -203,10 +203,17 @@ Aufbau von unten nach oben (x-y-Fussabdruck):
 
 - **Fussabdruck immer mit 88 × 56 mm rechnen** (Buchsenüberstand), mit Bumper
   **89,6 × 60,6 mm**.
-- **M.2 HAT+ (Hailo):** Belegt den 40-Pin-Header mechanisch und blockiert GPIO-Zugriff.
-  Für Audio deshalb USB statt I2S-HAT planen (siehe `component-catalog.md`).
-- **Active Cooler + HAT:** Der offizielle Active Cooler nutzt die beiden Bohrungen neben
-  dem Header. Kombination mit HATs prüfen – viele HATs kollidieren mit dem Lüfterkörper.
+- **M.2 HAT+ (Hailo, NVMe):** Belegt den 40-Pin-Header mechanisch und blockiert
+  GPIO-Zugriff. Für Audio deshalb USB statt I2S-HAT planen (siehe `component-catalog.md`).
+  Abmessungen: 65 × 56,5 mm (Standard), Bohrbild 58 × 49 mm wie beim Pi.
+- **Active Cooler + M.2 HAT+ Standard:** Kein Konflikt – der beiliegende **16-mm-Stacking-Header**
+  ist genau dafür bemessen, dass der HAT über dem montierten Active Cooler sitzt.
+  Bei HATs von Drittanbietern dagegen die Bauhöhe prüfen, viele kollidieren mit dem
+  Lüfterkörper.
+- **Offizielles Gehäuse:** Dafür gibt es den **M.2 HAT+ Compact** (L-förmig, bis 71,5 mm
+  breit), der den integrierten Gehäuselüfter frei lässt – unterstützt aber nur 2230.
+- **PCIe-FFC:** Maximal 50 mm lang. Im Gehäuse einen Kabelweg vorsehen, der ohne
+  Verlängerung auskommt. Details: `pcie.md`.
 - **Kamerakabel:** Die 22-Pin-FFC-Kabel des Pi 5 haben einen engen Biegeradius. Im
   Gehäuse mindestens 10 mm Kabelweg vorsehen, sonst reisst die Zugentlastung des
   Steckers.
@@ -222,6 +229,10 @@ Aufbau von unten nach oben (x-y-Fussabdruck):
 | **Betriebstemperatur (Umgebung)** | **0 °C bis 70 °C** |
 | MTBF (Ground Benign) | **93 800 Stunden** (≈ 10,7 Jahre) |
 | Produktionszusage | mindestens bis **Januar 2036** |
+
+⚠️ **Zubehör kann diese Grenze senken.** Der M.2 HAT+ ist nur für **0–50 °C** spezifiziert.
+Für das Gesamtsystem gilt immer die niedrigste Grenze aller verbauten Komponenten –
+ein Pi 5 mit M.2 HAT+ ist ein 0–50-°C-System. Siehe `pcie.md`.
 
 > **Wichtige Unterscheidung:** Die 0–70 °C sind die zulässige **Umgebungstemperatur**.
 > Die in `hardware-specs.md` genannten 80/85 °C sind die **SoC-Sperrschichttemperaturen**,

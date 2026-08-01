@@ -145,8 +145,12 @@ Pin 11 (GPIO 17) ───[220Ω]─── LED (+) ───[GND]
 |------------|----------|------------|--------|-------------|
 | BME280 | 3.3V | 0.3 mA | GPIO Pin 1 | ✅ <500mA Limit |
 | LED + Widerstand | 3.3V | 15 mA | GPIO 17 | ✅ <16mA Limit |
-| Hailo-8L | 12V (PCIe) | 6W | PCIe Bus | ✅ PSU 27W |
+| Hailo-8L | 5V (via M.2 HAT+) | 6W | PCIe / HAT+ | ✅ PSU 27W |
 | **TOTAL** | | ~6.3W | | ✅ <21.6W (80% von 27W) |
+
+ℹ️ Der PCIe-Anschluss des Pi 5 führt **5 V**, nicht 12 V: Pins 1 und 2 mit je 500 mA,
+zusammen 1 A (5 W). Eine Zusatzplatine, die ausschliesslich über den FFC versorgt wird,
+hat nicht mehr zur Verfügung. Siehe `pcie.md`.
 
 ---
 
@@ -189,14 +193,27 @@ Pin 11 (GPIO 17) ───[220Ω]─── LED (+) ───[GND]
 Ausschnitthöhe an der Anschlusskante ≥ 4,4 mm über der Platinenoberseite.
 Toleranzzugabe: +0,5 mm (Spritzguss) bzw. +0,8–1,0 mm (FDM-Druck) pro Seite.
 
+### PCIe-Zubehör (falls M.2 HAT+, NVMe oder NPU)
+
+| Punkt | Anforderung | Projektwert |
+|-------|-------------|-------------|
+| HAT-Variante | Standard (2230+2242) oder Compact (nur 2230) | [ ] |
+| M.2-Formfaktor des Moduls | passt zur Variante | [ ] |
+| FFC-Kabel | mitgeliefert, ≤ 50 mm, opposite-sides-contact | [ ] |
+| Belegung des PCIe-Anschlusses | NVMe **oder** NPU – nicht beides | [Entscheidung] |
+| Bei Eigenentwicklung | Pull an PCIE_DET_WAKE, 100 kΩ an PCIE_PWR_EN | [ ] |
+
+⚠️ Ein FFC mit gleichseitigen Kontakten ist nicht umkehrbar und zerstört falsch herum
+eingesteckt Pi und/oder Zusatzplatine. Details: `pcie.md`.
+
 ### Umgebungsbedingungen
 
 | Parameter | Anforderung | Projektwert |
 |-----------|-------------|-------------|
-| Umgebungstemperatur (Spezifikation) | 0 °C bis 70 °C | [erwarteter Bereich] |
+| Umgebungstemperatur (Spezifikation) | Pi 5: 0–70 °C, **mit M.2 HAT+: 0–50 °C** | [erwarteter Bereich] |
 | Aufstellung | stabil, eben, nicht leitfähig | [ ] |
 | Feuchtigkeit / Kondensation | keine | [Massnahme] |
-| Erwartete Innentemperatur im Gehäuse | < 70 °C | [gemessen: __ °C] |
+| Erwartete Innentemperatur im Gehäuse | < 50 °C mit M.2 HAT+, sonst < 70 °C | [gemessen: __ °C] |
 
 ⚠️ Bei Aussenaufstellung oder Schaltschrank: Umgebungsgrenze zuerst prüfen – sie wird
 verletzt, bevor `vcgencmd measure_temp` auffällig wird.
@@ -517,7 +534,8 @@ def check_health():
 - Active Cooler ist **obligatorisch** für Dauerbetrieb
 - Monitoring: `vcgencmd measure_temp` < 80°C (SoC)
 - Bei >85°C: System drosselt automatisch
-- **Umgebungstemperatur** zusätzlich in 0–70 °C halten (Spezifikation Product Brief)
+- **Umgebungstemperatur** zusätzlich einhalten: Pi 5 0–70 °C, mit M.2 HAT+ nur 0–50 °C
+  (im Stapel gilt immer die niedrigste Grenze)
 - Gehäuse gut belüftet und **nie abgedeckt** betreiben
 
 ### Software-Sicherheit

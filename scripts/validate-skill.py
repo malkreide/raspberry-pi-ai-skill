@@ -6,7 +6,8 @@ Prüfungen:
   2. SKILL.md hat gültiges Frontmatter (name, description)
   3. Alle in SKILL.md referenzierten Skill-Pfade sind im Manifest abgedeckt
   4. Das eingecheckte raspberry-pi-ai.skill entspricht den Quelldateien
-  5. Keine toten relativen Links in den Markdown-Dokumenten
+  5. Relative Links loesen auch im Paket-Layout auf (references/ ist flach)
+  6. Keine toten relativen Links in den Markdown-Dokumenten
 
 Aufruf:
     python3 scripts/validate-skill.py
@@ -16,10 +17,11 @@ Exit-Code 0 = alles in Ordnung, 1 = mindestens eine Prüfung fehlgeschlagen.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILL_NAME = "raspberry-pi-ai"
@@ -156,12 +158,42 @@ def check_markdown_links() -> None:
                 fail(f"{path.relative_to(ROOT)}: toter relativer Link → '{target}'")
 
 
+def check_links_resolve_in_package(mapping: dict[str, str]) -> None:
+    """Prüft relative Links zusätzlich im Paket-Layout.
+
+    Im Repository liegen die Referenzen teils im Root, teils unter docs/. Im Paket
+    landen sie alle nebeneinander unter references/. Ein Link wie '../foo.md' löst
+    deshalb im Repository auf, im Paket aber nicht – und umgekehrt. Diese Prüfung
+    fängt genau diese Diskrepanz ab, die eine reine Repository-Prüfung übersieht.
+    """
+    link_re = re.compile(r"\]\((?!https?:|mailto:|#)([^)\s]+)\)")
+    packaged = set(mapping)
+
+    for target, source in sorted(mapping.items()):
+        src = ROOT / source
+        if not src.is_file():
+            continue
+        pkg_dir = PurePosixPath(target).parent
+        for match in link_re.finditer(src.read_text(encoding="utf-8")):
+            link = match.group(1).split("#")[0]
+            if not link:
+                continue
+            resolved = os.path.normpath(str(pkg_dir / link)).replace(os.sep, "/")
+            if resolved not in packaged:
+                fail(
+                    f"{source}: Link '{link}' löst im Paket nicht auf "
+                    f"(erwartet '{resolved}' unterhalb von {SKILL_NAME}/). "
+                    "Im Paket liegen alle Referenzen flach in references/."
+                )
+
+
 def main() -> int:
     mapping = read_manifest()
     if mapping:
         check_manifest_sources(mapping)
         check_skill_references(mapping)
         check_archive_is_current(mapping)
+        check_links_resolve_in_package(mapping)
     check_frontmatter()
     check_markdown_links()
 

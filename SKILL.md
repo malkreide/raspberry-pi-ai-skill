@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, oder (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), oder (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States).
 ---
 
 # Raspberry Pi AI Skill
@@ -32,6 +32,7 @@ Vor jeder Implementierung klären:
 - Echtzeit-Anforderungen
 - Netzwerk-Konnektivität
 - **Einsatzumgebung**: Umgebungstemperatur, Gehäuse, Montage, Feuchtigkeit
+- **PCIe-Bedarf**: NVMe, NPU oder beides? Beide belegen denselben Anschluss – nur eines geht.
 
 **RAM-Wahl (Pi 5):**
 
@@ -59,6 +60,13 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 - [ ] RP1-Chip-Kompatibilität der HATs/Libraries geprüft
 - [ ] PCIe-Modus entschieden (Gen 2 = Spezifikation, Gen 3 = Opt-in ohne Garantie)
 - [ ] Wayland vs. X11 entschieden
+
+**Bei PCIe-Zubehör (M.2 HAT+, NVMe, Hailo) zusätzlich:**
+- [ ] **Mitgeliefertes FFC-Kabel** verwendet – max. 50 mm, impedanzkontrolliert, Typ
+      opposite-sides-contact (falsch herum = Kurzschluss)
+- [ ] M.2-Formfaktor passt zur HAT-Variante (Compact = **nur 2230**, Standard = 2230 + 2242)
+- [ ] Umgebungstemperatur gegen die **50-°C-Grenze des M.2 HAT+** geprüft, nicht gegen 70 °C
+- [ ] Bei Eigenentwicklung: Pull an PCIE_DET_WAKE vorhanden, 100 kΩ Pull-down an PCIE_PWR_EN
 
 **Bei Gehäuse, Halterung oder HAT-Stapel zusätzlich:**
 - [ ] Platzbedarf mit **88 × 56 mm** gerechnet (85 mm Platine + 3 mm Buchsenüberstand)
@@ -137,6 +145,8 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - HAT-Stacking mit M.2 HAT+ (USB-Audio bevorzugen)
 - Bumper montiert → HAT-Standoffs und Gehäuseausschnitte passen nicht mehr
 - Umgebungstemperatur ausserhalb 0–70 °C (Aussenprojekte im Winter, Schaltschrank)
+- FFC zu lang, falscher Typ oder nicht ganz eingerastet → PCIe-Gerät fehlt oder ist instabil
+- M.2 HAT+ im Stapel → Systemgrenze sinkt auf 0–50 °C
 
 **Eskalationspfade** (zeitbasiert):
 - 0–15 Min: Isolationsmethode, Logs lesen
@@ -160,6 +170,8 @@ Diese Regeln **immer** proaktiv kommunizieren:
 4. **Induktive Lasten:** Freilaufdioden bei Relays/Motoren zwingend.
 5. **Umgebungstemperatur:** Spezifiziert sind **0 °C bis 70 °C**. Diese Grenze gilt zusätzlich zu den SoC-Temperaturen und wird bei Aussen- und Schaltschrankprojekten oft übersehen.
 6. **Aufstellung:** Stabile, ebene, **nicht leitfähige** Unterlage; gut belüftet; Gehäuse nie abdecken (offizielle Herstellerwarnung).
+7. **PCIe-FFC:** Das Kabel muss vom Typ **opposite-sides-contact** sein. Ein gleichseitiges Kabel ist nicht umkehrbar und **zerstört falsch herum eingesteckt Pi und/oder Zusatzplatine**. Immer das mitgelieferte Kabel verwenden, nie verlängern, nie Kamera-FFC zweckentfremden.
+8. **Niedrigste Grenze zählt:** Zubehör kann die Umgebungstemperatur des Systems senken – der M.2 HAT+ ist nur für 0–50 °C spezifiziert. Für den Stapel gilt immer die kleinste Grenze aller Komponenten.
 
 ## Referenz-Dateien laden
 
@@ -170,6 +182,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 
 **Mechanik, Montage & Gehäusedesign (Masse, Bohrbild, Bumper, Betriebstemperatur):**
 `/mnt/skills/user/raspberry-pi-ai/references/mechanical.md`
+
+**PCIe-Anschluss & M.2 HAT+ (Pinout, FFC, Sideband-Signale, Power States):**
+`/mnt/skills/user/raspberry-pi-ai/references/pcie.md`
 
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`

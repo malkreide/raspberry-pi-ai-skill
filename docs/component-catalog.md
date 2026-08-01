@@ -280,6 +280,26 @@ servo.max()   # 180°
 - Hailo nur auf Pi 5 (PCIe erforderlich)
 - Active Cooler obligatorisch bei Hailo
 
+### M.2-Adapter (Pi 5)
+
+| Komponente | Listenpreis | Formfaktoren | Gedacht für | Bezugsquelle |
+|------------|-------------|--------------|-------------|--------------|
+| **M.2 HAT+ Standard** | $12 | **2230 und 2242** | Pi 5 mit Active Cooler (16-mm-Stacking-Header liegt bei) | [pi-shop.ch](https://www.pi-shop.ch/) |
+| M.2 HAT+ Compact | $15 | **nur 2230** | Offizielles Raspberry Pi Case (lässt den Gehäuselüfter frei) | [pi-shop.ch](https://www.pi-shop.ch/) |
+
+Beide: PCIe 2.0 x1 bis 500 MB/s, bis 3 A ans M.2-Gerät, Power- und Aktivitäts-LED,
+HAT+-konform und automatisch erkannt, Produktion bis mindestens Januar 2032.
+
+**Die Wahl ist eine Gehäusefrage, keine Leistungsfrage:** Standard nehmen, ausser das
+offizielle Gehäuse ist gesetzt – dann Compact, aber nur mit 2230-Modulen.
+
+⚠️ **Betriebstemperatur 0–50 °C** – niedriger als die 0–70 °C des Pi 5. Für den Stapel
+gilt die niedrigere Grenze. Details: [`pcie.md`](pcie.md).
+
+⚠️ **Kein FFC-Kabel improvisieren.** Max. 50 mm, impedanzkontrolliert, Typ
+opposite-sides-contact. Ein gleichseitiges Kabel falsch herum eingesteckt zerstört
+Hardware. Das beiliegende Kabel verwenden.
+
 ### Kameras für AI
 
 | Komponente | Sensor | Besonderheit | Preis (CHF) | Bezugsquelle |

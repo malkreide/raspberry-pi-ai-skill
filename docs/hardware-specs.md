@@ -12,6 +12,8 @@ Mechanische Masse, Bohrbild und Gehäusethemen: siehe [`mechanical.md`](mechanic
 6. [Schnittstellen](#schnittstellen)
 7. [Modellwahl & Beschaffung](#modellwahl--beschaffung)
 
+PCIe-Stecker, FFC-Anforderungen und M.2 HAT+: [`pcie.md`](pcie.md).
+
 ---
 
 ## Raspberry Pi 5
@@ -336,8 +338,15 @@ rpicam-still -o test.jpg
 
 ### PCIe (nur Pi 5)
 
-- **Spezifiziert:** 1× PCIe 2.0 x1 (5 GT/s) via FFC-Kabel und M.2 HAT+
-- **Inoffiziell:** Gen 3 (8 GT/s) per Opt-in in `config.txt`, ohne Garantie von Raspberry Pi
+- **Spezifiziert:** 1× PCIe 2.0 x1 (5 GT/s) via 16-Pin-FFC (0,5 mm Raster) und M.2 HAT+
+- **Inoffiziell:** Gen 3 (8 GT/s) per Opt-in in `config.txt`. Das Steckerdokument sagt
+  dazu wörtlich: *«Signals can be run at Gen 3 speeds, but this is not officially supported.»*
+- **5 V am Stecker:** Pins 1 und 2, je 500 mA – zusammen **1 A (5 W)**
+- **FFC:** max. **50 mm**, 90 Ω ± 10 % impedanzkontrolliert, Typ **opposite-sides-contact**
+
+⚠️ Ein FFC mit gleichseitigen Kontakten ist nicht umkehrbar und **kurzschliesst falsch
+herum eingesteckt den Pi und/oder die Zusatzplatine**. Pinout, Sideband-Signale,
+Power States und M.2 HAT+: [`pcie.md`](pcie.md).
 
 **Aktivierung Gen 3 (auf eigenes Risiko):**
 ```bash
