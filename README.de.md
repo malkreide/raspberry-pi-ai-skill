@@ -29,6 +29,8 @@ Dieses Claude AI Skill unterstützt die systematische Entwicklung robuster, sich
   Betriebstemperatur – aus dem offiziellen Product Brief und den Massblättern von Raspberry Pi
 - **PCIe & M.2**: Steckerpinout, FFC-Anforderungen, Sideband-Signale für eigene Platinen,
   M.2-HAT+-Varianten und die Temperaturgrenze im Stapel
+- **RP1 & GPIO**: Pad-Grenzwerte (12 mA statt 16 mA), PCIe-Latenz beim GPIO-Zugriff,
+  vier I2C- und sechs SPI-Instanzen, PIO, Hardware-Entprellung
 
 ## 🚀 Schnellstart
 
@@ -58,6 +60,7 @@ Das Skill wird automatisch aktiviert bei:
 "Erstelle mir einen Bauplan für eine KI-Kamera"
 "Welches Innenmass braucht mein Pi-5-Gehäuse?"
 "Mein Hailo-NPU taucht nicht in lspci auf"
+"Warum flackern meine WS2812-LEDs auf dem Pi 5?"
 ```
 
 ## 📚 Dokumentation
@@ -72,6 +75,7 @@ Das Skill wird automatisch aktiviert bei:
 - **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 Spezifikationen, GPIO-Pinouts, Strombudgets, RAM-Varianten
 - **[mechanical.md](docs/mechanical.md)** – Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper, Gehäuse- und 3D-Druck-Checkliste
 - **[pcie.md](docs/pcie.md)** – PCIe-Pinout, FFC-Anforderungen, Sideband-Signale, Power States, M.2 HAT+
+- **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1-Pad-Grenzwerte, GPIO-Latenz, Alternativfunktionen, PIO, Hardware-Entprellung
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite Setup und Best Practices
 - **[component-catalog.md](docs/component-catalog.md)** – Empfohlene Komponenten mit Bezugsquellen
 
@@ -90,6 +94,8 @@ Hardware- und Mechanikangaben stammen aus den offiziellen Raspberry-Pi-Dokumente
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
 | Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
 | Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
+| Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) |
+| Raspberry Pi RP1 Peripherals | RP-008370-DS-1 |
 
 Mechanische Masse sind Referenzwerte mit Toleranzen und ausdrücklich nicht als
 Produktionsdaten freigegeben – für Serienteile am physischen Board nachmessen.
@@ -332,6 +338,10 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
   Kabel kann Hardware zerstören
 - **M.2 HAT+ Umgebungsgrenze:** 0 °C bis 50 °C, niedriger als der Pi 5 selbst – im Stapel
   zählt die Grenze des HAT
+- **GPIO-Treiberstrom:** Der Pi 5 kann max. 12 mA pro Pin – Pi-4-Anleitungen mit 16 mA
+  sind nicht übertragbar
+- **GPIO-Latenz:** Jeder Zugriff läuft über PCIe (~1 µs); Bit-Banging aus Pi-4-Code
+  funktioniert nicht zuverlässig
 - **Mechanische Masse:** Die Zeichnungen von Raspberry Pi sind Referenzwerte mit Toleranzen
   und ausdrücklich nicht als Produktionsdaten freigegeben
 

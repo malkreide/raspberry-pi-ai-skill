@@ -116,6 +116,10 @@ graph TD
 
 ### GPIO-Pin-Zuordnung
 
+> Der Pi 5 bietet am Header 4 I2C-, 6 SPI- und 5 UART-Instanzen. Bei Adress- oder
+> Chip-Select-Konflikten lohnt der Blick in die Alternativfunktionen (`rp1-gpio.md`),
+> bevor ein Multiplexer eingeplant wird.
+
 | GPIO | Funktion | Komponente | Spannung | Notizen |
 |------|----------|------------|----------|---------|
 | GPIO 2 | SDA (I2C) | BME280 | 3.3V | Pull-Up aktiv |
@@ -144,13 +148,16 @@ Pin 11 (GPIO 17) ───[220Ω]─── LED (+) ───[GND]
 | Komponente | Spannung | Max. Strom | Quelle | Validierung |
 |------------|----------|------------|--------|-------------|
 | BME280 | 3.3V | 0.3 mA | GPIO Pin 1 | ✅ <500mA Limit |
-| LED + Widerstand | 3.3V | 15 mA | GPIO 17 | ✅ <16mA Limit |
+| LED + Widerstand | 3.3V | 10 mA | GPIO 17 | ✅ <12mA Limit (Pi 5 / RP1) |
 | Hailo-8L | 5V (via M.2 HAT+) | 6W | PCIe / HAT+ | ✅ PSU 27W |
 | **TOTAL** | | ~6.3W | | ✅ <21.6W (80% von 27W) |
 
 ℹ️ Der PCIe-Anschluss des Pi 5 führt **5 V**, nicht 12 V: Pins 1 und 2 mit je 500 mA,
 zusammen 1 A (5 W). Eine Zusatzplatine, die ausschliesslich über den FFC versorgt wird,
 hat nicht mehr zur Verfügung. Siehe `pcie.md`.
+
+ℹ️ **Treiberstrom auf dem Pi 5: max. 12 mA pro Pin** (RP1-Pads, Voreinstellung 4 mA).
+Die verbreiteten 16 mA stammen vom Pi 4. Siehe `rp1-gpio.md`.
 
 ---
 
