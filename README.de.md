@@ -23,7 +23,9 @@ Dieses Claude AI Skill unterstützt die systematische Entwicklung robuster, sich
 - **Edge AI**: Ollama, Hailo-8L NPU, TensorFlow Lite
 - **Systematisches Debugging**: Isolationsmethode, Stolpersteine-Katalog, Eskalationspfade
 - **Sicherheit**: Proaktive Validierung kritischer Parameter (Spannung, Strom, Temperatur)
-- **Pi 5 Support**: Spezifische Unterstützung für RP1-Chip, PCIe Gen 3, Mini-CSI
+- **Pi 5 Support**: Spezifische Unterstützung für RP1-Chip, PCIe, Mini-CSI, RTC und Power-Button
+- **Mechanik & Gehäuse**: Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper,
+  Betriebstemperatur – aus dem offiziellen Product Brief und den Massblättern von Raspberry Pi
 
 ## 🚀 Schnellstart
 
@@ -51,6 +53,7 @@ Das Skill wird automatisch aktiviert bei:
 "Mein GPIO-Sensor funktioniert nicht"
 "Wie integriere ich den Hailo-8L NPU?"
 "Erstelle mir einen Bauplan für eine KI-Kamera"
+"Welches Innenmass braucht mein Pi-5-Gehäuse?"
 ```
 
 ## 📚 Dokumentation
@@ -62,13 +65,27 @@ Das Skill wird automatisch aktiviert bei:
 
 ### Referenzen
 
-- **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 Spezifikationen, GPIO-Pinouts, Strombudgets
+- **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 Spezifikationen, GPIO-Pinouts, Strombudgets, RAM-Varianten
+- **[mechanical.md](docs/mechanical.md)** – Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper, Gehäuse- und 3D-Druck-Checkliste
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite Setup und Best Practices
 - **[component-catalog.md](docs/component-catalog.md)** – Empfohlene Komponenten mit Bezugsquellen
 
 ### Templates
 
 - **[plan-template.md](templates/plan-template.md)** – Projekt-Bauplan-Vorlage
+
+### Datenquellen
+
+Hardware- und Mechanikangaben stammen aus den offiziellen Raspberry-Pi-Dokumenten:
+
+| Dokument | Nummer |
+|----------|--------|
+| Raspberry Pi 5 Product Brief | RP-008348-DS (April 2026) |
+| Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 |
+| Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
+
+Mechanische Masse sind Referenzwerte mit Toleranzen und ausdrücklich nicht als
+Produktionsdaten freigegeben – für Serienteile am physischen Board nachmessen.
 
 ## 🛠️ Features im Detail
 
@@ -98,7 +115,9 @@ Proaktive Validierung kritischer Parameter:
 - ✅ 3.3V GPIO-Toleranz (keine 5V-Signale!)
 - ✅ Strombudget: Pi + Peripherie < 80% PSU-Kapazität
 - ✅ Thermisches Management: Active Cooler für Pi 5
+- ✅ Umgebungstemperatur innerhalb der spezifizierten 0 °C bis 70 °C
 - ✅ Induktive Lasten: Freilaufdioden bei Motoren/Relays
+- ✅ Stabile, ebene, nicht leitfähige Unterlage; Gehäuse nie abgedeckt
 
 ## 🎓 Entwickelt für Bildung
 
@@ -137,13 +156,28 @@ except KeyboardInterrupt:
     led.close()
 ```
 
-### Beispiel 2: Hailo-8L NPU Setup
+### Beispiel 2: Gehäuse-Konstruktion
+
+**User:** «Ich möchte ein Gehäuse für den Pi 5 3D-drucken»
+
+**Claude (mit Skill):**
+
+- Innenmass ≥ **88 × 56 mm** (85 mm Platine + 3 mm Steckerüberstand)
+- Mit offiziellem Bumper: **89,6 × 60,6 mm**, Platine sitzt ~2,2 mm höher
+- Bohrbild **58 × 49 mm**, Ø 2,7 mm (M2.5), 3,5 mm von den Kanten
+- Ausschnittmitten: USB-C 11,2 mm, HDMI 0 25,8 mm, HDMI 1 39,2 mm ab linker Kante
+- FDM-Toleranz: +0,8–1,0 mm pro Seite
+- Lüftungsöffnungen zwingend – das Gehäuse darf nie abgedeckt werden
+
+*→ Details in [mechanical.md](docs/mechanical.md)*
+
+### Beispiel 3: Hailo-8L NPU Setup
 
 **User:** «Wie installiere ich den Hailo-8L auf dem Pi 5?»
 
 **Claude (mit Skill):**
 
-1. PCIe Gen 3 aktivieren in `/boot/firmware/config.txt`
+1. PCIe-Modus entscheiden – Gen 2 ist spezifiziert, Gen 3 ein Opt-in ausserhalb der Spezifikation in `/boot/firmware/config.txt`
 2. Active Cooler montieren (NPU + Pi 5 = ~15W Zusatzlast)
 3. Hailo-Treiber installieren
 4. Thermal Monitoring einrichten
@@ -165,6 +199,23 @@ cd raspberry-pi-ai-skill
 
 # Output: raspberry-pi-ai.skill
 ```
+
+Der Build erzeugt genau das Layout, auf das der Skill selbst verweist:
+
+```
+raspberry-pi-ai/
+├── SKILL.md
+├── references/
+│   ├── debugging-playbook.md
+│   ├── hardware-specs.md
+│   ├── mechanical.md
+│   ├── edge-ai.md
+│   └── component-catalog.md
+└── assets/
+    └── plan-template.md
+```
+
+Das Script bricht ab, wenn `SKILL.md` auf eine Datei verweist, die nicht im Paket liegt.
 
 ### Beitragen
 
@@ -207,6 +258,12 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 - **PEP 668:** Bookworm blockiert systemweite pip-Installs → venv verwenden
 - **RP1-Chip:** Ältere HATs/Libraries können inkompatibel sein
 - **Thermal:** Pi 5 benötigt Active Cooler für sustained loads
+- **Umgebungstemperatur:** Der Pi 5 ist für 0 °C bis 70 °C spezifiziert – Aussenbetrieb im
+  Winter liegt ausserhalb der Spezifikation
+- **PCIe Gen 3:** Offiziell bietet der Pi 5 PCIe 2.0 x1; Gen 3 ist ein Opt-in ausserhalb
+  der Spezifikation
+- **Mechanische Masse:** Die Zeichnungen von Raspberry Pi sind Referenzwerte mit Toleranzen
+  und ausdrücklich nicht als Produktionsdaten freigegeben
 
 ## 📜 Lizenz
 

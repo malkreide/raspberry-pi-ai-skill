@@ -11,6 +11,8 @@ Empfohlene Komponenten für Raspberry Pi Projekte mit Bezugsquellen (Schweiz/Eur
 6. [Edge AI Hardware](#edge-ai-hardware)
 7. [Stromversorgung](#stromversorgung)
 8. [Werkzeug & Zubehör](#werkzeug--zubehör)
+9. [Projekt-spezifische Kits](#projekt-spezifische-kits)
+10. [Mechanik & Gehäusebau](#mechanik--gehäusebau)
 
 ---
 
@@ -18,23 +20,37 @@ Empfohlene Komponenten für Raspberry Pi Projekte mit Bezugsquellen (Schweiz/Eur
 
 ### Raspberry Pi
 
-| Komponente | Spezifikation | Preis (CHF) | Bezugsquelle |
-|------------|---------------|-------------|--------------|
-| **Raspberry Pi 5 (8 GB)** | BCM2712, 4× A76 @ 2.4 GHz | ~120 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
-| **Raspberry Pi 5 (4 GB)** | BCM2712, 4× A76 @ 2.4 GHz | ~90 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| Raspberry Pi 4 (8 GB) | BCM2711, 4× A72 @ 1.8 GHz | ~100 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| Raspberry Pi 4 (4 GB) | BCM2711, 4× A72 @ 1.8 GHz | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Komponente | Spezifikation | Listenpreis (USD) | Preis (CHF) | Bezugsquelle |
+|------------|---------------|-------------------|-------------|--------------|
+| **Raspberry Pi 5 (16 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $305 | ~250 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
+| **Raspberry Pi 5 (8 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $175 | ~120 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
+| **Raspberry Pi 5 (4 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $110 | ~90 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 5 (2 GB) | BCM2712, 4× A76 @ 2.4 GHz | $65 | ~55 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 5 (1 GB) | BCM2712, 4× A76 @ 2.4 GHz | $45 | ~40 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 4 (8 GB) | BCM2711, 4× A72 @ 1.8 GHz | – | ~100 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 4 (4 GB) | BCM2711, 4× A72 @ 1.8 GHz | – | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
+
+Listenpreise aus dem Raspberry Pi 5 Product Brief (RP-008348-DS, April 2026); CHF-Werte
+sind Richtwerte für den Schweizer Endkundenhandel.
 
 **Empfehlung:**
-- **Edge AI / Computer Vision:** Pi 5 8GB + Hailo-8L
-- **Ollama / LLM:** Pi 5 8GB
+- **Edge AI / Computer Vision:** Pi 5 4GB oder 8GB + Hailo-8L (das Modell liegt auf der NPU)
+- **Ollama / LLM:** Pi 5 8GB als Minimum, **16GB für 7B/8B-Modelle**
+- **Vision + LLM gleichzeitig:** Pi 5 16GB
 - **Allgemein / Prototyping:** Pi 5 4GB oder Pi 4 4GB
+- **Klassensatz / Bildung:** Pi 5 2GB – deutlich günstiger, für Lehrprojekte ausreichend
+
+**Beschaffungsargumente (aus dem Product Brief):**
+- Produktion zugesichert **bis mindestens Januar 2036**
+- MTBF 93 800 h (Ground Benign)
+- Zulassungen dokumentiert unter [pip.raspberrypi.com](https://pip.raspberrypi.com)
 
 ### Gehäuse & Kühlung
 
 | Komponente | Spezifikation | Preis (CHF) | Bezugsquelle |
 |------------|---------------|-------------|--------------|
 | **Official Active Cooler (Pi 5)** | PWM-Lüfter, ~0.6W | ~8 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| **Official Pi 5 Bumper** | TPE-Unterschale, 89.6 × 60.6 × 7.0 mm | ~5 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | Argon NEO 5 Case | Passiv-Kühlung, Alu | ~30 | [argon40.com](https://argon40.com/) |
 | Pimoroni Heatsink Case | Passiv-Kühlung, Low-Profile | ~25 | [pimoroni.com](https://shop.pimoroni.com/) |
 | Flirc Raspberry Pi 5 Case | Passiv-Kühlung, Alu | ~35 | [flirc.tv](https://flirc.tv/) |
@@ -42,6 +58,26 @@ Empfohlene Komponenten für Raspberry Pi Projekte mit Bezugsquellen (Schweiz/Eur
 **Empfehlung:**
 - **Hailo-8L / sustained loads:** Official Active Cooler (obligatorisch)
 - **Idle / Media Center:** Flirc Case oder Argon NEO 5
+- **Offene Aufbauten / Unterricht:** Bumper – isoliert die Lötseite gegen leitfähige
+  Tischoberflächen (offizielle Sicherheitsanforderung)
+
+⚠️ **Bumper und Gehäuse schliessen sich meist aus.** Der Bumper vergrössert den
+Fussabdruck auf **89,6 × 60,6 mm** und hebt die Platine um ~2,2 mm an. Alu-Kühlgehäuse
+setzen dagegen auf der nackten Platine auf, und HAT-Standoffs passen mit Bumper nicht mehr.
+Masse und Konsequenzen: [`mechanical.md`](mechanical.md).
+
+### Zubehör Stromversorgung & Zeit
+
+| Komponente | Spezifikation | Preis (CHF) | Bezugsquelle |
+|------------|---------------|-------------|--------------|
+| **RTC-Batterie (Pi 5)** | Lithium-Zelle mit 2-Pin-Stecker | ~7 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| PoE+ HAT (Pi 5) | 802.3at, mit Lüfter | ~25 | [pi-shop.ch](https://www.pi-shop.ch/) |
+
+**Wann sinnvoll:**
+- **RTC-Batterie:** Datenlogger und Feldprojekte ohne Netzwerk – ohne sie sind alle
+  Zeitstempel nach einem Stromausfall falsch, bis NTP erreichbar ist.
+- **PoE+ HAT:** Ein Kabel für Strom und Daten. Der Pi 5 verlangt **PoE+** (802.3at),
+  ein reiner PoE-Injektor (802.3af) reicht nicht.
 
 ### Speicher
 
@@ -355,6 +391,19 @@ servo.max()   # 180°
 
 **Total: ~180 CHF**
 
+### Ollama-Chatbot XL (7B/8B-Modelle)
+- Raspberry Pi 5 (**16 GB**)
+- NVMe SSD 256 GB + M.2 HAT+ (Modellablage, schnelleres Laden)
+- USB-Mikrofon
+- Mini-Lautsprecher + I2S Amp
+- Active Cooler
+- 27W USB-C PD PSU
+
+**Total: ~400 CHF**
+
+> Hinweis: M.2 HAT+ und Hailo-8L belegen denselben PCIe-Anschluss – entweder NVMe **oder**
+> NPU, nicht beides.
+
 ### Wetterstation
 - Raspberry Pi 4 (4 GB)
 - BME280 (Temp/Humidity/Pressure)
@@ -363,3 +412,23 @@ servo.max()   # 180°
 - Passiv-Kühlung
 
 **Total: ~120 CHF**
+
+⚠️ **Aussenaufstellung:** Der Pi 5 ist für **0 °C bis 70 °C Umgebungstemperatur**
+spezifiziert. Für den Winterbetrieb draussen entweder beheiztes Gehäuse, Innenaufstellung
+mit Aussensensor oder ein Mikrocontroller (Pico W, ESP32) als Aussenknoten einplanen.
+
+---
+
+## Mechanik & Gehäusebau
+
+Masse, Bohrbild, Steckerpositionen, Bumper-Geometrie und die Checkliste für Gehäuse- und
+3D-Druck-Konstruktion stehen in [`mechanical.md`](mechanical.md).
+
+Kurzfassung für die Beschaffung von Halterungen:
+
+| Grösse | Wert |
+|--------|------|
+| Platine | 85 × 56 mm |
+| Realer Platzbedarf (Buchsenüberstand 3 mm) | 88 × 56 mm |
+| Mit offiziellem Bumper | 89,6 × 60,6 mm |
+| Bohrbild | 58 × 49 mm, Ø 2,7 mm, M2.5 |

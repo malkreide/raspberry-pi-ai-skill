@@ -45,6 +45,23 @@ sudo systemctl status ollama
 | `gemma2:2b` | 2B | ~2 GB | ~8 tok/s | Schnellste Option |
 | `qwen2.5:3b` | 3B | ~2.5 GB | ~6 tok/s | Mehrsprachig |
 
+**Raspberry Pi 5 (16 GB):**
+
+Die 16-GB-Variante (Product Brief RP-008348-DS) hebt die RAM-Grenze auf – der limitierende
+Faktor ist dann die **Speicherbandbreite**, nicht mehr die Kapazität. Grössere Modelle
+laufen, aber nicht schneller pro Parameter.
+
+| Modell | Parameter | RAM | Geschwindigkeit | Use Case |
+|--------|-----------|-----|-----------------|----------|
+| `llama3.1:8b` (q4) | 8B | ~5 GB | ~2 tok/s | Qualität vor Tempo, Batch/Offline |
+| `qwen2.5:7b` (q4) | 7B | ~4.5 GB | ~2–3 tok/s | Mehrsprachig, längere Kontexte |
+| `phi3:mini` | 3.8B | ~3 GB | ~5 tok/s | Weiterhin die beste Interaktiv-Wahl |
+| Vision + LLM parallel | – | ~8–10 GB | – | Hailo-Pipeline **und** Ollama gleichzeitig |
+
+➜ **Der eigentliche Gewinn der 16-GB-Variante ist nicht ein grösseres Modell, sondern
+Parallelität:** Kamera-Pipeline, Vektorindex und LLM passen gleichzeitig in den RAM, ohne
+zu swappen. Für reinen Chat bleibt `phi3:mini` auch auf 16 GB die sinnvollere Wahl.
+
 **Raspberry Pi 4 (4/8 GB):**
 
 | Modell | Parameter | RAM | Use Case |
@@ -53,8 +70,8 @@ sudo systemctl status ollama
 | `phi3:mini` | 3.8B | ~3 GB | Nur auf 8 GB Pi 4 (langsam) |
 
 **⚠️ Nicht empfohlen auf Raspberry Pi:**
-- Llama 3.1 8B (zu langsam, ~1-2 tok/s)
-- Llama 2 13B (OOM auf 8 GB RAM)
+- Llama 3.1 8B auf 8 GB Pi 5 (zu langsam, ~1-2 tok/s; auf 16 GB nur für Offline-Jobs)
+- Llama 2 13B (OOM auf 8 GB RAM, auf 16 GB unbrauchbar langsam)
 
 ### Basis-Verwendung
 
@@ -142,22 +159,29 @@ sudo systemctl disable ollama
 Der Hailo-8L ist ein Edge AI Accelerator (Neural Processing Unit) für Raspberry Pi 5. Bietet:
 - **26 TOPS** bei INT8-Precision
 - **6W TDP** (zusätzlich zu Pi 5)
-- PCIe Gen 3 Interface
+- M.2-Modul am PCIe-Anschluss des Pi 5
 - Spezialisiert auf Computer Vision
+
+⚠️ **PCIe-Spezifikation:** Der Product Brief spezifiziert für den Pi 5 **PCIe 2.0 x1**.
+Gen 3 (`dtparam=pciex1_gen=3`) ist ein Opt-in ausserhalb der Spezifikation ohne
+Signalintegritäts-Garantie. Der Hailo-8L läuft auch mit Gen 2 – bei Link-Fehlern,
+sporadischen Aussetzern oder AER-Meldungen in `dmesg` ist **Rückstellen auf Gen 2 der
+erste Schritt**, nicht der letzte.
 
 ### Hardware-Setup
 
 **Benötigte Komponenten:**
-1. Raspberry Pi 5 (4 GB oder 8 GB)
+1. Raspberry Pi 5 (4 GB genügt – das Modell liegt auf der NPU, nicht im RAM)
 2. Hailo M.2 HAT+ (oder AI Kit)
 3. Hailo-8L M.2 Modul
 4. **Active Cooler** (kritisch!)
 5. 27W USB-C PD Netzteil
+6. Platz im Gehäuse für den HAT-Stapel → [`mechanical.md`](mechanical.md)
 
 **Installation:**
 
 ```bash
-# 1. PCIe Gen 3 aktivieren
+# 1. PCIe Gen 3 aktivieren (optional, ausserhalb der Spezifikation)
 sudo nano /boot/firmware/config.txt
 # Hinzufügen:
 dtparam=pciex1_gen=3

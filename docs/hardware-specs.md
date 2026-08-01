@@ -1,5 +1,8 @@
 # Hardware-Spezifikationen – Raspberry Pi 4 & 5
 
+Quelle der Pi-5-Werte: **Raspberry Pi 5 Product Brief, RP-008348-DS (April 2026)**.
+Mechanische Masse, Bohrbild und Gehäusethemen: siehe [`mechanical.md`](mechanical.md).
+
 ## Inhaltsverzeichnis
 1. [Raspberry Pi 5](#raspberry-pi-5)
 2. [Raspberry Pi 4](#raspberry-pi-4)
@@ -7,6 +10,7 @@
 4. [Strombudgets](#strombudgets)
 5. [Thermisches Management](#thermisches-management)
 6. [Schnittstellen](#schnittstellen)
+7. [Modellwahl & Beschaffung](#modellwahl--beschaffung)
 
 ---
 
@@ -17,14 +21,27 @@
 | Komponente | Spezifikation |
 |------------|---------------|
 | **SoC** | Broadcom BCM2712 (16nm) |
-| **CPU** | 4× Arm Cortex-A76 @ 2.4 GHz |
-| **GPU** | VideoCore VII @ 800 MHz |
-| **RAM** | 4GB oder 8GB LPDDR4X-4267 |
+| **CPU** | 4× Arm Cortex-A76 @ 2.4 GHz, 64-bit, mit Cryptographic Extension |
+| **Cache** | 512 KB L2 pro Kern, 2 MB gemeinsamer L3 |
+| **GPU** | VideoCore VII @ 800 MHz, OpenGL ES 3.1, Vulkan 1.2 |
+| **Video** | Dual 4Kp60 HDMI mit HDR, 4Kp60 HEVC-Decoder |
+| **RAM** | 1, 2, 4, 8 **oder 16 GB** LPDDR4X-4267 |
 | **I/O-Controller** | RP1 (separater Chip!) |
-| **PCIe** | 1× PCIe 2.0/3.0 (via FFC) |
-| **USB** | 2× USB 3.0, 2× USB 2.0 |
-| **Stromversorgung** | 5V/5A via USB-C PD |
+| **PCIe** | 1× PCIe **2.0** x1 (via FFC) – Gen 3 nur inoffiziell, siehe unten |
+| **USB** | 2× USB 3.0 (gleichzeitig 5 Gbps), 2× USB 2.0 |
+| **Kamera/Display** | 2× 4-Lane MIPI-Transceiver @ 1.5 Gbps/Lane, beliebige Kombination aus bis zu 2 Kameras oder Displays |
+| **Speicherkarte** | microSD mit SDR104-Highspeed-Modus |
+| **Netzwerk** | Gigabit Ethernet mit PoE+ (separater PoE+ HAT nötig), Dual-Band 802.11ac WLAN, Bluetooth 5.0/BLE |
+| **Sonstiges** | Echtzeituhr (RTC, externe Batterie), Power-Button, 40-Pin-Header |
+| **Stromversorgung** | 5V/5A via USB-C mit Power Delivery |
 | **TDP** | ~12W (Peak: ~27W mit Peripherie) |
+| **Betriebstemperatur** | **0 °C bis 70 °C** (Umgebung) |
+| **MTBF** | 93 800 h (Ground Benign) |
+| **Produktionszusage** | mindestens bis Januar 2036 |
+
+**Abmessungen:** 85 × 56 mm, Bohrbild 58 × 49 mm (Ø 2,7 mm).
+Buchsen ragen 3 mm über die 85-mm-Kante → realer Platzbedarf 88 mm.
+Details, Steckerpositionen und Gehäuse-Checkliste: [`mechanical.md`](mechanical.md).
 
 ### Kritische Unterschiede zu Pi 4
 
@@ -37,16 +54,33 @@
 - 22-Pin-Stecker (schmal), nicht 15-Pin wie Pi 4
 - Kamera Module 1/2 benötigen Adapter-Kabel
 - Camera Module 3 hat natives Mini-CSI-Kabel
+- Beide Anschlüsse sind **kombinierte MIPI-Transceiver**: jeder kann eine Kamera *oder*
+  ein Display bedienen (max. 2 Geräte insgesamt) – auf Pi 4 waren CSI und DSI getrennt
 
-**PCIe Gen 3:**
-- Standardmässig Gen 2 (5 GT/s)
-- Gen 3 (8 GT/s) muss in `config.txt` aktiviert werden
-- Wichtig für Hailo-8L NPU und NVMe SSDs
+**PCIe:**
+- Offiziell spezifiziert ist **PCIe 2.0 x1** (5 GT/s) – so steht es im Product Brief
+- Gen 3 (8 GT/s) ist ein **Opt-in ausserhalb der Spezifikation**: `dtparam=pciex1_gen=3`
+  in `config.txt`. Raspberry Pi gibt dafür keine Signalintegritäts-Garantie.
+- Praxis: Hailo-8L und NVMe SSDs profitieren spürbar, laufen aber auch auf Gen 2.
+- ➜ **Regel:** Bei instabilem PCIe-Gerät immer zuerst auf Gen 2 zurückstellen, bevor
+  Treiber oder Hardware verdächtigt werden.
+
+**USB-Bandbreite:**
+- Pi 5: Beide USB-3.0-Ports können **gleichzeitig** mit 5 Gbps arbeiten
+- Pi 4: Die USB-3.0-Ports teilen sich die Bandbreite
+- ➜ Zwei schnelle USB-Geräte (UAS-SSD + Kamera) sind erst auf Pi 5 sinnvoll
 
 **Stromversorgung:**
-- USB-C PD erforderlich (nicht nur USB-C)
+- USB-C **mit Power Delivery** erforderlich (nicht nur USB-C)
 - 27W offizielles Netzteil empfohlen
 - Unterspannungserkennung strenger (mehr false positives)
+
+**Neu gegenüber Pi 4:**
+- **Echtzeituhr (RTC)** mit Anschluss für eine externe Batterie – Zeitstempel bleiben ohne
+  Netz und ohne NTP korrekt (relevant für Datenlogger und Feldprojekte)
+- **Power-Button** für sauberes Herunter- und Hochfahren
+- **PoE+** (nicht nur PoE) über separaten PoE+ HAT
+- microSD im **SDR104**-Modus (doppelte Spitzenrate gegenüber Pi 4)
 
 ### GPIO-Besonderheiten Pi 5
 
@@ -203,7 +237,14 @@ Empfehlung              | 27W USB-C PD
 
 ### Raspberry Pi 5
 
-**Temperatur-Limits:**
+**Zulässige Umgebungstemperatur (Product Brief): 0 °C bis 70 °C**
+
+⚠️ Nicht verwechseln: Die folgenden Werte sind **SoC-Temperaturen** (`vcgencmd measure_temp`),
+die 0–70 °C oben sind die **Umgebungstemperatur**. Beide Grenzen gelten gleichzeitig.
+Ein Gehäuse in der Sonne oder ein Schaltschrank ohne Belüftung kann die Umgebungsgrenze
+verletzen, lange bevor der SoC auffällig wird.
+
+**Temperatur-Limits (SoC):**
 - **Idle:** 30–45°C (Raumtemperatur)
 - **Load:** 60–80°C (ohne Kühlung)
 - **Throttling Start:** 80°C (Soft Limit)
@@ -250,8 +291,9 @@ vcgencmd get_throttled
 ### Kamera
 
 **Pi 5:**
-- 2× Mini-CSI (22-Pin, schmal)
-- Unterstützt bis zu 2 Kameras gleichzeitig
+- 2× Mini-CSI/DSI (22-Pin, schmal), je 4 Lanes @ 1.5 Gbps
+- Jeder Anschluss ist Kamera **oder** Display → bis zu 2 Kameras, 2 Displays oder je eines
+- Gesamtbandbreite gegenüber Pi 4 verdreifacht
 - Kompatibel: Camera Module 3, HQ Camera (mit Adapter)
 
 **Pi 4:**
@@ -294,15 +336,50 @@ rpicam-still -o test.jpg
 
 ### PCIe (nur Pi 5)
 
-- 1× PCIe 2.0 (5 GT/s, Standard)
-- 1× PCIe 3.0 (8 GT/s, opt-in via config.txt)
-- Via FFC-Kabel und M.2 HAT+
+- **Spezifiziert:** 1× PCIe 2.0 x1 (5 GT/s) via FFC-Kabel und M.2 HAT+
+- **Inoffiziell:** Gen 3 (8 GT/s) per Opt-in in `config.txt`, ohne Garantie von Raspberry Pi
 
-**Aktivierung Gen 3:**
+**Aktivierung Gen 3 (auf eigenes Risiko):**
 ```bash
 # /boot/firmware/config.txt
 dtparam=pciex1_gen=3
 ```
+
+**Rollback bei Instabilität** (Link-Fehler, Gerät verschwindet, `dmesg`-AER-Meldungen):
+Zeile auskommentieren oder entfernen, neu starten – das Gerät läuft dann mit Gen 2.
+
+---
+
+## Modellwahl & Beschaffung
+
+### RAM-Varianten Pi 5 (Listenpreise Product Brief, USD)
+
+| Variante | Listenpreis | Sinnvoll für |
+|----------|-------------|--------------|
+| 1 GB | $45 | Headless-Sensorik, einzelne Dienste |
+| 2 GB | $65 | Headless mit Kamera, klassische GPIO-Projekte |
+| 4 GB | $110 | Desktop, Computer Vision mit Hailo-8L |
+| 8 GB | $175 | Ollama bis ~4B, mehrere AI-Prozesse parallel |
+| **16 GB** | $305 | Ollama mit 7B/8B-Modellen, Vision + LLM gleichzeitig |
+
+Schweizer Endkundenpreise liegen darüber – siehe [`component-catalog.md`](component-catalog.md).
+
+**Faustregeln:**
+- **Hailo-8L / Computer Vision:** 4 GB genügen, das Modell liegt auf der NPU.
+- **Ollama:** 8 GB ist das praktikable Minimum, 16 GB öffnet die 7B/8B-Klasse.
+- **Vision + LLM gleichzeitig:** 16 GB, sonst wird geswappt und die Latenz bricht ein.
+- **Bildung / Klassensatz:** 2 GB oder 4 GB – günstiger und für Lehrprojekte ausreichend.
+
+### Langlebigkeit
+
+| Kennzahl | Wert | Bedeutung für Projekte |
+|----------|------|------------------------|
+| MTBF (Ground Benign) | 93 800 h ≈ 10,7 Jahre | Dauerbetrieb ist plausibel, Backup-Strategie trotzdem nötig |
+| Produktionszusage | mindestens bis Januar 2036 | Ersatzteil- und Nachbeschaffungssicherheit für Schulen und Verwaltung |
+
+**Konformität:** Alle lokalen und regionalen Produktzulassungen sind unter
+[pip.raspberrypi.com](https://pip.raspberrypi.com) dokumentiert – relevant für Beschaffungen
+und für Projekte, die den Pi in ein eigenes Produkt integrieren.
 
 ---
 
@@ -330,11 +407,28 @@ dtparam=pciex1_gen=3
 - Performance drastisch schlechter
 - Lösung: Active Cooler montieren
 
+### Offizielle Betriebs- und Handhabungshinweise
+
+Aus dem Product Brief – gelten unabhängig vom Projekt:
+
+- Betrieb nur in **gut belüfteter Umgebung**; ein verwendetes Gehäuse darf **nicht
+  abgedeckt** werden.
+- Im Betrieb sicher befestigen oder auf eine **stabile, ebene, nicht leitfähige**
+  Unterlage legen.
+- Keine Feuchtigkeit, keine externe Wärmequelle, kühl und trocken lagern.
+- Platine im Betrieb nicht berühren bzw. nur an den Kanten anfassen (**ESD**).
+- Inkompatible Peripherie kann Konformität und Garantie kosten; Peripherie muss den
+  Normen des Einsatzlandes entsprechen.
+
+➜ Vollständig samt mechanischer Konsequenzen in [`mechanical.md`](mechanical.md).
+
 ---
 
 ## Weitere Ressourcen
 
-- [Raspberry Pi 5 Datasheet](https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf)
+- [Raspberry Pi 5 Product Brief](https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf)
+- [Raspberry Pi 5 Mechanical Drawing](https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-mechanical-drawing.pdf)
 - [Raspberry Pi 4 Datasheet](https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-datasheet.pdf)
+- [Produktzulassungen (PIP)](https://pip.raspberrypi.com)
 - [GPIO Pinout (interaktiv)](https://pinout.xyz/)
 - [Official Documentation](https://www.raspberrypi.com/documentation/)
