@@ -388,7 +388,8 @@ High/Low** und **Filtered Edge High/Low**. In `gpiozero` deckt der Parameter
 **Vorgehen:**
 
 1. **5 Minuten warten.** Bootet der Pi bis dahin nicht, den **Status-LED** prüfen –
-   blinkt sie, geben die **LED-Blinkcodes** die Ursache an.
+   blinkt sie, geben die **LED-Blinkcodes** die Ursache an (vollständige Tabelle in
+   Abschnitt 20).
 2. Wurde von einem **anderen Medium als der SD-Karte** gebootet (USB, NVMe)? Zum Test
    mit einer SD-Karte starten.
 3. SD-Karte **neu beschreiben** und dabei den **Verify-Schritt vollständig durchlaufen
@@ -517,6 +518,94 @@ Kameramodul spielt schlecht ab. In einen Container packen, ohne neu zu codieren:
 ffmpeg -r 30 -i video.h264 -c:v copy video.mp4
 ```
 
+### 20. LED-Blinkcodes lesen
+
+Wenn der Pi nicht bootet und kein Bild liefert, ist die Status-LED die **einzige**
+Diagnosequelle. Lange Blinkzeichen kommen immer **vor** den kurzen; oft fehlen die langen
+ganz. Nach einer Pause von rund zwei Sekunden wiederholt sich das Muster.
+
+| Lang | Kurz | Bedeutung |
+|:----:|:----:|-----------|
+| 0 | 3 | Allgemeiner Bootfehler |
+| 0 | 4 | `start*.elf` nicht gefunden |
+| 0 | 7 | Kernel-Image nicht gefunden |
+| 0 | 8 | **SDRAM-Fehler** |
+| 0 | 9 | Zu wenig SDRAM |
+| 0 | 10 | Zustand HALT |
+| 1 | 2 | **Überstrom an der SD-Karte** |
+| 2 | 1 | Partition ist nicht FAT |
+| 2 | 2 | Partition nicht lesbar |
+| 2 | 3 | Erweiterte Partition ist nicht FAT |
+| 2 | 4 | Signatur/Hash stimmt nicht (Pi 4 und 5) |
+| 3 | 1 | SPI-EEPROM-Fehler (Pi 4 und 5) |
+| 3 | 2 | SPI-EEPROM ist schreibgeschützt (Pi 4 und 5) |
+| 3 | 3 | I2C-Fehler (Pi 4 und 5) |
+| 3 | 4 | Secure-Boot-Konfiguration ungültig |
+| 4 | 3 | 🔴 **RP1 nicht gefunden** |
+| 4 | 4 | Board-Typ nicht unterstützt |
+| 4 | 5 | Schwerer Firmware-Fehler |
+| 4 | 6 | **Power failure Typ A** |
+| 4 | 7 | **Power failure Typ B** |
+
+**Was die wichtigsten Codes im Projektkontext bedeuten:**
+
+| Muster | Erste Massnahme |
+|--------|-----------------|
+| **0 / 4** und **0 / 7** | Boot-Medium neu beschreiben, Verify-Schritt vollständig durchlaufen lassen |
+| **2 / 1**–**2 / 3** | Karte falsch formatiert oder beschädigt – nicht der Pi |
+| **1 / 2** | Karte oder Kartenslot zieht zu viel Strom – andere Karte testen |
+| **4 / 6** und **4 / 7** | **Netzteil, Kabel oder Last** – vor allem bei Pi 5 mit PCIe-Zubehör |
+| **4 / 3** | RP1 wird nicht erkannt – Hardwaredefekt oder unpassend alte Firmware |
+| **3 / 1**–**3 / 2** | EEPROM-Problem: Bootloader mit dem Imager neu flashen |
+
+### 21. LED-Verhalten des Pi 5 richtig deuten
+
+Der Pi 5 hat **eine** zweifarbige LED statt der getrennten PWR- und ACT-LEDs der
+Vorgänger:
+
+| Phase | LED |
+|-------|-----|
+| Spannung liegt an | **rot** |
+| Firmware startet | wechselt auf **grün** |
+| System läuft | bleibt **grün** |
+| microSD-Zugriff | blinkt kurz **aus** |
+| Nach dem Herunterfahren | **rot** (Standby) |
+
+> ⚠️ **Beim Booten von NVMe blinkt die LED nicht.** Das Aktivitätsblinken gilt nur für die
+> microSD-Karte. Wer ein Pi-5-System auf einer NVMe am M.2 HAT+ betreibt und aus
+> Pi-4-Gewohnheit auf eine flackernde ACT-LED wartet, hält ein völlig gesundes Gerät für
+> tot.
+
+> ⚠️ **Rot nach dem Herunterfahren heisst nicht «aus».** Das ist der Standby-Zustand –
+> passend zum Standardwert *VPU sleep mode* (siehe `configuration.md`) und zu den Power
+> States in `pcie.md`. Vor dem Umstecken von Hardware trotzdem die Stromversorgung trennen.
+
+### 22. Overlay oder `dtparam` bleibt wirkungslos
+
+**Symptom:** Eine Zeile in `config.txt` scheint nichts zu bewirken – der Sensor erscheint
+nicht, der Bus bleibt leer, aber es gibt keine Fehlermeldung.
+
+**Ursache:** Der Firmware-Loader **überspringt fehlende Overlays und ungültige Parameter
+stillschweigend**. Diese Meldungen landen nicht in `dmesg`.
+
+**Diagnose:**
+```bash
+sudo vclog --msg                 # Meldungen der Firmware – hier steht der eigentliche Fehler
+dtoverlay -l                     # zur Laufzeit geladene Overlays
+dtc -I fs /proc/device-tree | less   # was tatsächlich im Baum steht
+cat /boot/firmware/overlays/README   # gültige Namen und Parameter der installierten Firmware
+```
+
+Mehr Firmware-Protokoll mit `dtdebug=1` in `config.txt`.
+
+**Häufige Ursachen:**
+- Tippfehler im Overlay-Namen – die Datei existiert nicht in `/boot/firmware/overlays/`
+- `dtparam`-Zeilen stehen unter dem **falschen** Overlay (der Geltungsbereich endet beim
+  nächsten `dtoverlay=`)
+- Das Overlay gibt es für die Plattform `bcm2712` nicht oder unter anderem Namen –
+  z.B. `disable-bt` → `disable-bt-pi5` (siehe `configuration.md`)
+- Ein Zeilenumbruch in `cmdline.txt`: alles nach der ersten Zeile wird ignoriert
+
 ---
 
 ## Software-Debugging
@@ -616,6 +705,28 @@ dmesg | grep -i "voltage\|under"
 # Live-Spannung messen (Pi 5)
 vcgencmd pmic_read_adc
 ```
+
+**Was das Netzteil wirklich meldet (Pi 5) – ohne Messgerät:**
+
+```bash
+# Maximalstrom in mA laut USB-C/USB-PD/PoE-Aushandlung
+od -v -An -t x1 /proc/device-tree/chosen/power/max_current | tr -d ' '
+
+# 0 = Peripherie auf die niedrige Grenze gedeckelt, != 0 = hohe Grenze aktiv
+od -v -An -t x1 /proc/device-tree/chosen/power/usb_max_current_enable | tr -d ' '
+
+# Warum der PMIC zuletzt zurückgesetzt hat (Bit 0 Überspannung, 1 Unterspannung,
+# 2 Übertemperatur, 3 Enable, 4 Watchdog)
+od -v -An -t x1 /proc/device-tree/chosen/power/power_reset | tr -d ' '
+
+# Für Fehlerberichte: rohe USB-PD-Objekte
+hexdump -C /proc/device-tree/chosen/power/usbpd_power_data_objects
+```
+
+➜ **Der schnellste Weg, den 600-mA-Fall zu beweisen.** Läuft ein Pi 5 an einem
+3-A-Netzteil, ist die Peripherieversorgung begrenzt – *ohne* Unterspannungswarnung, also
+mit `get_throttled` = `0x0`. Diese Werte machen den Unterschied zwischen «USB-SSD ist
+defekt» und «Netzteil ist zu klein» sichtbar. Details in `configuration.md`.
 
 **Strombudget-Berechnung:**
 

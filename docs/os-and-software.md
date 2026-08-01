@@ -35,6 +35,18 @@ gelten auch für Trixie – sie markieren, **seit wann** etwas gilt, nicht bis w
 betrifft im Skill vor allem PEP 668, den Wegfall von `wpa_supplicant.conf` und Wayland
 als Standard.
 
+### Was zwischen den Versionen anders heisst
+
+| Trixie | Bookworm | Anmerkung |
+|--------|----------|-----------|
+| **Control Centre** | **Raspberry Pi Configuration** | Dasselbe Desktop-Werkzeug, neuer Name |
+| `auto_initramfs` voreingestellt | Datei vorhanden, Schlüsselwort nötig | In `config.txt` |
+| — | letzte Version mit `raindrop` / `arandr` | Display-Konfiguration unter Trixie anders |
+
+➜ Anleitungen aus der Bookworm-Zeit sind meist noch gültig, nennen aber alte Namen. Wenn
+ein Menüpunkt «nicht existiert», zuerst den Namenswechsel prüfen, bevor eine Fehlfunktion
+vermutet wird. Die Konfigurationsfläche im Detail: `configuration.md`.
+
 ---
 
 ## Editionen und Architektur
@@ -110,7 +122,13 @@ Unit-Files ins Repository. Das alte Medium **nicht überschreiben**, bis das neu
 | Werkzeug | Zweck |
 |----------|-------|
 | **APT** (`raspi-firmware`) | **Normalfall.** Stabile Firmware kommt mit den regulären Updates |
+| **Beta Access** (`raspi-config`) | Freischaltung eines **Beta-Repositories** – neuere Pakete und Bootloader-Versionen, weiterhin über `apt` verwaltet |
 | `rpi-update` | **Nur** Vorab-/Testfirmware für Entwicklung und gezielte Bugfixes |
+
+> **Wer Neueres testen will, nimmt Beta Access – nicht `rpi-update`.** Beide liefern
+> Vorabsoftware, aber Beta Access bleibt paketverwaltet und rückbaubar
+> (`raspi-config` → `6 Advanced Options` → `A6 Beta Access`, danach `sudo apt update`).
+> `rpi-update` geht an APT vorbei. Siehe `configuration.md`.
 
 > ⚠️ **`rpi-update` ist kein Update-Werkzeug für den Alltag.** Es installiert
 > Vorabversionen von Kernel, Modulen, Device-Tree und VideoCore-Firmware – auf Pi 4 und

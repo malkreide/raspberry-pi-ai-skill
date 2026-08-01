@@ -1,0 +1,641 @@
+# Konfiguration – raspi-config, config.txt und Device Tree
+
+Quelle: **Offizielle Raspberry-Pi-Dokumentation, «Configuration»**
+([raspberrypi.com/documentation](https://www.raspberrypi.com/documentation/computers/configuration.html)).
+
+Diese Referenz beantwortet die Frage **«wo stelle ich das ein?»**. Sie ergänzt
+`os-and-software.md` (welche Software, welche Version) und `setup-provisioning.md`
+(erstmaliges Aufsetzen) um die Konfigurationsfläche eines bereits laufenden Systems.
+
+## Inhaltsverzeichnis
+1. [Drei Wege, ein Ziel](#drei-wege-ein-ziel)
+2. [Die zwei Dateien](#die-zwei-dateien)
+3. [raspi-config – Menülandkarte](#raspi-config--menülandkarte)
+4. [Einstellungen mit Projektrelevanz](#einstellungen-mit-projektrelevanz)
+5. [Device Tree, Overlays und Parameter](#device-tree-overlays-und-parameter)
+6. [Bootloader und EEPROM](#bootloader-und-eeprom)
+7. [Was die Firmware über das System verrät](#was-die-firmware-über-das-system-verrät)
+8. [Externe Datenträger dauerhaft einbinden](#externe-datenträger-dauerhaft-einbinden)
+9. [Betriebssicherheit](#betriebssicherheit)
+10. [Display und Bildschirmabschaltung](#display-und-bildschirmabschaltung)
+11. [Boot-Dateien im Überblick](#boot-dateien-im-überblick)
+
+---
+
+## Drei Wege, ein Ziel
+
+Alle drei Wege ändern letztlich dieselben Dateien – vor allem
+`/boot/firmware/config.txt`.
+
+| Weg | Wann | Grenzen |
+|-----|------|---------|
+| **Desktop-GUI** | System mit Desktop, Standardeinstellungen | Nicht headless; deckt nicht alles ab |
+| **`sudo raspi-config`** (TUI) | **Der Normalfall für Embedded und Headless** | Menügeführt, aber nicht jede Option vorhanden |
+| **CLI / Dateien von Hand** | Alles Übrige (Splash-Screen, `cmdline.txt`, eigene Overlays) | Kein Sicherheitsnetz |
+
+> ⚠️ **Namenswechsel zwischen den OS-Versionen:** Unter **Trixie** heisst das
+> Desktop-Werkzeug **Control Centre** (*Preferences → Control Centre*), unter
+> **Bookworm** hiess es **Raspberry Pi Configuration**. Anleitungen aus der Bookworm-Zeit
+> nennen den alten Namen – die Einstellungen sind dieselben.
+
+➜ **Für Projekte in diesem Skill gilt: `raspi-config` oder Datei, nicht GUI.** Ein
+Edge-AI-Aufbau läuft headless; jede Einstellung, die nur per Maus gesetzt wurde, ist beim
+nächsten Neuaufsetzen verloren. Was reproduzierbar sein muss, gehört als Zeile in
+`config.txt` oder als Skriptschritt ins `plan.md`.
+
+---
+
+## Die zwei Dateien
+
+| Datei | Wer liest sie | Wofür |
+|-------|---------------|-------|
+| `/boot/firmware/config.txt` | **Bootloader/Firmware**, vor dem Kernel | Hardware: Overlays, Parameter, Takt, PCIe, UART |
+| `/boot/firmware/cmdline.txt` | **Linux-Kernel**, beim Übernehmen | Verhalten des OS: Root-Device, Konsole, `video=`, `earlycon` |
+
+```bash
+sudo nano /boot/firmware/config.txt
+sudo nano /boot/firmware/cmdline.txt
+
+cat /proc/cmdline          # was der Kernel TATSÄCHLICH bekommen hat
+```
+
+> 🔴 **`cmdline.txt` ist eine einzige Zeile.** Alles nach dem ersten Zeilenumbruch wird
+> ignoriert. Ein «zur Übersicht» eingefügter Umbruch ist eine der undankbarsten
+> Fehlerquellen: Das System bootet, aber die Hälfte der Parameter fehlt.
+
+> ⚠️ **`/proc/cmdline` weicht von `cmdline.txt` ab** – die Firmware ergänzt und ändert
+> Parameter, bevor sie den Kernel startet. Für die Fehlersuche zählt `/proc/cmdline`.
+
+> ⚠️ **Der Pi 5 braucht eine nicht-leere `config.txt`** in der Boot-Partition. Eine leere
+> Datei ist kein «Standardzustand», sondern ein Defekt.
+
+### Kernparameter in `cmdline.txt`
+
+| Eintrag | Bedeutung |
+|---------|-----------|
+| `console=serial0,115200` / `console=tty1` | Wohin Boot-Meldungen gehen |
+| `root=/dev/mmcblk0p2` | Wo das Root-Dateisystem liegt |
+| `rootfstype=ext4` | Dateisystemtyp der Root-Partition |
+| `quiet` | Log-Level auf `KERN_WARNING` – unterdrückt fast alles beim Boot |
+| `splash` | Plymouth-Startbild verwenden |
+| `video=` | Auflösung/Orientierung im Konsolenbetrieb (KMS) |
+| `usbhid.mousepoll=0` | Gegen träge oder ruckelnde Funkmäuse |
+| `dwc_otg.speed=1` | USB-Controller auf Full Speed – **nur zur Diagnose**, danach entfernen |
+
+---
+
+## raspi-config – Menülandkarte
+
+Die Pfade sind stabil genug, um sie in Anleitungen zu schreiben. Aufruf immer
+`sudo raspi-config`; Navigation mit Pfeiltasten, Auswahl mit Enter, Buchstabe springt
+alphabetisch (z.B. `E` in der Zeitzonenliste zu *Europe*).
+
+| Pfad | Einstellung |
+|------|-------------|
+| `1 System Options` → `S8 Power LED` | LED-Verhalten (nur Zero-Familie) |
+| `2 Display Options` → `D4 Composite` | Composite statt HDMI |
+| `2 Display Options` → `D6/D7 Onscreen Keyboard` | Bildschirmtastatur ein/aus, auf welchem Schirm |
+| `3 Interface Options` | SSH, VNC, SPI, I2C, 1-Wire, Serial Port, Raspberry Pi Connect |
+| `4 Performance Options` → `P1 Overclock` | **Nur Pi 1 und Pi 2** |
+| `5 Localisation Options` | Locale, Zeitzone, Tastatur, **WLAN-Land** |
+| `6 Advanced Options` → `A1 Expand Filesystem` | Root-Partition auf die Medienkapazität ausdehnen |
+| `6 Advanced Options` → `A2 Network Interface Names` | Vorhersagbare Interface-Namen (Standard: **aus**) |
+| `6 Advanced Options` → `A3 Network Proxy Settings` | Proxy für All/HTTP/HTTPS/FTP + Ausnahmen |
+| `6 Advanced Options` → `A4 Boot Order` | SD zuerst / NVMe-USB zuerst / Netzwerk |
+| `6 Advanced Options` → `A5 Bootloader Version` | `E1 Latest` oder `E2 Default` |
+| `6 Advanced Options` → `A6 Beta Access` | Beta-Repository ein/aus |
+| `6 Advanced Options` → `A7 Wayland` | `W1 X11` (nicht empfohlen) / `W2 Labwc` |
+| `6 Advanced Options` → `A8 PCIe Speed` | **PCIe Gen 3 – siehe Warnung unten** |
+| `6 Advanced Options` → `A9 Network Install UI` | Immer / nur auf Shift bzw. bei Fehler |
+| `6 Advanced Options` → `A11 Shutdown Behaviour` | `B1 Full power off` / `B2 VPU sleep mode` |
+| `6 Advanced Options` → `A12 Logging` | Default / Volatile / Persistent / Auto / None |
+| `6 Advanced Options` → `A13 WLAN Power Save` | Stromsparen des WLAN-Chips |
+| `6 Advanced Options` → `A14 Link-local Fallback` | 169.254.x.x als Rückfallebene (Standard: **aus**) |
+
+> ⚠️ **Unterpunkt-Nummern können sich zwischen OS-Versionen verschieben.** Die
+> Menü**namen** sind der verlässlichere Anker; die Nummern hier entsprechen dem aktuellen
+> Stand der offiziellen Dokumentation.
+
+---
+
+## Einstellungen mit Projektrelevanz
+
+### 🔴 PCIe Gen 3 – `A8 PCIe Speed`
+
+Bisher stand im Skill nur der `config.txt`-Weg. Es gibt auch den offiziellen:
+
+```bash
+sudo raspi-config        # 6 Advanced Options → A8 PCIe Speed → Yes
+# entspricht:  dtparam=pciex1_gen=3  in /boot/firmware/config.txt
+```
+
+> **Wortlaut der Dokumentation:** Raspberry Pi empfiehlt diese Einstellung ausdrücklich
+> **nicht**, ausser ein PCIe-HAT verlangt sie. Der Pi 5 ist für **PCIe Gen 2.0
+> zertifiziert**; Gen 3 ist deshalb ab Werk deaktiviert. Ein Erzwingen kann zu
+> **Datenkorruption oder Systeminstabilität** führen, wenn HAT oder Flachbandkabel die
+> höhere Frequenz nicht mitmachen.
+
+➜ Deckungsgleich mit der Regel in `pcie.md` und `SKILL.md`: **Gen 2 ist Spezifikation,
+Gen 3 ist Opt-in auf eigenes Risiko.** Bei sporadischen I/O-Fehlern zuerst zurückstellen.
+
+### USB-Strombegrenzung (Pi 5, 500, 500+)
+
+Betrifft **nur** Aufbauten **ohne** offizielles Netzteil.
+
+```
+raspi-config → 4 Performance Options → Disable USB Current Limit
+```
+
+> ⚠️ Aufheben der Begrenzung erlaubt stromhungrigere USB-Geräte, kann aber
+> **Instabilität, Abstürze oder Datenverlust** verursachen, wenn das Netzteil die
+> zusätzliche Last nicht sicher liefert.
+
+➜ **Richtige Reihenfolge:** erst das Netzteil dimensionieren (siehe
+`setup-provisioning.md`), dann – falls überhaupt nötig – die Grenze anheben. Nicht
+umgekehrt. Ob die Firmware die hohe Grenze aktiviert hat, lässt sich auslesen (siehe
+[Abschnitt 7](#was-die-firmware-über-das-system-verrät)).
+
+### Overlay-Dateisystem – schreibgeschützter Dauerbetrieb
+
+Zwei getrennte Schalter unter *Performance Options → Overlay File System*:
+
+| Schalter | Wirkung |
+|----------|---------|
+| **Use Overlay** | Root-Dateisystem read-only, Änderungen landen in einem RAM-Overlay und sind nach dem Neustart **weg** |
+| **Write-protect Boot Partition** | `/boot` gegen Änderungen sperren |
+
+➜ **Für Kiosk-, Ausstellungs- und Dauerbetriebs-Aufbauten ist das die Antwort auf
+korrupte SD-Karten nach Stromausfall.** Preis: Das System vergisst alles ausserhalb von
+`/boot`. Logs, Messdaten und Modelle müssen dann auf ein separat gemountetes, beschreibbares
+Medium – oder gar nicht anfallen. Vor dem Einschalten den Aufbau fertig konfigurieren, und
+für Änderungen das Overlay wieder abschalten.
+
+### Logging – SD-Karten-Schonung
+
+```
+raspi-config → 6 Advanced Options → A12 Logging
+```
+
+| Option | Ablage | Für |
+|--------|--------|-----|
+| `2 Volatile` | nur RAM (`/run/log/journal`), nach Reboot weg | Schreiblast auf der SD-Karte senken |
+| `3 Persistent` | Platte (`/var/log/journal`), überlebt Reboots | Fehlersuche über längere Zeit |
+| `4 Auto` | Persistent, falls `/var/log/journal` existiert, sonst volatile | Standardverhalten |
+| `5 None` | keine Protokollierung | Nur wenn wirklich nichts geschrieben werden darf |
+
+➜ **Zielkonflikt benennen, nicht auflösen:** `Volatile` schont die Karte, macht aber genau
+die Fehlersuche unmöglich, die man bei einem sporadisch abstürzenden Feldgerät braucht.
+Für Dauerbetrieb im Feld eher `Persistent` **plus** ein besseres Boot-Medium (SSD über
+`pcie.md`) als `Volatile` auf einer Billigkarte.
+
+### Boot-Reihenfolge – `A4 Boot Order`
+
+| Option | Reihenfolge |
+|--------|-------------|
+| `B1 SD Card Boot` (Standard) | SD → NVMe → USB |
+| `B2 NVMe/USB Boot` | NVMe → USB → SD |
+| `B3 Network Boot` | SD → Netzwerk (PXE) |
+
+➜ Wer eine NVMe am M.2 HAT+ als Systemlaufwerk betreibt, braucht `B2` – sonst startet das
+Gerät bei eingelegter SD-Karte wieder von dieser, ohne dass es auffällt.
+
+### Abschaltverhalten – `A11 Shutdown Behaviour`
+
+| Option | Bedeutung |
+|--------|-----------|
+| `B1 Full power off` | Vollständig aus |
+| `B2 VPU sleep mode` | Restspannung bleibt, schnelleres Wiederanlaufen |
+
+**Standard je Modell:** Pi 400, 500, 500+ und CM5 → *Full power off*; **Pi 4B, Pi 5 und
+CM4 → VPU sleep mode**.
+
+➜ Das ist die raspi-config-Seite dessen, was `pcie.md` unter **Power States** elektrisch
+beschreibt: Nach `sudo halt` ist ein Pi 5 im Standardfall **nicht spannungsfrei**. Für
+batteriebetriebene oder solargespeiste Aufbauten `B1` setzen – und trotzdem messen.
+
+### Dateisystem ausdehnen – `A1 Expand Filesystem`
+
+> ⚠️ **Keine Rückfrage.** Die Partition wird sofort vergrössert, wirksam nach dem
+> Neustart. Raspberry Pi OS macht das beim ersten Boot ohnehin automatisch; nötig wird der
+> Menüpunkt vor allem nach dem Klonen auf ein **grösseres** Medium.
+
+### Netzwerk-Feinheiten
+
+| Einstellung | Standard | Wann anfassen |
+|-------------|----------|---------------|
+| `A2 Network Interface Names` | aus | Nur wenn stabile Namen über Hardwarewechsel hinweg gebraucht werden – ersetzt `eth0`/`wlan0` |
+| `A14 Link-local Fallback` | aus | Nur bei Aufbauten ohne DHCP; kann sonst die Netzkonfiguration stören |
+| `A13 WLAN Power Save` | – | **Nicht anfassen**, ausser ein Raspberry-Pi-Engineer empfiehlt es; Abschalten kann die Verbindung stabilisieren, erhöht aber den Verbrauch |
+| `A3 Network Proxy Settings` | – | Verwaltete Netze (Schule, Firma) |
+
+**Feste IP-Adresse:** Die Dokumentation empfiehlt ausdrücklich die **DHCP-Reservation am
+Router** (statische Lease über die MAC-Adresse) gegenüber einer statisch am Gerät
+gesetzten Adresse. Wer sie dennoch am Gerät setzt, tut das mit `nmcli` und muss selbst
+dafür sorgen, dass die Adresse ausserhalb des DHCP-Pools liegt und mit niemandem
+kollidiert.
+
+**Netzwerkpriorität** bei mehreren bekannten WLANs: höhere Zahl gewinnt, `0` ist neutral
+(Standard), negative Werte werden nur genutzt, wenn sonst nichts verfügbar ist.
+
+---
+
+## Device Tree, Overlays und Parameter
+
+Der Device Tree beschreibt die Hardware. **Overlays** sind Teilbeschreibungen für optionale
+Hardware, **Parameter** sind benannte Kleinänderungen daran. Zusammen sind sie der Grund,
+warum ein Sensor-HAT ohne Kernel-Übersetzung funktioniert.
+
+### In `config.txt`
+
+```ini
+dtoverlay=acme-board                  # overlays/acme-board.dtbo laden
+dtoverlay=lirc-rpi,gpio_out_pin=16    # Overlay mit Parametern in einer Zeile
+dtparam=i2c_arm=on,spi=on             # Parameter des Basis-DTB
+dtparam=i2c,i2s                       # Kurzform: =on ist die Vorgabe
+dtoverlay=                            # beendet den Geltungsbereich des letzten Overlays
+```
+
+> ⚠️ **Overlay-Parameter gelten nur bis zum nächsten `dtoverlay=`.** Wer `dtparam`-Zeilen
+> unter das falsche Overlay schreibt, setzt sie am eigentlichen Ziel vorbei – ohne
+> Fehlermeldung.
+
+### Zur Laufzeit
+
+```bash
+dtoverlay -a                     # alle Overlays, aktive markiert
+dtoverlay -l                     # aktive Overlays und Parameter
+dtoverlay -h <overlay>           # Hilfe zu einem Overlay
+dtoverlay -h uart2               # z.B. Pins und Optionen einer zusätzlichen UART
+sudo dtoverlay <overlay> <param>=<wert>
+sudo dtoverlay -r <overlay>      # entfernen (nur zur Laufzeit geladene)
+```
+
+> ⚠️ Overlays, die die **Firmware** beim Booten angewandt hat, sind «eingebacken»: Sie
+> tauchen in `dtoverlay -l` nicht auf und lassen sich zur Laufzeit nicht entfernen.
+> Overlays bilden einen **Stapel** – ein tiefer liegendes zu entfernen entfernt und
+> reaktiviert alles darüber.
+
+Die vollständige Liste der mitgelieferten Overlays und ihrer Parameter steht in
+**`/boot/firmware/overlays/README`** – die verlässlichste Quelle, weil sie zur installierten
+Firmware gehört.
+
+### Board-spezifische Aliase für I2C
+
+Die Firmware legt modellunabhängige Namen an, weil zwei frühe Pi-1-B-Revisionen die
+I2C-Busse vertauscht haben:
+
+| Alias | Bedeutung |
+|-------|-----------|
+| `i2c_arm` / `i2c_arm_baudrate` | Der Bus am 40-Pin-Header – **der, den man meint** |
+| `i2c_vc` / `i2c_vc_baudrate` | Der Bus der GPU: Kamera und HAT-EEPROM |
+
+> 🔴 **`i2c_vc` nicht aus Neugier einschalten.** Laut Dokumentation kann das
+> **Kameramodul oder das Touch-Display lahmlegen**. Für eigene HAT-EEPROMs ist ein
+> Software-I2C über `i2c-gpio` der empfohlene Weg.
+
+Eigene Overlays sollten `&i2c_arm` referenzieren, nicht `&i2c1`.
+
+### Overlay-Map: warum ein Overlay auf dem Pi 5 anders heisst
+
+Die Firmware lädt `overlays/overlay_map.dtb` und bildet Overlay-Namen auf Plattformen ab:
+
+| Plattformname | Modelle |
+|---------------|---------|
+| `bcm2835` | BCM2835/2836/2837 und RP3A0 – alle älteren Pi |
+| `bcm2711` | Pi 4B, CM4, CM4S, Pi 400 |
+| **`bcm2712`** | **Pi 5, CM5, Pi 500, Pi 500+** |
+
+Beispiel aus der Map: `disable-bt` wird auf `bcm2712` automatisch durch **`disable-bt-pi5`**
+ersetzt. `uart5` gibt es nur für `bcm2711`.
+
+➜ **Konsequenz für die Fehlersuche:** «Das Overlay aus dem Forum tut auf dem Pi 5 nichts»
+ist oft kein Tippfehler, sondern eine fehlende Plattform-Zuordnung. Ein nicht in der Map
+genanntes Overlay gilt als für alle Plattformen kompatibel.
+
+### Diagnose
+
+```bash
+sudo vclog --msg                       # Meldungen der Firmware – zuerst hier nachsehen
+dtc -I fs /proc/device-tree            # aktueller Device Tree in lesbarer Form
+
+# Wirkung eines Overlays zeigen, ohne es scharfzuschalten
+dtmerge /boot/firmware/bcm2712-rpi-5-b.dtb base.dtb -
+dtmerge base.dtb merged.dtb /boot/firmware/overlays/<name>.dtbo
+dtdiff base.dtb merged.dtb
+```
+
+Zusätzliche Firmware-Protokolle mit `dtdebug=1` in `config.txt` einschalten.
+
+> Der Loader **überspringt fehlende Overlays und ungültige Parameter stillschweigend**.
+> Wenn eine `dtoverlay`-Zeile wirkungslos bleibt, ist `sudo vclog --msg` der erste Griff –
+> nicht `dmesg`.
+
+### Grenzen zur Laufzeit
+
+- Teile des Device Tree werden **nur beim Booten** ausgewertet; ein Overlay zur Laufzeit
+  ändert sie nicht.
+- Nur Knoten auf oberster Ebene oder unterhalb eines Bus-Knotens werden erkannt.
+- Takt- und Interrupt-Controller werden nur beim Booten gesucht – Overlays, die solche
+  Knoten anlegen, funktionieren zur Laufzeit nicht.
+- Das Entfernen eines Sound-Overlays kann hängen oder das System stören, solange ALSA
+  darauf zugreift.
+
+➜ **Für reproduzierbare Aufbauten: Overlays in `config.txt`, nicht zur Laufzeit.** Die
+`dtoverlay`-Kommandos sind Werkzeuge zum Ausprobieren, nicht zum Konfigurieren.
+
+---
+
+## Bootloader und EEPROM
+
+Betrifft **Pi 4B und neuer** sowie alle Keyboard-Computer. Der Bootloader liegt im EEPROM,
+nicht auf der Karte.
+
+```bash
+sudo apt update && sudo apt full-upgrade   # ZUERST: aktuelles rpi-eeprom-Paket
+sudo rpi-eeprom-update                     # CURRENT / LATEST / RELEASE anzeigen
+rpi-eeprom-config                          # laufende Konfiguration lesen
+sudo -E rpi-eeprom-config --edit           # bearbeiten, Update beim Reboot einplanen
+sudo rpi-eeprom-config --apply boot.conf   # gespeicherte Konfiguration anwenden
+sudo reboot
+```
+
+Release-Track wechseln: `raspi-config` → `6 Advanced Options` → `A5 Bootloader Version`
+(`E1 Latest` = neueste Funktionen, `E2 Default` = stabil, getestet).
+
+> ⚠️ **CM4 und CM4S können den Bootloader nicht automatisch aktualisieren** – ihr Boot-ROM
+> lädt keine `recovery.bin` aus dem eMMC. Dort sind `rpiboot` bzw. `flashrom` nötig.
+
+### Beta Access ist nicht `rpi-update`
+
+| Weg | Was er tut | Risiko |
+|-----|-----------|--------|
+| **`A6 Beta Access`** | Schaltet ein **Beta-Repository** frei; Installation danach normal über `apt` | Vorabversionen, aber paketverwaltet |
+| **`rpi-update`** | Zieht **ungetestete** Firmware direkt an APT vorbei | Kann das System unbootbar machen |
+
+➜ Damit ergänzt sich die Regel aus `os-and-software.md`: Wer neuere Firmware **testen**
+will, nimmt Beta Access – nicht `rpi-update`. `rpi-update` bleibt dem Fall vorbehalten,
+dass Raspberry Pi es ausdrücklich empfiehlt.
+
+---
+
+## Was die Firmware über das System verrät
+
+Die Firmware legt Werte unter `/proc/device-tree/chosen/` ab. Das ist der einzige Weg, an
+manche Angaben **ohne Messgerät** heranzukommen – besonders wertvoll bei Strom- und
+Speicherfragen.
+
+```bash
+# Zeichenketten direkt lesen
+strings /proc/device-tree/chosen/rpi-serial64
+
+# 32-Bit-Integer (Big Endian) hexadezimal ausgeben
+od -v -An -t x1 /proc/device-tree/chosen/power/max_current | tr -d ' '
+```
+
+### Stromversorgung – `/chosen/power/` (Pi 5)
+
+| Eigenschaft | Bedeutung |
+|-------------|-----------|
+| **`max_current`** | Maximalstrom in **mA**, den das Netzteil laut USB-C/USB-PD/PoE meldet |
+| **`usb_max_current_enable`** | 0 = Peripherie auf die **niedrige** Grenze gedeckelt, ≠ 0 = hohe Grenze aktiv |
+| `usb_over_current_detected` | ≠ 0, wenn beim USB-Boot eine Überstromabschaltung auftrat |
+| `rpi_power_supply` | USB-VID/Product-VDO des offiziellen 27-W-Netzteils, falls angeschlossen |
+| `power_reset` | Bitfeld: warum der PMIC zurückgesetzt hat |
+| `usbpd_power_data_objects` | Rohe USB-PD-Objekte – für Fehlerberichte: `hexdump -C` |
+
+**`power_reset` – Bitbedeutung:**
+
+| Bit | Grund |
+|-----|-------|
+| 0 | Überspannung |
+| 1 | Unterspannung |
+| 2 | Übertemperatur |
+| 3 | Enable-Signal |
+| 4 | Watchdog |
+
+> ➜ **Das ist der Beweis für den 600-mA-Fall.** `setup-provisioning.md` beschreibt, dass
+> ein Pi 5 an einem 3-A-Netzteil die Peripherie auf 600 mA begrenzt, **ohne**
+> Unterspannungswarnung. Statt zu raten, lassen sich `max_current` und
+> `usb_max_current_enable` direkt auslesen – und die Diskussion ist beendet.
+>
+> Bei Laborsteckernetzteilen am GPIO-Header kennt die Firmware die Belastbarkeit nicht;
+> dort muss `PSU_MAX_CURRENT` in der Bootloader-Konfiguration gesetzt werden.
+
+### System-Identität
+
+| Eigenschaft | Bedeutung |
+|-------------|-----------|
+| **`rpi-sdram-size-gbit`** | Physische RAM-Grösse in **Gigabit**, unbeeinflusst von Carveouts und `total_mem` |
+| `rpi-serial64` | 64-Bit-Seriennummer als Zeichenkette |
+| `rpi-machine-id` | Stabile 128-Bit-Kennung (Hash aus Seriennummer, ab Pi 4 auch MAC) |
+| `rpi-duid` | Pi 5: Zeichenkette des QR-Codes auf der Platine |
+| `rpi-boardrev-ext` | Erweiterter Board-Revisionscode aus OTP |
+| `/chosen/bootloader/boot-mode` | Von welchem Medium tatsächlich gebootet wurde |
+| `/chosen/bootloader/partition` | Verwendete Partitionsnummer |
+| `/chosen/bootloader/pm_rsts` | `PM_RSTS`-Register beim Booten |
+
+> ➜ **`rpi-sdram-size-gbit` löst ein bekanntes Problem des Skills.** `vcgencmd get_mem arm`
+> liefert auf Geräten über 1 GB einen falschen Wert (siehe `os-and-software.md`), und die
+> Speichergrösse im Board-Revisionscode kann Nicht-Zweierpotenzen wie 3 GB gar nicht
+> abbilden. Für Skripte, die die Gerätekapazität ermitteln, ist dieser Wert die richtige
+> Quelle.
+>
+> `rpi-machine-id` ist die saubere Antwort auf «wie identifiziere ich die Geräte im
+> Klassensatz eindeutig» – stabil, ohne eigene Datei auf der Karte.
+
+---
+
+## Externe Datenträger dauerhaft einbinden
+
+Relevant, sobald Modelle, Datensätze oder Aufnahmen nicht mehr auf die Boot-Karte passen.
+
+> ⚠️ **Raspberry Pi OS Lite mountet nicht automatisch.** Auf den Desktop-Editionen landen
+> FAT, NTFS und HFS+ automatisch unter `/media/pi/<LABEL>` – headless passiert nichts. Das
+> ist der Grund, warum «der Stick geht auf meinem Desktop-Pi, aber nicht auf dem
+> Feldgerät».
+
+```bash
+# 1. Gerät finden
+sudo lsblk -o UUID,NAME,FSTYPE,SIZE,MOUNTPOINT,LABEL,MODEL
+sudo blkid
+
+# 2. Treiber nachrüsten, falls nötig
+sudo apt install exfat-fuse      # exFAT
+sudo apt install ntfs-3g         # NTFS beschreibbar (ohne: nur lesend)
+
+# 3. Mountpunkt anlegen und einbinden
+sudo mkdir /mnt/mydisk
+sudo mount /dev/sda1 /mnt/mydisk
+```
+
+### Dauerhaft über `/etc/fstab`
+
+```
+UUID=5C24-1453 /mnt/mydisk ext4 defaults,auto,users,rw,nofail,x-systemd.device-timeout=30 0 0
+```
+
+| Option | Warum |
+|--------|-------|
+| **`UUID=`** statt `/dev/sda1` | Gerätenamen wechseln je nach Steckreihenfolge |
+| **`nofail`** | 🔴 **Ohne diese Option bootet der Pi nicht, wenn das Medium fehlt** |
+| `x-systemd.device-timeout=30` | Ohne sie wartet der Start **90 Sekunden** auf ein fehlendes Medium |
+| `,umask=000` | Nur bei FAT/NTFS – sonst darf nur root schreiben |
+
+➜ **`nofail` ist für Feldgeräte nicht optional.** Ein Gerät, das nach einem abgezogenen
+USB-Stick nicht mehr hochkommt und headless in einem Schaltschrank sitzt, ist ein
+Serviceeinsatz.
+
+### Aushängen
+
+```bash
+sudo umount /mnt/mydisk
+
+# «target is busy»? – herausfinden, wer das Medium offen hält
+sudo apt install lsof
+lsof /mnt/mydisk
+```
+
+Häufigste Ursache für «target is busy»: Ein Terminal steht noch im gemounteten Verzeichnis.
+
+---
+
+## Betriebssicherheit
+
+Für ein Gerät, das dauerhaft im Netz hängt – Kamera-Node, Sensor-Gateway, Klassensatz.
+
+### SSH härten
+
+```bash
+sudo nano /etc/ssh/sshd_config
+#   AllowUsers alice bob        # nur diese Konten dürfen sich anmelden
+#   DenyUsers  jane john        # oder gezielt sperren
+sudo systemctl restart ssh
+```
+
+Zusätzlich empfiehlt die Dokumentation **schlüsselbasierte Anmeldung** statt Passwort und
+– bei per SSH erreichbaren Geräten – einen täglichen Cron-Job, der gezielt den SSH-Server
+aktualisiert:
+
+```bash
+apt install openssh-server
+```
+
+### Firewall (UFW)
+
+> 🔴 **Reihenfolge ist entscheidend.** Wer UFW über eine SSH-Verbindung aktiviert, **ohne
+> vorher SSH freizugeben, sperrt sich aus** – bei einem headless Gerät heisst das: Karte
+> ausbauen.
+
+```bash
+sudo apt update && sudo apt install ufw
+sudo ufw status                        # nach der Installation: inactive
+sudo ufw default deny incoming
+sudo ufw allow ssh                     # ZUERST – vor dem enable
+sudo ufw allow 80/tcp                  # falls ein Webserver läuft
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Nützliche Ergänzungen:
+
+```bash
+sudo ufw --dry-run allow 22            # Wirkung zeigen, ohne etwas zu ändern
+sudo ufw limit ssh/tcp                 # Ratenbegrenzung gegen Brute-Force
+sudo ufw allow in on eth0 to any port 80 proto tcp
+sudo ufw status numbered && sudo ufw delete <nummer>
+```
+
+### fail2ban
+
+```bash
+sudo apt install fail2ban
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+sudo nano /etc/fail2ban/jail.local
+```
+
+```ini
+[ssh]
+enabled  = true
+port     = ssh
+filter   = sshd
+backend  = systemd
+maxretry = 3
+bantime  = -1       ; negativ = dauerhaft sperren
+```
+
+> ⚠️ Die Standardaktion `iptables-multiport` sperrt eine auffällige IP-Adresse auf **allen**
+> Ports. Bei `bantime = -1` und einem Tippfehler beim eigenen Passwort sperrt man sich
+> selbst dauerhaft aus. Für Geräte ohne physischen Zugang lieber eine endliche Sperrzeit.
+
+### Und das Naheliegende
+
+Nur die **jeweils aktuelle Hauptversion** von Raspberry Pi OS bekommt alle
+Sicherheitsfixes. Der Wechsel Bookworm → Trixie ist damit kein Komfortthema, sondern ein
+Sicherheitsthema – und läuft laut `os-and-software.md` über eine Neuinstallation.
+
+---
+
+## Display und Bildschirmabschaltung
+
+| Modell | Maximum |
+|--------|---------|
+| **Pi 5, 500, 500+, CM5** | **2× 4K bei 60 Hz – ohne zusätzliche Konfiguration** |
+| Pi 4B, 400, CM4 | 2× 4K bei 30 Hz **oder** 1× 4K bei 60 Hz mit `hdmi_enable_4kp60=1` in `config.txt` |
+| Zero-Familie | 1 Display, meist bis 1920 × 1080 |
+
+Kabel **vor** dem Einschalten anstecken – Raspberry Pi OS wählt dann die höchste
+gemeinsam unterstützte Auflösung und Bildrate.
+
+**Ohne Desktop** (Konsolenmodus) wird die Auflösung über den Kernel gesetzt, per
+`video=`-Parameter in `cmdline.txt`.
+
+> ⚠️ **Bookworm war die letzte Version mit `raindrop` und `arandr`.** Anleitungen, die
+> diese Werkzeuge nennen, greifen unter Trixie ins Leere.
+
+**Bildschirmabschaltung** ist per Voreinstellung nach **10 Minuten** Inaktivität aktiv –
+für Info-Displays, Kiosk-Aufbauten und Statusanzeigen abschalten (Control Centre →
+*Display*, oder `raspi-config` → *Display Options*).
+
+---
+
+## Boot-Dateien im Überblick
+
+Die Boot-Partition ist FAT-formatiert und unter Linux als `/boot/firmware/` eingehängt.
+
+| Datei | Zweck |
+|-------|-------|
+| `config.txt` | Firmware-Konfiguration – **Pi 5: darf nicht leer sein** |
+| `cmdline.txt` | Kernel-Kommandozeile (eine Zeile!) |
+| `bootcode.bin` | Bootloader – **entfällt bei Pi 4 und Pi 5** (im EEPROM) |
+| `start*.elf` / `fixup*.dat` | VideoCore-Firmware – **entfällt beim Pi 5** (im EEPROM) |
+| `*.dtb` | Device-Tree-Blobs je Modell |
+| `overlays/` | Overlays plus **`README`** mit allen Parametern |
+| `initramfs*` | Initiale RAM-Disk; unter Trixie ist `auto_initramfs` voreingestellt |
+| `ssh` bzw. `ssh.txt` | Leere Datei genügt – aktiviert SSH beim Booten |
+| `issue.txt` | Datum und Git-Commit der Distribution |
+
+### Kernel-Images
+
+| Datei | Prozessor | Modelle |
+|-------|-----------|---------|
+| `kernel8.img` | BCM2837/2711/2712 | 64-Bit-Kernel für alles ab Pi 2 (spätere Revisionen) |
+| **`kernel_2712.img`** | **BCM2712** | **Pi 5, CM5, Pi 500, 500+ – für den Pi 5 optimiert** |
+| `kernel7l.img` | BCM2711 | Pi 4, CM4, CM4S, Pi 400 (32 Bit, LPAE) |
+| `kernel7.img` | BCM2836/2837 | Zero 2 W, Pi 2/3, CM3 (32 Bit) |
+| `kernel.img` | BCM2835 | Pi Zero, Pi 1, CM1 |
+
+> ⚠️ **`lscpu` meldet auf einem 32-Bit-Kernel `armv7l`, auf einem 64-Bit-Kernel
+> `aarch64`.** Das `l` in `armv7l` steht für **Little Endian**, nicht für LPAE – anders als
+> das `l` im Dateinamen `kernel7l.img`. Für die Prüfung «läuft hier wirklich 64 Bit?» (bei
+> Edge AI zwingend) ist `aarch64` das Kriterium.
+
+---
+
+## Weitere Ressourcen
+
+- [Configuration](https://www.raspberrypi.com/documentation/computers/configuration.html)
+- [config.txt](https://www.raspberrypi.com/documentation/computers/config_txt.html)
+- [Device Trees, Overlays und Parameter](https://www.raspberrypi.com/documentation/computers/configuration.html#device-trees-overlays-and-parameters)
+- `/boot/firmware/overlays/README` – auf dem Gerät, passend zur installierten Firmware
+- [rpi-eeprom](https://github.com/raspberrypi/rpi-eeprom) – Bootloader-Images und Skripte
+- [Raspberry Pi Linux Kernel](https://github.com/raspberrypi/linux) – Quelltexte der Overlays
