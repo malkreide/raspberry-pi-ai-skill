@@ -34,6 +34,20 @@ If you find a bug or have a suggestion:
    - Reference to related issues
    - Examples of the improvement, if applicable
 
+### Releasing (maintainers)
+
+Pushing a `v*` tag publishes a GitHub Release with the built `raspberry-pi-ai.skill`
+attached — this is what the download link in the README resolves to.
+
+```bash
+git checkout main && git pull
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+The release workflow re-runs the validation, rebuilds the package, verifies the build is
+reproducible, and refuses tags that do not point at a commit contained in `main`.
+
 ### Areas for Contributions
 
 We are particularly interested in contributions in these areas:

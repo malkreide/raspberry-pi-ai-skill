@@ -1,0 +1,69 @@
+name: Release
+
+# Veröffentlicht bei einem Tag-Push ein GitHub Release mit der gebauten
+# raspberry-pi-ai.skill als Asset. Damit funktioniert der Download-Link
+# aus dem README (releases/latest/download/raspberry-pi-ai.skill).
+#
+#   git tag v1.1.0 && git push origin v1.1.0
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Dieselben Prüfungen wie in ci.yml. Ein Release darf nie aus einem
+      # Stand entstehen, der die Validierung nicht besteht.
+      - name: Validate committed skill archive
+        run: python3 scripts/validate-skill.py
+
+      - name: Build skill package
+        run: ./scripts/build-skill.sh
+
+      - name: Verify build is reproducible
+        run: |
+          if ! git diff --quiet -- raspberry-pi-ai.skill; then
+            echo "::error::Der Tag zeigt auf einen Stand, dessen eingechecktes Archiv nicht zu den Quellen passt."
+            echo "Bitte './scripts/build-skill.sh' ausführen, committen und neu taggen."
+            exit 1
+          fi
+          echo "Archiv ist reproduzierbar."
+
+      # Der Tag muss auf einem Commit liegen, der in main enthalten ist.
+      # Verhindert, dass ein ungeprüfter Feature-Branch als "latest" veröffentlicht wird.
+      - name: Verify tag is on main
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo "::error::Tag ${GITHUB_REF_NAME} zeigt auf einen Commit, der nicht in main enthalten ist."
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF_NAME} liegt auf main."
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            raspberry-pi-ai.skill \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag

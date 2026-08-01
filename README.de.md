@@ -253,6 +253,22 @@ Vor einem Pull Request lokal ausführen:
 ./scripts/build-skill.sh && python3 scripts/validate-skill.py && shellcheck scripts/*.sh
 ```
 
+### Releases
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) veröffentlicht bei jedem
+`v*`-Tag ein GitHub Release und hängt die gebaute `raspberry-pi-ai.skill` als Asset an.
+Erst dadurch funktioniert der Download-Link oben in diesem README.
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+Vor der Veröffentlichung läuft die vollständige Validierung erneut, das Paket wird neu
+gebaut, die Reproduzierbarkeit geprüft, und es wird kontrolliert, dass der Tag auf einem
+Commit liegt, der in `main` enthalten ist – so kann kein ungeprüfter Feature-Branch zu
+`latest` werden. Die Release Notes entstehen aus den Commits seit dem vorherigen Tag.
+
 ### Beitragen
 
 Contributions sind willkommen! Bitte:
