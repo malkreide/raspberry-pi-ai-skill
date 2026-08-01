@@ -103,6 +103,20 @@ Stapelhöhe ändert sich aber. Masse, Materialfrage und CAD-Daten:
 - **Ollama / grosse Modelle:** 128 GB oder NVMe SSD
 - **Vermeiden:** No-Name SD-Karten (Korruptions-Risiko)
 
+**Offizielle Mindestgrössen nach OS-Variante:**
+
+| OS | Minimum |
+|----|---------|
+| Raspberry Pi OS (Desktop) | 32 GB |
+| Raspberry Pi OS Full | 32 GB |
+| **Raspberry Pi OS Lite** (Headless) | **8 GB** |
+
+Für Edge AI grosszügiger rechnen – Ollama-Modelle und HEF-Dateien füllen 32 GB schnell.
+
+⚠️ **Karten über 2 TB werden nicht unterstützt** (Beschränkung des Master Boot Record).
+Ältere Geräte (Pi Zero, erster Flagship-Pi, frühe Pi 2 mit BCM2836) booten nur von einer
+Boot-Partition ≤ 256 GB. Details: [`setup-provisioning.md`](setup-provisioning.md).
+
 ---
 
 ## Sensoren
@@ -269,6 +283,10 @@ servo.max()   # 180°
 | Adafruit I2S Amp | MAX98357A | 3W, I2S | ~12 | [adafruit.com](https://www.adafruit.com/) |
 | HiFiBerry DAC+ | Audio HAT | Line-Out | ~40 | [hifiberry.com](https://www.hifiberry.com/) |
 | USB-Soundkarte | 3.5mm Jack | USB 2.0 | ~15 | [digitec.ch](https://www.digitec.ch/) |
+
+⚠️ **Der Pi 5 hat keinen 3,5-mm-Klinkenanschluss** – anders als Pi 1 bis 4. Audio läuft
+über USB, I2S oder HDMI. Der TRRS-Anschluss der älteren Modelle liefert zudem nur
+Line-Pegel, keinen Lautsprecherpegel.
 
 ---
 

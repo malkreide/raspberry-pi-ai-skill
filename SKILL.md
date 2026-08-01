@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), oder (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), oder (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz).
 ---
 
 # Raspberry Pi AI Skill
@@ -48,12 +48,19 @@ Vor jeder Implementierung klären:
 Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). Details in `/mnt/skills/user/raspberry-pi-ai/references/debugging-playbook.md`, Abschnitt "Pre-Flight Quick Checks".
 
 **Immer prüfen:**
-- [ ] Netzteil dimensioniert (Pi 5 = 27W USB-C **PD**)
+- [ ] Netzteil dimensioniert (Pi 5 = 27W USB-C **PD**; mit nur 3 A sind Peripheriegeräte auf 600 mA begrenzt)
 - [ ] Active Cooler montiert (Pi 5 obligatorisch bei Dauerlast)
 - [ ] Strombudget: Pi + Peripherie < 80% Netzteil-Kapazität
 - [ ] Python venv (PEP 668 auf Bookworm!)
 - [ ] Umgebungstemperatur im Betrieb bleibt in **0 °C bis 70 °C**
 - [ ] Aufstellung stabil, eben, **nicht leitfähig**; Gehäuse nicht abgedeckt
+
+**Bei Erstaufsetzung / Headless zusätzlich:**
+- [ ] Boot-Medium gross genug (OS Lite 8 GB, Desktop 32 GB) und < 2 TB
+- [ ] **SSH oder Raspberry Pi Connect im Imager aktiviert** – VNC steht beim ersten Boot nicht zur Verfügung
+- [ ] WLAN im Imager konfiguriert (`wpa_supplicant.conf` funktioniert ab Bookworm nicht mehr)
+- [ ] Modell kann das vorhandene WLAN-Band (Zero W, Zero 2 W, Pi 3B: nur 2,4 GHz)
+- [ ] Reihenfolge: Boot-Medium → Peripherie → **zuletzt Strom**
 
 **Bei Pi 5 zusätzlich:**
 - [ ] Mini-CSI-Kabel (22-Pin ≠ Pi 4 Standard 15-Pin)
@@ -150,6 +157,9 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - M.2 HAT+ im Stapel → Systemgrenze sinkt auf 0–50 °C
 - Bit-Banging aus Pi-4-Code → GPIO hängt hinter PCIe (~1 µs pro Zugriff), Hardware oder PIO nutzen
 - Treiberstrom aus einer Pi-4-Anleitung übernommen → Pi 5 kann nur 12 mA
+- Peripherie fällt aus ohne Unterspannungswarnung → Pi 5 an 3-A-Netzteil begrenzt sie auf 600 mA
+- Headless-Pi nicht erreichbar → SSH/Connect nicht im Imager aktiviert, oder `wpa_supplicant.conf` benutzt (ab Bookworm wirkungslos)
+- Monitor bleibt schwarz → nicht an HDMI0, oder Video über USB-C erwartet (gibt es auf keinem Pi)
 
 **Eskalationspfade** (zeitbasiert):
 - 0–15 Min: Isolationsmethode, Logs lesen
@@ -192,6 +202,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 
 **RP1 I/O-Controller (Pad-Grenzwerte, Latenz, Alternativfunktionen, PIO, Interrupts):**
 `/mnt/skills/user/raspberry-pi-ai/references/rp1-gpio.md`
+
+**Setup & Provisionierung (Boot-Medium, Imager, Netzteile, Headless, erster Start):**
+`/mnt/skills/user/raspberry-pi-ai/references/setup-provisioning.md`
 
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`

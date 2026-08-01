@@ -13,6 +13,7 @@ SKILL.md=SKILL.md
 
 references/debugging-playbook.md=debugging-playbook.md
 references/hardware-specs.md=docs/hardware-specs.md
+references/setup-provisioning.md=docs/setup-provisioning.md
 references/mechanical.md=docs/mechanical.md
 references/pcie.md=docs/pcie.md
 references/rp1-gpio.md=docs/rp1-gpio.md
