@@ -28,6 +28,8 @@ This Claude AI Skill supports the systematic development of robust, secure, and 
 - **Mechanics & Enclosures**: Board dimensions, mounting pattern, connector positions,
   official bumper, ambient temperature limits — sourced from the official Raspberry Pi
   product brief and mechanical drawings
+- **PCIe & M.2**: Connector pinout, FFC requirements, sideband signals for custom boards,
+  M.2 HAT+ variants and the stacked ambient-temperature limit
 
 ## 🚀 Quick Start
 
@@ -56,6 +58,7 @@ The skill is automatically activated when you say things like:
 "How do I integrate the Hailo-8L NPU?"
 "Create a build plan for an AI camera"
 "What inner dimensions does my Pi 5 enclosure need?"
+"My Hailo NPU doesn't show up in lspci"
 ```
 
 ## 📚 Documentation
@@ -69,6 +72,7 @@ The skill is automatically activated when you say things like:
 
 - **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 specifications, GPIO pinouts, power budgets, RAM variant selection
 - **[mechanical.md](docs/mechanical.md)** – Board dimensions, mounting pattern, connector positions, official bumper, enclosure and 3D-print checklist
+- **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite setup and best practices
 - **[component-catalog.md](docs/component-catalog.md)** – Recommended components with suppliers
 
@@ -85,6 +89,8 @@ Hardware and mechanical figures are taken from the official Raspberry Pi documen
 | Raspberry Pi 5 Product Brief | RP-008348-DS (April 2026) |
 | Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 |
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
+| Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
+| Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
 
 Mechanical figures are reference values with tolerances and are explicitly not released as
 production data — measure against a physical board for production work.
@@ -120,6 +126,7 @@ Proactive validation of critical parameters:
 - ✅ Ambient temperature within the specified 0 °C to 70 °C
 - ✅ Inductive loads: Flyback diodes for motors/relays
 - ✅ Stable, flat, non-conductive mounting surface; enclosure never covered
+- ✅ PCIe FFC of the opposite-sides-contact type (a same-side cable inserted backwards shorts the board)
 
 ## 🎓 Developed for Education
 
@@ -320,6 +327,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - **Ambient temperature:** The Pi 5 is specified for 0 °C to 70 °C — outdoor winter
   deployments are out of spec
 - **PCIe Gen 3:** Officially the Pi 5 provides PCIe 2.0 x1; Gen 3 is an out-of-spec opt-in
+- **PCIe FFC:** Max 50 mm, impedance-controlled, opposite-sides-contact — a wrong cable can destroy hardware
+- **M.2 HAT+ ambient limit:** 0 °C to 50 °C, lower than the Pi 5 itself — the stack is limited by the HAT
 - **Mechanical dimensions:** Raspberry Pi's drawings are reference values with tolerances
   and are explicitly not released for production data
 

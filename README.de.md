@@ -27,6 +27,8 @@ Dieses Claude AI Skill unterstützt die systematische Entwicklung robuster, sich
 - **Pi 5 Support**: Spezifische Unterstützung für RP1-Chip, PCIe, Mini-CSI, RTC und Power-Button
 - **Mechanik & Gehäuse**: Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper,
   Betriebstemperatur – aus dem offiziellen Product Brief und den Massblättern von Raspberry Pi
+- **PCIe & M.2**: Steckerpinout, FFC-Anforderungen, Sideband-Signale für eigene Platinen,
+  M.2-HAT+-Varianten und die Temperaturgrenze im Stapel
 
 ## 🚀 Schnellstart
 
@@ -55,6 +57,7 @@ Das Skill wird automatisch aktiviert bei:
 "Wie integriere ich den Hailo-8L NPU?"
 "Erstelle mir einen Bauplan für eine KI-Kamera"
 "Welches Innenmass braucht mein Pi-5-Gehäuse?"
+"Mein Hailo-NPU taucht nicht in lspci auf"
 ```
 
 ## 📚 Dokumentation
@@ -68,6 +71,7 @@ Das Skill wird automatisch aktiviert bei:
 
 - **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 Spezifikationen, GPIO-Pinouts, Strombudgets, RAM-Varianten
 - **[mechanical.md](docs/mechanical.md)** – Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper, Gehäuse- und 3D-Druck-Checkliste
+- **[pcie.md](docs/pcie.md)** – PCIe-Pinout, FFC-Anforderungen, Sideband-Signale, Power States, M.2 HAT+
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite Setup und Best Practices
 - **[component-catalog.md](docs/component-catalog.md)** – Empfohlene Komponenten mit Bezugsquellen
 
@@ -84,6 +88,8 @@ Hardware- und Mechanikangaben stammen aus den offiziellen Raspberry-Pi-Dokumente
 | Raspberry Pi 5 Product Brief | RP-008348-DS (April 2026) |
 | Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 |
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
+| Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
+| Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
 
 Mechanische Masse sind Referenzwerte mit Toleranzen und ausdrücklich nicht als
 Produktionsdaten freigegeben – für Serienteile am physischen Board nachmessen.
@@ -119,6 +125,7 @@ Proaktive Validierung kritischer Parameter:
 - ✅ Umgebungstemperatur innerhalb der spezifizierten 0 °C bis 70 °C
 - ✅ Induktive Lasten: Freilaufdioden bei Motoren/Relays
 - ✅ Stabile, ebene, nicht leitfähige Unterlage; Gehäuse nie abgedeckt
+- ✅ PCIe-FFC vom Typ opposite-sides-contact (gleichseitiges Kabel falsch herum = Kurzschluss)
 
 ## 🎓 Entwickelt für Bildung
 
@@ -321,6 +328,10 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
   Winter liegt ausserhalb der Spezifikation
 - **PCIe Gen 3:** Offiziell bietet der Pi 5 PCIe 2.0 x1; Gen 3 ist ein Opt-in ausserhalb
   der Spezifikation
+- **PCIe-FFC:** Max. 50 mm, impedanzkontrolliert, opposite-sides-contact – ein falsches
+  Kabel kann Hardware zerstören
+- **M.2 HAT+ Umgebungsgrenze:** 0 °C bis 50 °C, niedriger als der Pi 5 selbst – im Stapel
+  zählt die Grenze des HAT
 - **Mechanische Masse:** Die Zeichnungen von Raspberry Pi sind Referenzwerte mit Toleranzen
   und ausdrücklich nicht als Produktionsdaten freigegeben
 

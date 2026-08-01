@@ -98,6 +98,8 @@ Problem aufgetreten
 
 Diese Probleme treten **nur** auf dem Pi 5 auf und sind die häufigsten Ursachen für unerklärliches Fehlverhalten.
 
+PCIe-Details (Pinout, FFC-Anforderungen, Sideband-Signale, M.2 HAT+): `pcie.md`.
+
 ### 1. Mini-CSI-Kabelinkompatibilität
 
 **Symptom:** Kamera wird nicht erkannt, `rpicam-hello --list-cameras` zeigt keine Kamera.
@@ -263,6 +265,60 @@ while true; do echo "$(date -Is) $(vcgencmd measure_temp)"; sleep 60; done | tee
   (Pico W / ESP32) als Aussenknoten
 - Über 70 °C bzw. schlecht belüftet: Öffnungen vergrössern, Gehäuse nie abdecken
 - Kondenswasser bei Temperaturwechseln berücksichtigen
+
+### 9. PCIe-FFC: Typ, Länge und der Kurzschluss-Fall
+
+**Symptom:** PCIe-Gerät erscheint nicht in `lspci`, Link-Fehler, sporadische Aussetzer –
+oder im schlimmsten Fall ein toter Pi bzw. HAT nach dem ersten Einschalten.
+
+**Ursachen und Prüfreihenfolge:**
+
+1. **Kabeltyp.** Das FFC muss vom Typ **opposite-sides-contact** sein. Ein Kabel mit
+   gleichseitigen Kontakten ist nicht umkehrbar – falsch herum eingesteckt
+   **kurzschliesst es den Pi 5 und/oder die Zusatzplatine**. Immer das mitgelieferte
+   Kabel verwenden, nie ein Kamera- oder Display-FFC zweckentfremden.
+2. **Länge und Impedanz.** Maximal **50 mm**, differentielle Impedanz **90 Ω ± 10 %**
+   über durchgehender Massefläche. Ein längeres oder unkontrolliertes Kabel führt zu
+   Link-Fehlern, nicht zu «etwas langsamer».
+3. **Sitz.** Beide Enden vollständig eingeschoben, Verriegelung geschlossen.
+4. **Gen-Modus.** Bei AER-Meldungen zuerst auf Gen 2 zurück (siehe Punkt 4 oben).
+
+```bash
+# Ist überhaupt ein Gerät am Bus?
+lspci
+
+# Link-Status und Geschwindigkeit
+sudo lspci -vv | grep -i "LnkSta:"
+# 5GT/s = Gen 2 (spezifiziert), 8GT/s = Gen 3 (Opt-in)
+
+# PCIe-Fehler im Kernel-Log
+dmesg | grep -iE "pcie|aer|link" | tail -30
+```
+
+**Bei Eigenentwicklungen zusätzlich:** `PCIE_DET_WAKE` (Pin 14) muss auf High gezogen
+sein, sonst tastet der Pi den PCIe-Bus beim Booten gar nicht ab und das Gerät erscheint
+nie. Pinout und Beschaltungsregeln stehen in `pcie.md`.
+
+### 10. M.2 HAT+: Temperaturgrenze und Variantenwahl
+
+**Symptom:** Aufbau mit Hailo oder NVMe läuft instabil, ohne dass Unterspannung oder
+SoC-Throttling erkennbar wären.
+
+**Ursache:** Der M.2 HAT+ ist für **0–50 °C Umgebungstemperatur** spezifiziert, der Pi 5
+für 0–70 °C. Für den Stapel gilt die **niedrigere** Grenze. Wer mit den 70 °C des Pi
+rechnet, plant 20 °C zu optimistisch.
+
+```bash
+# SoC-Temperatur (sagt wenig über die Umgebung im Gehäuse aus)
+vcgencmd measure_temp
+
+# Verlauf mitschreiben und mit einem Thermometer im Gehäuse vergleichen
+while true; do echo "$(date -Is) $(vcgencmd measure_temp)"; sleep 60; done | tee thermal.log
+```
+
+**Verwandter Fall – falsche Variante beschafft:** Der **M.2 HAT+ Compact** unterstützt
+**nur 2230**. Ein 2242-Modul passt mechanisch nicht. Die Standard-Variante unterstützt
+2230 und 2242 und bringt den 16-mm-Stacking-Header mit, der über den Active Cooler passt.
 
 ---
 
@@ -619,6 +675,8 @@ Alles aus Beginner + Intermediate, PLUS:
 ☐ HAT-Stacking/PCIe-Konflikte geprüft (Bohrbild 58 × 49 mm, Standoff-Längen)
 ☐ I2C-Adressen kollisionsfrei?
 ☐ PCIe-Modus bewusst gewählt (Gen 2 = Spezifikation, Gen 3 = Opt-in ohne Garantie)
+☐ FFC: mitgeliefertes Kabel, ≤ 50 mm, opposite-sides-contact
+☐ M.2-Formfaktor passt zur HAT-Variante (Compact = nur 2230)
 ☐ Gehäuseausschnitte gegen Steckerpositionen geprüft (mechanical.md)
 ☐ Wayland vs. X11 entschieden
 ☐ Thermal-Monitoring eingerichtet (vcgencmd measure_temp)
@@ -633,7 +691,7 @@ Alles aus Beginner + Intermediate + Advanced, PLUS:
 ☐ RAM-Budget berechnet (8-GB-Pi: alle Modelle + OS < 7.5 GB; 16-GB-Pi: < 15 GB)
 ☐ hailortcli fw-control identify erfolgreich
 ☐ PCIe-Link verifiziert (lspci → 5GT/s Gen 2 bzw. 8GT/s Gen 3)
-☐ Gehäuse-Innentemperatur unter Volllast gemessen (< 70 °C)
+☐ Gehäuse-Innentemperatur unter Volllast gemessen (< 50 °C mit M.2 HAT+, sonst < 70 °C)
 ☐ Alle AI-Modelle einzeln getestet (Whisper, Ollama, YOLO)
 ☐ Audio-Subsystem: USB-Mikrofon statt GPIO-HAT (Stacking-Konflikt!)
 ☐ udev-Regel für USB-Audio erstellt

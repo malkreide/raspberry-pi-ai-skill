@@ -14,6 +14,7 @@ SKILL.md=SKILL.md
 references/debugging-playbook.md=debugging-playbook.md
 references/hardware-specs.md=docs/hardware-specs.md
 references/mechanical.md=docs/mechanical.md
+references/pcie.md=docs/pcie.md
 references/edge-ai.md=docs/edge-ai.md
 references/component-catalog.md=docs/component-catalog.md
 

@@ -162,21 +162,33 @@ Der Hailo-8L ist ein Edge AI Accelerator (Neural Processing Unit) für Raspberry
 - M.2-Modul am PCIe-Anschluss des Pi 5
 - Spezialisiert auf Computer Vision
 
-⚠️ **PCIe-Spezifikation:** Der Product Brief spezifiziert für den Pi 5 **PCIe 2.0 x1**.
-Gen 3 (`dtparam=pciex1_gen=3`) ist ein Opt-in ausserhalb der Spezifikation ohne
-Signalintegritäts-Garantie. Der Hailo-8L läuft auch mit Gen 2 – bei Link-Fehlern,
-sporadischen Aussetzern oder AER-Meldungen in `dmesg` ist **Rückstellen auf Gen 2 der
-erste Schritt**, nicht der letzte.
+⚠️ **PCIe-Spezifikation:** Der Product Brief spezifiziert für den Pi 5 **PCIe 2.0 x1**
+(bis 500 MB/s über den M.2 HAT+). Das Steckerdokument formuliert es unmissverständlich:
+*«Signals can be run at Gen 3 speeds, but this is not officially supported.»*
+Gen 3 (`dtparam=pciex1_gen=3`) ist damit ein Opt-in ohne Signalintegritäts-Garantie.
+Der Hailo-8L läuft auch mit Gen 2 – bei Link-Fehlern, sporadischen Aussetzern oder
+AER-Meldungen in `dmesg` ist **Rückstellen auf Gen 2 der erste Schritt**, nicht der letzte.
 
 ### Hardware-Setup
 
 **Benötigte Komponenten:**
 1. Raspberry Pi 5 (4 GB genügt – das Modell liegt auf der NPU, nicht im RAM)
-2. Hailo M.2 HAT+ (oder AI Kit)
+2. **M.2 HAT+ Standard** (2230 und 2242) oder AI Kit – die **Compact**-Variante
+   unterstützt nur 2230
 3. Hailo-8L M.2 Modul
-4. **Active Cooler** (kritisch!)
+4. **Active Cooler** (kritisch!) – der 16-mm-Stacking-Header des M.2 HAT+ Standard ist
+   genau dafür bemessen, dass der HAT darüber passt
 5. 27W USB-C PD Netzteil
 6. Platz im Gehäuse für den HAT-Stapel → [`mechanical.md`](mechanical.md)
+7. Das **mitgelieferte** FFC-Kabel – max. 50 mm, impedanzkontrolliert, Typ
+   opposite-sides-contact → [`pcie.md`](pcie.md)
+
+⚠️ **Umgebungstemperatur:** Der M.2 HAT+ ist für **0–50 °C** spezifiziert, der Pi 5 für
+0–70 °C. Für den Stapel gilt die niedrigere Grenze – ein Hailo-Aufbau ist ein
+**0–50-°C-System**. Im geschlossenen Gehäuse unter Dauerlast ist das schnell erreicht.
+
+⚠️ **FFC falsch herum = Kurzschluss.** Ein Kabel mit gleichseitigen Kontakten ist nicht
+umkehrbar und beschädigt Pi und/oder HAT. Nie improvisieren, nie verlängern.
 
 **Installation:**
 
