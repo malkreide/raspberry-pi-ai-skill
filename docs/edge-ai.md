@@ -21,7 +21,7 @@ Ollama ermöglicht das lokale Ausführen von Large Language Models (LLMs) auf de
 
 ### Installation
 
-**Raspberry Pi 4/5 (64-bit OS):**
+**Raspberry Pi 4/5 (64-bit OS – zwingend, nicht die 32-Bit-Variante):**
 
 ```bash
 # Ollama installieren

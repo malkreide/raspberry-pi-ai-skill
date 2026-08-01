@@ -239,7 +239,7 @@ verletzt, bevor `vcgencmd measure_temp` auffällig wird.
 
 | Software | Version | Download | Notizen |
 |----------|---------|----------|---------|
-| Raspberry Pi OS | 64-bit Bookworm | [raspberrypi.com](https://www.raspberrypi.com/software/) | Lite oder Desktop |
+| Raspberry Pi OS | 64-bit **Trixie** (aktuell) | [raspberrypi.com](https://www.raspberrypi.com/software/) | Lite oder Desktop |
 | Kernel | 6.6+ | (included) | Für Pi 5 obligatorisch |
 
 ### System-Konfiguration
@@ -293,7 +293,7 @@ pip install numpy opencv-python pillow
 1. **SD-Karte flashen:**
    ```bash
    # Raspberry Pi Imager verwenden
-   # OS: Raspberry Pi OS (64-bit) Bookworm
+   # OS: Raspberry Pi OS (64-bit) Trixie
    # Settings: Hostname, User, WiFi, SSH konfigurieren
    ```
 
@@ -302,7 +302,7 @@ pip install numpy opencv-python pillow
    ssh pi@raspberrypi.local
    
    # System aktualisieren
-   sudo apt update && sudo apt upgrade -y
+   sudo apt update && sudo apt full-upgrade -y   # full-upgrade, nicht upgrade
    
    # Zeitzonen setzen
    sudo timedatectl set-timezone Europe/Zurich
@@ -556,7 +556,8 @@ def check_health():
 ⚠️ **Best Practices:**
 - Niemals `sudo pip install` (PEP 668)
 - Virtual Environment verwenden
-- Regelmässige Updates: `sudo apt update && sudo apt upgrade`
+- Regelmässige Updates: `sudo apt update && sudo apt full-upgrade`
+  (Raspberry Pi OS ändert Abhängigkeiten häufiger als Debian – `upgrade` allein greift zu kurz)
 - SSH-Keys statt Passwörter
 - Firewall aktivieren: `sudo ufw enable`
 

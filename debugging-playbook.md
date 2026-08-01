@@ -101,6 +101,7 @@ Diese Probleme treten **nur** auf dem Pi 5 auf und sind die häufigsten Ursachen
 PCIe-Details (Pinout, FFC-Anforderungen, Sideband-Signale, M.2 HAT+): `pcie.md`.
 RP1-Pads, Latenzverhalten und Alternativfunktionen: `rp1-gpio.md`.
 Boot-Medium, Netzteilwahl, Headless-Provisionierung und erster Start: `setup-provisioning.md`.
+OS-Versionen, Updates, APT, venv und Diagnose-Werkzeuge: `os-and-software.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -141,7 +142,9 @@ dpkg -l | grep lgpio
 
 **Symptom:** `pip install` schlägt fehl mit "externally-managed-environment".
 
-**Ursache:** Raspberry Pi OS Bookworm folgt PEP 668 und blockiert systemweite pip-Installationen.
+**Ursache:** Raspberry Pi OS folgt seit Bookworm (und damit auch unter Trixie) PEP 668
+und blockiert systemweite pip-Installationen. Das ist eine Entscheidung der
+Python-Community, keine von Raspberry Pi.
 
 **Lösung:**
 ```bash
@@ -198,7 +201,7 @@ sporadisch schnell mit Gen 3.
 
 **Symptom:** PyGame zeigt schwarzes Fenster, Latenz bei Display-Output, Fenster wird nicht gerendert.
 
-**Ursache:** Bookworm verwendet standardmässig Wayland (labwc). PyGame und ältere SDL-Anwendungen haben Kompatibilitätsprobleme.
+**Ursache:** Seit Bookworm ist Wayland (labwc) der Standard. PyGame und ältere SDL-Anwendungen haben Kompatibilitätsprobleme.
 
 **Lösung:**
 ```bash
@@ -439,6 +442,80 @@ wenig. Ein 15-W-Netzteil vom Pi 4 ist deshalb kein vollwertiger Ersatz.
 
 **Lösung:** 27-W-Netzteil (5 V / 5 A) verwenden. Zusätzlich das Kabel prüfen – die
 Spannungsangabe gilt **am Stecker**, dünne oder lange USB-C-Kabel fallen hier auf.
+
+### 17. Update greift zu kurz oder Firmware ist kaputt
+
+**Symptom A:** Nach `sudo apt upgrade` sind Pakete weiterhin veraltet, oder ein Treiber
+passt nicht zum Kernel.
+
+**Ursache:** `apt upgrade` lässt Pakete zurück, deren Aktualisierung neue Abhängigkeiten
+oder Entfernungen erfordert. Raspberry Pi OS ändert Abhängigkeiten häufiger als Debian –
+genau diese Fälle treten hier regelmässig auf.
+
+```bash
+sudo apt update
+sudo apt full-upgrade        # nicht 'upgrade'
+```
+
+Meldet der Befehl zu wenig Platz:
+
+```bash
+df -h
+sudo apt clean               # /var/cache/apt/archives leeren
+```
+
+**Symptom B:** Nach `sudo rpi-update` startet das System nicht mehr oder ist instabil.
+
+**Ursache:** `rpi-update` installiert **Vorabversionen** von Kernel und
+VideoCore-Firmware, auf Pi 4/5 auch den EEPROM-Bootloader. Es ist ein Werkzeug für
+Entwicklung und gezielte Bugfixes, nicht für den Alltag.
+
+**Rückweg auf die letzte stabile Firmware:**
+```bash
+sudo apt update
+sudo apt install --reinstall raspi-firmware
+sudo reboot
+```
+
+⚠️ **Nicht zwischen Hauptversionen in-place upgraden.** Der Weg von Bookworm nach Trixie
+läuft über eine **Neuinstallation auf neuem Medium**, nicht über umgebogene Paketquellen.
+Details: `os-and-software.md`.
+
+### 18. `vcgencmd get_mem` zeigt den falschen RAM
+
+**Symptom:** Ein 8-GB-Pi meldet nur rund 1 GB Arbeitsspeicher.
+
+**Ursache:** `vcgencmd get_mem arm` liefert auf Geräten mit mehr als 1 GB immer
+«1 GB minus GPU-Speicher» – die GPU-Firmware kennt nur das erste Gigabyte.
+
+```bash
+vcgencmd get_config total_mem    # tatsächlicher Gesamtspeicher in MB
+free -h                          # oder schlicht das hier
+```
+
+### 19. Audio oder Video landet auf dem falschen Ausgang
+
+**Symptom:** Ton kommt über HDMI statt über die Klinke, oder das Video erscheint auf dem
+falschen Monitor.
+
+**Diagnose und Lösung:**
+```bash
+# Verfügbare Geräte auflisten
+aplay -L | grep sysdefault       # ALSA (Audio)
+kmsprint | grep Connector        # DRM (Video)
+
+# Gezielt ausgeben
+cvlc --play-and-exit -A alsa --alsa-audio-device sysdefault:CARD=Headphones datei.mp3
+cvlc --play-and-exit --drm-vout-display HDMI-A-1 video.mp4
+```
+
+Gerätenamen-Tabellen für alle Modelle: `os-and-software.md`.
+
+**Verwandt – ruckelnde Wiedergabe von Kamera-Aufnahmen:** Ein roher H.264-Stream aus dem
+Kameramodul spielt schlecht ab. In einen Container packen, ohne neu zu codieren:
+```bash
+ffmpeg -r 30 -i video.h264 -c:v copy video.mp4
+```
 
 ---
 

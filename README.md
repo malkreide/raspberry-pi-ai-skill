@@ -75,6 +75,7 @@ The skill is automatically activated when you say things like:
 
 - **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 specifications, GPIO pinouts, power budgets, RAM variant selection
 - **[setup-provisioning.md](docs/setup-provisioning.md)** – Boot media, Imager, power supplies, headless setup, first boot, classroom fleets
+- **[os-and-software.md](docs/os-and-software.md)** – OS versions, updates, APT, venv, media playback, vcgencmd
 - **[mechanical.md](docs/mechanical.md)** – Board dimensions, mounting pattern, connector positions, official bumper, enclosure and 3D-print checklist
 - **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1 pad limits, GPIO latency, alternate functions, PIO, hardware debouncing
@@ -98,6 +99,7 @@ Hardware and mechanical figures are taken from the official Raspberry Pi documen
 | Pi 5 Bumper 3D CAD Data (STEP) | RP-006236-DD-1 |
 | Raspberry Pi 5 3D STEP (with graphics) | RP-010082-CA-1 |
 | Raspberry Pi Documentation – Getting started | raspberrypi.com |
+| Raspberry Pi Documentation – Raspberry Pi OS | raspberrypi.com |
 | Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
 | Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
 | Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) |
@@ -344,6 +346,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - **GPIO latency:** Every access goes over PCIe (~1 µs); bit-banged Pi 4 code is unreliable
 - **Pi 5 peripherals:** A 3 A supply limits attached devices to 600 mA — with no undervoltage warning
 - **No video over USB-C:** The USB-C port is not a display output on any Pi
+- **Major upgrades:** Bookworm → Trixie requires a clean install, not an in-place upgrade
 - **Mechanical dimensions:** Raspberry Pi's drawings are reference values with tolerances
   and are explicitly not released for production data
 
