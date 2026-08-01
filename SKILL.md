@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), oder (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), oder (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd).
 ---
 
 # Raspberry Pi AI Skill
@@ -98,10 +98,14 @@ Für Projekte mit >10 Zeilen Code oder Hardware-Integration: Erstelle `plan.md` 
 ### 5. Implementierung
 
 Software-Standards einhalten:
-- Python: `python3 -m venv .venv --system-site-packages`
+- OS: aktuelle Hauptversion ist **Trixie**, Vorgänger Bookworm – 64-Bit für Edge AI zwingend
+- Updates: `sudo apt update && sudo apt full-upgrade` (**nicht** `upgrade`)
+- Python: `python3 -m venv .venv --system-site-packages`; was es als `python3-*`-Paket
+  gibt, per `apt` installieren statt kompilieren
 - GPIO: `gpiozero` (nicht `RPi.GPIO`)
 - Netzwerk: `nmcli` (nicht `dhcpcd`)
 - I2C/SPI: `smbus2`, `spidev`, Adafruit Blinka
+- Firmware: über `apt`; `rpi-update` nur auf ausdrückliche Empfehlung
 
 Inkrementeller Aufbau (nie Big Bang):
 1. OS-Grundkonfiguration
@@ -125,7 +129,8 @@ Inkrementeller Aufbau (nie Big Bang):
 
 ```bash
 # Power & Thermal
-vcgencmd get_throttled        # 0x0 = OK
+vcgencmd get_throttled        # 0x0 = OK; untere 4 Bits = jetzt, obere 4 = seit Boot
+vcgencmd get_config total_mem # echter Gesamt-RAM (get_mem arm luegt bei >1 GB!)
 vcgencmd measure_temp         # <80°C = OK (SoC, nicht Umgebung!)
 free -h                       # RAM-Situation
 
@@ -160,6 +165,8 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - Peripherie fällt aus ohne Unterspannungswarnung → Pi 5 an 3-A-Netzteil begrenzt sie auf 600 mA
 - Headless-Pi nicht erreichbar → SSH/Connect nicht im Imager aktiviert, oder `wpa_supplicant.conf` benutzt (ab Bookworm wirkungslos)
 - Monitor bleibt schwarz → nicht an HDMI0, oder Video über USB-C erwartet (gibt es auf keinem Pi)
+- `apt upgrade` statt `full-upgrade` → Pakete bleiben zurück
+- `vcgencmd get_mem arm` als RAM-Prüfung → meldet auf >1-GB-Geräten immer ~1 GB
 
 **Eskalationspfade** (zeitbasiert):
 - 0–15 Min: Isolationsmethode, Logs lesen
@@ -206,6 +213,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 **Setup & Provisionierung (Boot-Medium, Imager, Netzteile, Headless, erster Start):**
 `/mnt/skills/user/raspberry-pi-ai/references/setup-provisioning.md`
 
+**Raspberry Pi OS (Versionen, Updates, APT, venv, Medien, vcgencmd):**
+`/mnt/skills/user/raspberry-pi-ai/references/os-and-software.md`
+
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`
 
@@ -226,6 +236,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 - **Mechanische Masse sind Referenzwerte.** Die Zeichnungen von Raspberry Pi sind
   ausdrücklich nicht für Produktionsdaten freigegeben und unterliegen Toleranzen. Für
   Serienfertigung oder passgenaue Gehäuse: am physischen Board nachmessen.
+- **Major-Upgrades nur per Neuinstallation.** Der Weg von Bookworm nach Trixie läuft über
+  ein neues Boot-Medium, nicht über umgebogene Paketquellen. Daraus folgt: Setup-Schritte
+  müssen reproduzierbar dokumentiert sein, sonst ist jedes Upgrade ein Wiederaufbau.
 - **Bei Widersprüchen zwischen Quellen: die bemasste Zeichnung schlägt das CAD-Modell.**
   Das offizielle 3D-Modell des Pi 5 ist laut eigener Lizenz «guidance only» und weicht
   bei den Micro-HDMI-Positionen um ~6,8 mm von der Zeichnung ab. Widersprüche benennen,
