@@ -1,15 +1,32 @@
 name: Release
 
-# Veröffentlicht bei einem Tag-Push ein GitHub Release mit der gebauten
-# raspberry-pi-ai.skill als Asset. Damit funktioniert der Download-Link
-# aus dem README (releases/latest/download/raspberry-pi-ai.skill).
+# Veröffentlicht die gebaute raspberry-pi-ai.skill als Release-Asset. Damit
+# funktioniert der Download-Link aus dem README
+# (releases/latest/download/raspberry-pi-ai.skill).
 #
-#   git tag v1.1.0 && git push origin v1.1.0
+# Zwei Wege führen hierher:
+#
+#   1. Tag pushen – der Workflow legt das Release an:
+#        git tag v1.1.0 && git push origin v1.1.0
+#
+#   2. Release über die GitHub-Oberfläche anlegen ("Create new tag on publish").
+#      Dabei existiert das Release bereits, wenn der Workflow startet – er hängt
+#      dann nur noch das Asset an.
+#
+# Für ein Tag, dessen Lauf fehlgeschlagen ist oder das älter als dieser
+# Workflow ist, lässt sich der Job manuell nachziehen:
+#   Actions → Release → Run workflow → Tag eintragen
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Bestehendes Tag, das veröffentlicht werden soll (z.B. v1.0.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -19,10 +36,14 @@ jobs:
     name: Build & Publish Release
     runs-on: ubuntu-latest
 
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -41,29 +62,44 @@ jobs:
       - name: Verify build is reproducible
         run: |
           if ! git diff --quiet -- raspberry-pi-ai.skill; then
-            echo "::error::Der Tag zeigt auf einen Stand, dessen eingechecktes Archiv nicht zu den Quellen passt."
+            echo "::error::${RELEASE_TAG} zeigt auf einen Stand, dessen eingechecktes Archiv nicht zu den Quellen passt."
             echo "Bitte './scripts/build-skill.sh' ausführen, committen und neu taggen."
             exit 1
           fi
           echo "Archiv ist reproduzierbar."
 
-      # Der Tag muss auf einem Commit liegen, der in main enthalten ist.
-      # Verhindert, dass ein ungeprüfter Feature-Branch als "latest" veröffentlicht wird.
+      # Das Tag muss auf einem Commit liegen, der in main enthalten ist.
+      # Verhindert, dass ein ungeprüfter Feature-Branch als "latest" erscheint.
+      # Bezugspunkt ist der ausgecheckte HEAD, nicht GITHUB_SHA – bei einem
+      # manuellen Lauf zeigt GITHUB_SHA auf den Branch, nicht auf das Tag.
       - name: Verify tag is on main
         run: |
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
-            echo "::error::Tag ${GITHUB_REF_NAME} zeigt auf einen Commit, der nicht in main enthalten ist."
+          head_sha=$(git rev-parse HEAD)
+          if ! git merge-base --is-ancestor "$head_sha" refs/remotes/origin/main; then
+            echo "::error::${RELEASE_TAG} zeigt auf ${head_sha}, das nicht in main enthalten ist."
             exit 1
           fi
-          echo "Tag ${GITHUB_REF_NAME} liegt auf main."
+          echo "${RELEASE_TAG} liegt auf main."
 
-      - name: Create release
+      # Idempotent: Wurde das Release über die GitHub-Oberfläche angelegt,
+      # existiert es beim Start des Workflows bereits. Dann nur das Asset
+      # anhängen und vorhandene Metadaten (Titel, Notes) unangetastet lassen.
+      - name: Publish release asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            raspberry-pi-ai.skill \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes \
-            --verify-tag
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            echo "Release $RELEASE_TAG existiert bereits – hänge das Asset an."
+            gh release upload "$RELEASE_TAG" raspberry-pi-ai.skill --clobber
+          else
+            echo "Lege Release $RELEASE_TAG an."
+            gh release create "$RELEASE_TAG" \
+              raspberry-pi-ai.skill \
+              --title "$RELEASE_TAG" \
+              --generate-notes \
+              --verify-tag
+          fi
+
+          echo "Assets des Releases:"
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name'

@@ -265,10 +265,16 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
+Creating the release through the GitHub web UI ("Create new tag on publish") works too —
+the workflow then finds the release already there and only attaches the asset, leaving the
+title and notes you wrote untouched.
+
 Before publishing, the workflow re-runs the full validation, rebuilds the package, verifies
 the build is reproducible, and checks that the tag points at a commit contained in `main` —
-so an unreviewed feature branch cannot become `latest`. Release notes are generated from the
-commits since the previous tag.
+so an unreviewed feature branch cannot become `latest`.
+
+If a run failed, or a tag predates this workflow, publish it manually:
+**Actions → Release → Run workflow → enter the tag**.
 
 ### Contributing
 
