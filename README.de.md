@@ -94,6 +94,7 @@ Hardware- und Mechanikangaben stammen aus den offiziellen Raspberry-Pi-Dokumente
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
 | Raspberry Pi Bumper Product Brief | RP-008144-DS-1 (Oktober 2024) |
 | Pi 5 Bumper 3D CAD Data (STEP) | RP-006236-DD-1 |
+| Raspberry Pi 5 3D STEP (with graphics) | RP-010082-CA-1 |
 | Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
 | Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
 | Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) |

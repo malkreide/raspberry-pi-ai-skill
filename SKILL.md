@@ -72,6 +72,7 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 - [ ] Platzbedarf mit **88 × 56 mm** gerechnet (85 mm Platine + 3 mm Buchsenüberstand)
 - [ ] Mit offiziellem Bumper: **89,6 × 60,6 × 10 mm**, Platine um die Bodenstärke höher
 - [ ] Bohrbild 58 × 49 mm, Ø 2,7 mm (M2.5), isolierende Standoffs
+- [ ] Innenhöhe: ~19 mm für die nackte Platine, plus Cooler/HAT
 - [ ] Belüftung sichergestellt (offizielle Warnung: Gehäuse nie abdecken)
 
 ### 3. Plan erstellen (Level 2+)
@@ -212,6 +213,10 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 - **Mechanische Masse sind Referenzwerte.** Die Zeichnungen von Raspberry Pi sind
   ausdrücklich nicht für Produktionsdaten freigegeben und unterliegen Toleranzen. Für
   Serienfertigung oder passgenaue Gehäuse: am physischen Board nachmessen.
+- **Bei Widersprüchen zwischen Quellen: die bemasste Zeichnung schlägt das CAD-Modell.**
+  Das offizielle 3D-Modell des Pi 5 ist laut eigener Lizenz «guidance only» und weicht
+  bei den Micro-HDMI-Positionen um ~6,8 mm von der Zeichnung ab. Widersprüche benennen,
+  statt eine Quelle stillschweigend zu bevorzugen.
 - **Fehlende Masse nicht schätzen.** Werte, die in keiner Quelle stehen (Platinendicke,
   Header-Höhe, Cooler-Höhe), nachmessen lassen und den Messwert im `plan.md` dokumentieren.
 

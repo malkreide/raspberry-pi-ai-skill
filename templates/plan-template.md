@@ -174,6 +174,8 @@ Die verbreiteten 16 mA stammen vom Pi 4. Siehe `rp1-gpio.md`.
 | Realer Fussabdruck (Buchsen ragen 3 mm über) | **88 × 56 mm** | [Gehäuse-Innenmass] |
 | Mit offiziellem Bumper | **89,6 × 60,6 × 10 mm** | [ja/nein] |
 | Bohrbild | 58 × 49 mm, Ø 2,7 mm (M2.5) | [Standoff-Typ] |
+| Bauhöhe der nackten Platine | ~19 mm (CAD-Anhaltswert) | – |
+| 40-Pin-Header über der Platine | ~8,6 mm (CAD-Anhaltswert) | – |
 | Bauhöhe des Stapels | Platine + HAT + Cooler | [gemessen: __ mm] |
 
 ### Gehäuse & Montage
@@ -199,6 +201,10 @@ Die verbreiteten 16 mA stammen vom Pi 4. Siehe `rp1-gpio.md`.
 
 Ausschnitthöhe an der Anschlusskante ≥ 4,4 mm über der Platinenoberseite.
 Toleranzzugabe: +0,5 mm (Spritzguss) bzw. +0,8–1,0 mm (FDM-Druck) pro Seite.
+
+⚠️ Diese Werte stammen aus der bemassten Zeichnung. Das offizielle CAD-Modell weicht bei
+den beiden Micro-HDMI um ~6,8 mm ab – für Ausschnitte gilt die Zeichnung, und vor dem
+finalen Zuschnitt am Board nachmessen. Siehe `mechanical.md`.
 
 ### PCIe-Zubehör (falls M.2 HAT+, NVMe oder NPU)
 

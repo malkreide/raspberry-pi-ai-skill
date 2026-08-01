@@ -460,5 +460,10 @@ Kurzfassung für die Beschaffung von Halterungen:
 |--------|------|
 | Platine | 85 × 56 mm |
 | Realer Platzbedarf (Buchsenüberstand 3 mm) | 88 × 56 mm |
-| Mit offiziellem Bumper | 89,6 × 60,6 mm |
+| Mit offiziellem Bumper | 89,6 × 60,6 × 10 mm |
 | Bohrbild | 58 × 49 mm, Ø 2,7 mm, M2.5 |
+| Bauhöhe der nackten Platine | ~19 mm (CAD-Anhaltswert) |
+
+Raspberry Pi stellt ein **MIT-lizenziertes STEP-Modell des Boards** bereit – für
+Passformprüfungen die beste Quelle. Für bemasste Ausschnitte gilt weiterhin die
+Zeichnung: Modell und Zeichnung widersprechen sich bei den Micro-HDMI-Positionen.
