@@ -8,6 +8,8 @@ Grundlage dieser Referenz sind die offiziellen Raspberry-Pi-Dokumente:
 | Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 | Platinenmasse, Bohrbild, Steckerpositionen, Höhenprofil |
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1, 28.06.2024) | Offizieller Bumper (Unterschale), Teil RP-006236-DD-1 |
 | Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) | Offizielles Gehäuse mit Aktivlüfter |
+| Raspberry Pi Bumper Product Brief | RP-008144-DS-1 (Oktober 2024) | Bumper: Nennmasse, Material, Preis, Warnungen |
+| Pi 5 Bumper 3D CAD Data | RP-006236-DD-1 (STEP, 28.06.2024) | 3D-Modell des Bumpers |
 
 > ⚠️ **Verbindlichkeitshinweis (aus den Zeichnungen selbst):**
 > Alle Masse sind Näherungswerte und dienen nur als Referenz. Sie dürfen **nicht** als
@@ -140,27 +142,50 @@ mindestens bis **4,4 mm über der Platinenoberseite** frei sein.
 
 ## Offizieller Bumper
 
-Der Raspberry Pi 5 Bumper (Teil **RP-006236-DD-1**) ist eine aufsteckbare Unterschale aus
-**TPE**, die die Platinenunterseite abdeckt und die Lötseite gegen leitfähige Oberflächen
-isoliert. Sie liegt vielen Pi-5-Bundles bei und wird oft übersehen, obwohl sie die
+Der Raspberry Pi Bumper für Raspberry Pi 5 (Teil **RP-006236-DD-1**) ist eine
+**aufsteckbare, einteilige, flexible Schutzhülle**, die **Unterseite und Kanten** der
+Platine schützt. Sie liegt vielen Pi-5-Bundles bei und wird oft übersehen, obwohl sie die
 Aussenmasse verändert.
+
+| Eigenschaft | Wert |
+|-------------|------|
+| Listenpreis | **$3** |
+| Produktionszusage | mindestens bis **Januar 2036** |
+| Power-Button | bleibt zugänglich |
+| Befestigungsbohrungen | bleiben **unter dem Bumper zugänglich** |
 
 ### Masse
 
-| Mass | Wert |
-|------|------|
-| Aussenmass | **89,6 mm × 60,6 mm** |
-| Gesamthöhe (inkl. mittlerer Erhebung) | **7,0 mm** |
-| Höhe am Rand | **5,1 mm** |
-| Innenkontur | 84,3 mm / 84,7 mm × 55,6 mm / 56,2 mm |
-| Wandstärke (Schnitt C-C) | **2,20 mm** |
-| Dome/Randhöhe (Schnitte A-A / C-C) | 5,30 mm bzw. 5,55 mm |
-| Auflagedome | Ø 2,80 mm typ., Höhe 4,30 mm / 3,80 mm typ. |
-| Bohrbild der Dome | **58,00 mm × 49,00 mm** (deckungsgleich mit der Platine) |
-| Weitere Masse | 54,1 mm, 10,0 mm, 11,3 mm, 2,20 mm |
-| Material | **TPE** |
+| Mass | Wert | Quelle |
+|------|------|--------|
+| Aussenmass | **89,6 × 60,6 mm** | Product Brief & Massblatt |
+| ↳ gegengerechnet am CAD-Modell | 89,584 × 60,584 mm | STEP-Datei |
+| **Nennhöhe** | **10 mm** | Product Brief |
+| ↳ CAD-Bounding-Box (höchste Merkmale) | 11,30 mm | STEP-Datei |
+| Innenkontur | 84,3 / 84,7 mm × 55,6 / 56,2 mm | Massblatt |
+| Wandstärke (Schnitt C-C) | 2,20 mm | Massblatt |
+| Teilmasse aus den Schnitten | 5,1 / 5,30 / 5,55 / 7,0 mm | Massblatt |
+| Auflagedome | Ø 2,80 mm typ., Höhe 4,30 / 3,80 mm typ. | Massblatt |
+| Bohrbild der Dome | **58,00 × 49,00 mm** (deckungsgleich mit der Platine) | Massblatt |
 
-### Toleranzen laut Zeichnung
+> ⚠️ **Die Werte 5,1 mm und 7,0 mm sind Teilmasse aus den Schnittdarstellungen, nicht die
+> Gesamthöhe.** Für Gehäuse- und Stapelrechnungen gilt die Nennhöhe von **10 mm** aus dem
+> Product Brief; das CAD-Modell misst über die höchsten Merkmale 11,30 mm.
+
+### Widersprüchliche Materialangabe
+
+| Dokument | Angabe |
+|----------|--------|
+| Massblatt RP-006237-DD-1 (28.06.2024) | **TPE** |
+| Product Brief RP-008144-DS-1 (Oktober 2024) | **Silikon** |
+
+Beide Dokumente sind offiziell und widersprechen sich. ➜ **Keine Annahmen über
+Temperaturbeständigkeit, Chemikalienverträglichkeit oder Brandverhalten auf diese Angabe
+stützen.** Wo das Material zählt, beim Hersteller nachfragen. Für die üblichen Zwecke
+(Isolation gegen leitfähige Tischflächen, mechanischer Schutz) ist die Unterscheidung ohne
+Belang – beide sind Elastomere und thermische Isolatoren.
+
+### Toleranzen laut Massblatt
 
 | Angabe | Toleranz |
 |--------|----------|
@@ -173,17 +198,37 @@ Aussenmasse verändert.
 
 1. **Gehäuseinnenmass:** Mit Bumper braucht der Pi **89,6 × 60,6 mm** statt 85 × 56 mm.
    Ein Gehäuse, das exakt auf die Platine ausgelegt ist, passt mit Bumper nicht mehr.
-2. **Bauhöhe:** Der Bumper legt die Platine ca. **2,2 mm** höher (Wandstärke unter der
-   Platine). Bei Frontplatten und Steckerausschnitten muss dieser Versatz eingerechnet
-   werden, sonst sitzen USB-C und HDMI zu tief.
-3. **HAT-Stacking:** Die Standard-Abstandshalter der HAT-Kits sind auf die nackte Platine
-   ausgelegt. Bei aufgestecktem Bumper stimmen weder Schraubenlänge noch
-   Header-Eingriffstiefe – **Bumper vor der HAT-Montage entfernen** oder längere
-   Standoffs verwenden.
-4. **Thermik:** TPE ist ein Isolator. Der Bumper behindert die Wärmeabgabe nach unten;
-   bei Dauerlast (Hailo, Ollama) ist der Active Cooler damit noch wichtiger.
+2. **Bauhöhe:** Mit **10 mm** rechnen (Nennhöhe), bei engen Konstruktionen mit den
+   11,3 mm des CAD-Modells. Die Wandstärke unter der Platine beträgt laut Schnitt C-C
+   2,20 mm – Frontplatten und Steckerausschnitte müssen diesen Versatz einrechnen, sonst
+   sitzen USB-C und HDMI zu tief.
+3. **Befestigung:** Die Bohrungen bleiben **unter dem Bumper zugänglich** – Verschrauben
+   ist also möglich, ohne ihn abzunehmen. Die Gesamthöhe des Stapels ändert sich dennoch;
+   Standoff-Längen und Gehäusehöhe entsprechend nachrechnen.
+4. **Thermik:** Elastomere sind Isolatoren. Der Bumper behindert die Wärmeabgabe nach
+   unten; bei Dauerlast (Hailo, Ollama) ist der Active Cooler damit noch wichtiger.
 5. **Nicht mit Kühlkörper-Cases kombinieren:** Alu-Gehäuse (Flirc, Argon) setzen auf der
    nackten Platine auf.
+
+### Montage
+
+> ⚠️ **Vor dem Einsetzen des Raspberry Pi 5 in den Bumper die SD-Karte entfernen.**
+> Beim Einsetzen vorsichtig vorgehen. (Offizielle Warnung im Product Brief.)
+
+Der Bumper ist **ausschliesslich für den Raspberry Pi 5** vorgesehen.
+
+### CAD-Daten
+
+Raspberry Pi stellt für den Bumper ein **STEP-Modell** bereit
+(`RP-006236-DD-1-Bumper 3D CAD.STEP`, AP203, erstellt 28.06.2024).
+
+Für Gehäusekonstruktion ist das die belastbarere Quelle als abgemessene Zeichnungswerte:
+Die Grundfläche des Modells stimmt mit **89,584 × 60,584 mm** bis auf 0,02 mm mit der
+gerundeten Zeichnungsangabe überein. Wer eine Aussparung oder Halterung konstruiert,
+sollte das Modell direkt importieren, statt Masse aus dem PDF zu übernehmen.
+
+➜ Der Verbindlichkeitshinweis oben gilt weiterhin: auch CAD-Daten sind Referenzwerte mit
+Toleranzen und keine Produktionsfreigabe.
 
 ---
 

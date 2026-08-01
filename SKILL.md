@@ -70,7 +70,7 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 
 **Bei Gehäuse, Halterung oder HAT-Stapel zusätzlich:**
 - [ ] Platzbedarf mit **88 × 56 mm** gerechnet (85 mm Platine + 3 mm Buchsenüberstand)
-- [ ] Mit offiziellem Bumper: **89,6 × 60,6 mm**, Platine ~2,2 mm höher
+- [ ] Mit offiziellem Bumper: **89,6 × 60,6 × 10 mm**, Platine um die Bodenstärke höher
 - [ ] Bohrbild 58 × 49 mm, Ø 2,7 mm (M2.5), isolierende Standoffs
 - [ ] Belüftung sichergestellt (offizielle Warnung: Gehäuse nie abdecken)
 
@@ -143,7 +143,7 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - PCIe Gen 3 aktiviert, obwohl nur Gen 2 spezifiziert ist → bei Instabilität zurückstellen
 - Wayland/X11-Konflikte (PyGame, SDL)
 - HAT-Stacking mit M.2 HAT+ (USB-Audio bevorzugen)
-- Bumper montiert → HAT-Standoffs und Gehäuseausschnitte passen nicht mehr
+- Bumper montiert → Gehäuseausschnitte und Stapelhöhe stimmen nicht mehr (Bohrungen bleiben zugänglich)
 - Umgebungstemperatur ausserhalb 0–70 °C (Aussenprojekte im Winter, Schaltschrank)
 - FFC zu lang, falscher Typ oder nicht ganz eingerastet → PCIe-Gerät fehlt oder ist instabil
 - M.2 HAT+ im Stapel → Systemgrenze sinkt auf 0–50 °C

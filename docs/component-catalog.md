@@ -51,7 +51,7 @@ sind Richtwerte für den Schweizer Endkundenhandel.
 |------------|---------------|-------------|--------------|
 | **Official Active Cooler (Pi 5)** | PWM-Lüfter, ~0.6W | ~8 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | **Official Raspberry Pi Case (Pi 5)** | 98.5 × 70.3 × 33 mm, Aktivlüfter 8000 U/min, ABS/PC | ~12 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| **Official Pi 5 Bumper** | TPE-Unterschale, 89.6 × 60.6 × 7.0 mm | ~5 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| **Official Pi 5 Bumper** | Aufsteckbare Schutzhülle, 89.6 × 60.6 × 10 mm ($3 Listenpreis) | ~5 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | Argon NEO 5 Case | Passiv-Kühlung, Alu | ~30 | [argon40.com](https://argon40.com/) |
 | Pimoroni Heatsink Case | Passiv-Kühlung, Low-Profile | ~25 | [pimoroni.com](https://shop.pimoroni.com/) |
 | Flirc Raspberry Pi 5 Case | Passiv-Kühlung, Alu | ~35 | [flirc.tv](https://flirc.tv/) |
@@ -68,10 +68,13 @@ sind Richtwerte für den Schweizer Endkundenhandel.
 GPIO-Header-Verlängerungen** montieren – beides ist **nicht im Lieferumfang**. Für M.2 auf
 das offizielle Gehäuse ist der **M.2 HAT+ Compact** vorgesehen (nur 2230).
 
-⚠️ **Bumper und Gehäuse schliessen sich meist aus.** Der Bumper vergrössert den
-Fussabdruck auf **89,6 × 60,6 mm** und hebt die Platine um ~2,2 mm an. Alu-Kühlgehäuse
-setzen dagegen auf der nackten Platine auf, und HAT-Standoffs passen mit Bumper nicht mehr.
-Masse und Konsequenzen: [`mechanical.md`](mechanical.md).
+⚠️ **Bumper und Kühlgehäuse schliessen sich aus.** Der Bumper vergrössert den Fussabdruck
+auf **89,6 × 60,6 mm** bei **10 mm** Nennhöhe. Alu-Kühlgehäuse setzen dagegen auf der
+nackten Platine auf. Die Befestigungsbohrungen bleiben unter dem Bumper zugänglich, die
+Stapelhöhe ändert sich aber. Masse, Materialfrage und CAD-Daten:
+[`mechanical.md`](mechanical.md).
+
+ℹ️ **Vor dem Einsetzen die SD-Karte entfernen** (offizielle Warnung im Product Brief).
 
 ### Zubehör Stromversorgung & Zeit
 

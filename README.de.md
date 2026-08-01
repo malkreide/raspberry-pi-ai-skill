@@ -92,6 +92,8 @@ Hardware- und Mechanikangaben stammen aus den offiziellen Raspberry-Pi-Dokumente
 | Raspberry Pi 5 Product Brief | RP-008348-DS (April 2026) |
 | Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 |
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
+| Raspberry Pi Bumper Product Brief | RP-008144-DS-1 (Oktober 2024) |
+| Pi 5 Bumper 3D CAD Data (STEP) | RP-006236-DD-1 |
 | Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
 | Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
 | Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) |
@@ -177,7 +179,7 @@ except KeyboardInterrupt:
 **Claude (mit Skill):**
 
 - Innenmass ≥ **88 × 56 mm** (85 mm Platine + 3 mm Steckerüberstand)
-- Mit offiziellem Bumper: **89,6 × 60,6 mm**, Platine sitzt ~2,2 mm höher
+- Mit offiziellem Bumper: **89,6 × 60,6 × 10 mm**
 - Bohrbild **58 × 49 mm**, Ø 2,7 mm (M2.5), 3,5 mm von den Kanten
 - Ausschnittmitten: USB-C 11,2 mm, HDMI 0 25,8 mm, HDMI 1 39,2 mm ab linker Kante
 - FDM-Toleranz: +0,8–1,0 mm pro Seite

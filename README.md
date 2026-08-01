@@ -93,6 +93,8 @@ Hardware and mechanical figures are taken from the official Raspberry Pi documen
 | Raspberry Pi 5 Product Brief | RP-008348-DS (April 2026) |
 | Raspberry Pi 5 Mechanical Drawing | RP-008347-DS-1 |
 | Raspberry Pi 5 Bumper Mechanical Drawing | RP-006237-DD-1 (Rev. 1) |
+| Raspberry Pi Bumper Product Brief | RP-008144-DS-1 (October 2024) |
+| Pi 5 Bumper 3D CAD Data (STEP) | RP-006236-DD-1 |
 | Raspberry Pi Connector for PCIe | RP-008298-DS-1 (Rev. 1.1) |
 | Raspberry Pi M.2 HAT+ Product Brief | RP-009234-MM-1 (September 2025) |
 | Raspberry Pi Case for Raspberry Pi 5 | RP-008159-DS-1 (April 2024) |
@@ -178,7 +180,7 @@ except KeyboardInterrupt:
 **Claude (with skill):**
 
 - Inner dimensions ≥ **88 × 56 mm** (85 mm board + 3 mm connector overhang)
-- With the official bumper: **89.6 × 60.6 mm**, board sits ~2.2 mm higher
+- With the official bumper: **89.6 × 60.6 × 10 mm**
 - Mounting pattern **58 × 49 mm**, Ø 2.7 mm (M2.5), 3.5 mm from the edges
 - Cutout centres: USB-C 11.2 mm, HDMI 0 25.8 mm, HDMI 1 39.2 mm from the left edge
 - FDM tolerance: add 0.8–1.0 mm per side
