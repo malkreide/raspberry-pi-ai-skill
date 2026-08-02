@@ -795,3 +795,4 @@ vcgencmd get_config str          # alle gesetzten Zeichenketten
 - [rpi-eeprom](https://github.com/raspberrypi/rpi-eeprom) – EEPROM-Konfiguration und `PSU_MAX_CURRENT`
 - [usbboot](https://github.com/raspberrypi/usbboot) – RPIBOOT, `boot.img`, Secure-Boot-Tutorial
 - `/boot/firmware/overlays/README` – auf dem Gerät, passend zur installierten Firmware
+- `kernel.md` – eigene Kernel bauen und über `kernel=` gefahrlos auswählen

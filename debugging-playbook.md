@@ -104,6 +104,7 @@ Boot-Medium, Netzteilwahl, Headless-Provisionierung und erster Start: `setup-pro
 OS-Versionen, Updates, APT, venv und Diagnose-Werkzeuge: `os-and-software.md`.
 `raspi-config`, Device Tree, Bootloader, fstab und Firewall: `configuration.md`.
 Dateiformat von `config.txt`, bedingte Filter, A/B-Boot, Watchdog: `config-txt.md`.
+Kernel-Header, Kernelmodule, eigene Kernel-Builds und Patches: `kernel.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -702,6 +703,45 @@ Pflanzenüberwachung mit Edge AI der entscheidende Schalter.
 
 Verwandt: `disable_camera_led=1` verhindert, dass sich die rote LED in einer Scheibe oder
 im Gehäuse spiegelt und die Erkennung stört.
+
+---
+
+### 27. Hardware ist nach einem Update verschwunden
+
+**Symptom:** Nach `full-upgrade` und Neustart wird ein Beschleuniger, CAN-Adapter oder
+WLAN-Stick nicht mehr erkannt. Vorher lief alles. Es gibt keine Fehlermeldung – das Gerät
+fehlt einfach.
+
+**Ursache:** Der Treiber ist ein **Kernelmodul aus einer externen Quelle**. Ein neuer
+Kernel bringt ein neues Modulverzeichnis mit; das alte Modul passt nicht mehr. Wird es
+über DKMS automatisch neu gebaut, scheitert das **still**, sobald die Kernel-Header nicht
+zum laufenden Kernel passen – und nach einem Kernel-Update kann es **Wochen** dauern, bis
+das Header-Paket in `apt` nachzieht.
+
+**Diagnose:**
+```bash
+uname -r                                  # laufender Kernel
+ls /lib/modules/                          # wofür Module installiert sind
+dpkg -l 'linux-headers-*' | grep ^ii      # welche Header installiert sind
+modprobe <modul>                          # lädt es überhaupt? Fehlermeldung lesen
+dkms status                               # Zustand der DKMS-Module
+sudo dmesg | grep -i -E "module|taint"
+```
+
+**Behebung:**
+```bash
+sudo apt install linux-headers-rpi-v8     # 64 Bit; dauert Minuten ohne Anzeige
+sudo dkms autoinstall
+sudo reboot
+```
+
+➜ **Richtige Reihenfolge beim Aufsetzen:** aktualisieren → **neu starten** → Header
+installieren → Modul bauen. Wer nach dem Modulbau noch aktualisiert, fängt von vorne an.
+
+➜ **Für Feldgeräte ist das ein Argument gegen automatische Updates.** Ein unbeaufsichtigtes
+`full-upgrade` kann genau die Hardware abschalten, für die das Gerät gebaut wurde. Entweder
+Kernel-Updates zurückhalten oder über A/B-Boot absichern (`config-txt.md`). Mehr zu
+Headern, Modulen und eigenen Kernel-Builds in `kernel.md`.
 
 ---
 

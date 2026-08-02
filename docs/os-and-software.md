@@ -422,6 +422,7 @@ automatisch ein gesprochener Hinweis ab, wie Orca installiert wird.
 
 ## Weitere Ressourcen
 
+- `kernel.md` – Kernel-Header für Kernelmodule, eigene Builds, Patches, Beitragswege
 - [Raspberry Pi OS](https://www.raspberrypi.com/documentation/computers/os.html)
 - [gpiozero](https://gpiozero.readthedocs.io/)
 - [piwheels](https://www.piwheels.org/) – vorkompilierte Python-Wheels für den Pi
