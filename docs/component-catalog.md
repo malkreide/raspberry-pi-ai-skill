@@ -22,27 +22,24 @@ Empfohlene Komponenten für Raspberry Pi Projekte mit Bezugsquellen (Schweiz/Eur
 
 | Komponente | Spezifikation | Listenpreis (USD) | Preis (CHF) | Bezugsquelle |
 |------------|---------------|-------------------|-------------|--------------|
-| **Raspberry Pi 5 (16 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $305 | ~250 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
-| **Raspberry Pi 5 (8 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $175 | ~120 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
-| **Raspberry Pi 5 (4 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $110 | ~90 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| Raspberry Pi 5 (2 GB) | BCM2712, 4× A76 @ 2.4 GHz | $65 | ~55 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| Raspberry Pi 5 (1 GB) | BCM2712, 4× A76 @ 2.4 GHz | $45 | ~40 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| Raspberry Pi 4 (8 GB) | BCM2711, 4× A72 @ 1.8 GHz | – | ~100 | [pi-shop.ch](https://www.pi-shop.ch/) |
-| Raspberry Pi 4 (4 GB) | BCM2711, 4× A72 @ 1.8 GHz | – | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| **Raspberry Pi 5 (16 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $120 | ~130 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
+| **Raspberry Pi 5 (8 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $80 | ~90 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
+| **Raspberry Pi 5 (4 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $60 | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 5 (2 GB) | BCM2712, 4× A76 @ 2.4 GHz | $50 | ~60 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 4 (8 GB) | BCM2711, 4× A72 @ 1.8 GHz | $75 | ~100 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 4 (4 GB) | BCM2711, 4× A72 @ 1.8 GHz | $55 | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
 
-Listenpreise aus dem Raspberry Pi 5 Product Brief (RP-008348-DS, April 2026); CHF-Werte
-sind Richtwerte für den Schweizer Endkundenhandel.
+**USD = offizielle Listenpreise der Raspberry Pi Ltd** (Preis der Platine, ohne Netzteil,
+Speicherkarte und Versand). **CHF = Richtwerte für den Schweizer Endkundenhandel** – sie
+liegen wegen Mehrwertsteuer, Zoll und Händlermarge über dem Dollar-Listenpreis und
+schwanken je nach Anbieter und Verfügbarkeit.
 
-> 🔴 **Diese Listenpreise vor Verwendung gegen die aktuelle Preisliste prüfen.** Sie liegen
-> deutlich über den seit der Markteinführung breit publizierten Werten (4 GB ≈ 60 USD,
-> 8 GB ≈ 80 USD, 16 GB ≈ 120 USD) und lassen sich aus dieser Referenz heraus nicht
-> bestätigen. Für eine Beschaffungsentscheidung ist die tagesaktuelle Preisliste des
-> Händlers massgeblich, nicht diese Tabelle.
+> ℹ️ **Eine 1-GB-Variante des Pi 5 gibt es nicht.** Das kleinste Modell hat 2 GB. Für
+> Vorhaben unterhalb dieser Klasse ist der **Pi Zero 2 W ($15)** die richtige Wahl, nicht
+> ein kleinerer Pi 5.
 >
-> Als Plausibilitätsanker dient die vertragliche Zusage gegenüber der Foundation: Das
-> **Basismodell bleibt bei höchstens 45 USD** (Stand Februar 2024, inflationsbereinigt).
-> Eine Preistabelle, in der die mittleren Varianten weit darüber liegen, verdient eine
-> Rückfrage.
+> Preise vor der Beschaffung gegen die tagesaktuelle Händlerliste prüfen – die
+> USD-Listenpreise sind stabil, die CHF-Strassenpreise nicht.
 
 **Empfehlung:**
 - **Edge AI / Computer Vision:** Pi 5 4GB oder 8GB + Hailo-8L (das Modell liegt auf der NPU)
@@ -440,46 +437,62 @@ Hardware. Das beiliegende Kabel verwenden.
 
 ## Projekt-spezifische Kits
 
-### KI-Kamera-Projekt
-- Raspberry Pi 5 (8 GB)
-- AI Kit (Hailo-8L)
-- Camera Module 3
-- Active Cooler
-- 27W USB-C PD PSU
-- 64 GB SD-Karte
+Alle vier Kits sind **einheitlich gerechnet**: Netzteil und Boot-Medium sind jeweils
+enthalten – sonst lassen sich die Summen nicht vergleichen und das Budget reisst beim
+Bestellen. Die CHF-Beträge sind die Richtwerte aus den Tabellen oben.
 
-**Total: ~270 CHF**
+### KI-Kamera-Projekt
+
+| Position | CHF |
+|----------|-----|
+| Raspberry Pi 5 (8 GB) | 90 |
+| AI HAT+ 13 TOPS (Hailo-8L) | 70 |
+| Camera Module 3 | 40 |
+| Active Cooler | 8 |
+| 27-W-USB-C-PD-Netzteil | 15 |
+| 64 GB SD-Karte | 15 |
+| **Total** | **~240** |
 
 ### Ollama-Chatbot
-- Raspberry Pi 5 (8 GB)
-- USB-Mikrofon
-- Mini-Lautsprecher + I2S Amp
-- Active Cooler
-- 128 GB SD-Karte
 
-**Total: ~180 CHF**
+| Position | CHF |
+|----------|-----|
+| Raspberry Pi 5 (8 GB) | 90 |
+| USB-Mikrofon | 20 |
+| Mini-Lautsprecher + I2S Amp | 17 |
+| Active Cooler | 8 |
+| 27-W-USB-C-PD-Netzteil | 15 |
+| 128 GB SD-Karte | 20 |
+| **Total** | **~170** |
 
 ### Ollama-Chatbot XL (7B/8B-Modelle)
-- Raspberry Pi 5 (**16 GB**)
-- NVMe SSD 256 GB + M.2 HAT+ (Modellablage, schnelleres Laden)
-- USB-Mikrofon
-- Mini-Lautsprecher + I2S Amp
-- Active Cooler
-- 27W USB-C PD PSU
 
-**Total: ~400 CHF**
+| Position | CHF |
+|----------|-----|
+| Raspberry Pi 5 (**16 GB**) | 130 |
+| NVMe SSD 256 GB | 60 |
+| M.2 HAT+ (Modellablage, schnelleres Laden) | 15 |
+| USB-Mikrofon | 20 |
+| Mini-Lautsprecher + I2S Amp | 17 |
+| Active Cooler | 8 |
+| 27-W-USB-C-PD-Netzteil | 15 |
+| **Total** | **~265** |
 
 > Hinweis: M.2 HAT+ und Hailo-8L belegen denselben PCIe-Anschluss – entweder NVMe **oder**
 > NPU, nicht beides.
 
 ### Wetterstation
-- Raspberry Pi 4 (4 GB)
-- BME280 (Temp/Humidity/Pressure)
-- BH1750 (Lux)
-- SSD1306 OLED Display
-- Passiv-Kühlung
 
-**Total: ~120 CHF**
+| Position | CHF |
+|----------|-----|
+| Raspberry Pi 4 (4 GB) | 70 |
+| BME280 (Temperatur/Feuchte/Druck) | 15 |
+| BH1750 (Lux) | 5 |
+| SSD1306 OLED Display | 12 |
+| Passiv-Kühlung (Heatsink-Case) | 15 |
+| 15-W-USB-C-Netzteil (Pi 4) | 12 |
+| 64 GB SD-Karte | 15 |
+| **Total** | **~145** |
 
 ⚠️ **Aussenaufstellung:** Der Pi 5 ist für **0 °C bis 70 °C Umgebungstemperatur**
 spezifiziert. Für den Winterbetrieb draussen entweder beheiztes Gehäuse, Innenaufstellung
