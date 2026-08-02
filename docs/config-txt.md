@@ -554,6 +554,33 @@ vcgencmd measure_clock arm                                  # Hz  – TATSÄCHLI
 > `scaling_cur_freq` abliest, hat die Drosselung nicht gesehen. Für die Wahrheit:
 > `vcgencmd measure_clock arm` – und `vcgencmd get_throttled`.
 
+### Spannungs- und Frequenzskalierung (DVFS)
+
+Der Pi 4 senkt nicht nur den Takt, sondern auch die Spannung einzelner SoC-Blöcke, sobald
+diese nicht auf Vollgas laufen (Arm, Core, V3D, ISP, H264, HEVC). Das drückt Verbrauch und
+Abwärme spürbar. Steuerbar über `/boot/firmware/config.txt`:
+
+| Wert | Verhalten |
+|------|-----------|
+| `dvfs=1` | Unterspannung erlaubt – sparsamster Modus |
+| `dvfs=2` | Feste Spannung für die Standardfrequenzen |
+| `dvfs=3` | Spannung bei Bedarf anheben (**Voreinstellung**) |
+
+⚠️ **`dvfs=1` kann PCIe destabilisieren**, weil fest getaktete Peripherie mit
+unterspannt wird. Nur auf Headless-Systemen ohne PCIe sinnvoll. Wird `over_voltage` in der
+`config.txt` gesetzt, schaltet das System automatisch auf `dvfs=2` zurück.
+
+> Auf dem **Pi 5 gibt es diese Einstellung nicht mehr** – dort ist das Verhalten von
+> `dvfs=3` fest eingebaut.
+
+Der Frequenz-Governor läuft standardmässig auf `ondemand` und kennt am Pi 4 die Stufen
+1500 / 1000 / 750 / 600 MHz. Für dauerhaft niedrigen Leerlaufverbrauch:
+
+```bash
+sudo apt install cpufrequtils
+sudo cpufreq-set -g powersave
+```
+
 ### Wenn das Gerät nach dem Übertakten nicht mehr bootet
 
 1. **Alle** Frequenz-Overrides aus `config.txt` entfernen (Karte in einem anderen Rechner
