@@ -156,6 +156,19 @@ sudo systemctl disable ollama
 
 ### Überblick
 
+> **Drei Hardwarevarianten – die Wahl ist eine Beschaffungsentscheidung:**
+>
+> | Variante | NPU | Vision | **LLM** |
+> |----------|-----|--------|---------|
+> | **AI Kit** (M.2 HAT+) | Hailo-8L | ✅ | ❌ – 🔴 nicht mehr in Produktion |
+> | **AI HAT+** | Hailo-8L / Hailo-8 | ✅ | ❌ |
+> | **AI HAT+ 2** | **Hailo-10H** | ✅ | ✅ |
+>
+> 🔴 **Nur das AI HAT+ 2 kann Sprachmodelle auf der NPU ausführen.** Das lässt sich später
+> nicht per Software nachrüsten – und es ist die Antwort auf den Zielkonflikt weiter unten,
+> bei dem Ollama auf der CPU alle Kerne und den Arbeitsspeicher belegt. Details in
+> `hailo.md`.
+
 Der Hailo-8L ist ein Edge AI Accelerator (Neural Processing Unit) für Raspberry Pi 5. Bietet:
 - **26 TOPS** bei INT8-Precision
 - **6W TDP** (zusätzlich zu Pi 5)
@@ -168,6 +181,12 @@ Der Hailo-8L ist ein Edge AI Accelerator (Neural Processing Unit) für Raspberry
 Gen 3 (`dtparam=pciex1_gen=3`) ist damit ein Opt-in ohne Signalintegritäts-Garantie.
 Der Hailo-8L läuft auch mit Gen 2 – bei Link-Fehlern, sporadischen Aussetzern oder
 AER-Meldungen in `dmesg` ist **Rückstellen auf Gen 2 der erste Schritt**, nicht der letzte.
+
+> ℹ️ **Für die AI-Hardware differenziert die offizielle Dokumentation:**
+> Beim **AI Kit** wird Gen 3 **ausdrücklich empfohlen** und muss von Hand aktiviert werden;
+> beim **AI HAT+ und AI HAT+ 2** setzt die Firmware es **automatisch**. Das ist der einzige
+> dokumentierte Fall, in dem Raspberry Pi selbst zu Gen 3 rät – bei eigener Hardware mit
+> bekannter Signalstrecke. Für beliebige PCIe-Geräte bleibt es beim Opt-in.
 
 ### Hardware-Setup
 
@@ -193,9 +212,9 @@ umkehrbar und beschädigt Pi und/oder HAT. Nie improvisieren, nie verlängern.
 **Installation:**
 
 ```bash
-# 1. PCIe Gen 3 aktivieren (optional, ausserhalb der Spezifikation)
-sudo nano /boot/firmware/config.txt
-# Hinzufügen:
+# 1. PCIe Gen 3 – nur beim AI Kit nötig; AI HAT+ und AI HAT+ 2 setzen es selbst
+sudo raspi-config        # 6 Advanced Options → A8 PCIe Speed → Yes
+# gleichwertig in /boot/firmware/config.txt:
 dtparam=pciex1_gen=3
 
 # 2. Reboot
@@ -231,17 +250,32 @@ sudo lspci -vv | grep -A 10 Hailo
 > Das Gerät bootet, aber die NPU ist weg. Details in `kernel.md`.
 
 ```bash
-# Hailo Runtime installieren
-wget https://hailo.ai/downloads/hailort-linux-arm64.deb
-sudo dpkg -i hailort-linux-arm64.deb
+# 1. System UND Firmware aktualisieren
+sudo apt update && sudo apt full-upgrade -y
+sudo rpi-eeprom-update -a
+sudo reboot
 
-# Python-Bindings
-pip install hailort
+# 2. Alles Nötige in einem Paket – Treiber, HailoRT, Tappas
+sudo apt install dkms
+sudo apt install hailo-all        # AI Kit und AI HAT+ (Hailo-8L / Hailo-8)
+# sudo apt install hailo-h10-all  # AI HAT+ 2 (Hailo-10H) – schliesst hailo-all AUS
 
-# Verfügbarkeit prüfen
+sudo reboot
+
+# 3. Verfügbarkeit prüfen
 hailortcli fw-control identify
-# Output: Hailo-8L, Firmware Version, etc.
+dmesg | grep -i hailo
 ```
+
+> 🔴 **Nicht über eine `.deb`-Datei von der Hailo-Website und nicht über
+> `pip install hailort`.** Die Paketquelle von Raspberry Pi liefert aufeinander
+> abgestimmte Versionen von Kerneltreiber, Laufzeit und Post-Processing; von Hand
+> zusammengesuchte Komponenten passen leicht nicht zueinander und funktionieren dann
+> **nicht korrekt**. Wer eine bestimmte Werkzeugkettenversion braucht, pinnt sie mit
+> `apt-mark hold` – siehe `hailo.md`.
+
+➜ **Vollständige Anleitung inklusive Versionspinning, fertiger Vision-Demos und lokaler
+LLMs auf dem AI HAT+ 2: `hailo.md`.**
 
 ### Modell-Deployment
 
@@ -490,10 +524,11 @@ Fremdbibliothek auf 128×96 und schreibt ihr Ergebnis in die Bildmetadaten. Auf 
 thermisch oder energetisch begrenzten Gerät startet die eigentliche Erkennung erst, wenn
 sich überhaupt etwas bewegt hat. Details in `camera.md`.
 
-> ⚠️ **Hailo-Post-Processing-Stages sind in den ausgelieferten `rpicam-apps` nicht
-> enthalten.** Für die Integration in die Kamerapipeline muss `rpicam-apps` mit
-> `-Denable_hailo=enabled` neu übersetzt werden (`camera.md`) – dasselbe gilt für alle
-> OpenCV- und TFLite-Stages.
+> ℹ️ **Die Hailo-Stages sind in den ausgelieferten `rpicam-apps` bereits enthalten** – im
+> Gegensatz zu den OpenCV- und TFLite-Stages, die deaktiviert sind (`camera.md`). Fertige
+> Konfigurationen für Objekterkennung, Segmentierung und Posenschätzung liegen unter
+> `/usr/share/rpi-camera-assets/`; eine Neuübersetzung ist dafür **nicht** nötig
+> (`hailo.md`).
 
 > ⚠️ **Auf dem Pi 5 kodiert die Videoaufnahme in Software**, nicht in Hardware wie auf dem
 > Pi 4. Wer gleichzeitig aufzeichnet und Inferenz betreibt, muss diese CPU-Last einplanen.

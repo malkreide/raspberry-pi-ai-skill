@@ -107,6 +107,7 @@ Dateiformat von `config.txt`, bedingte Filter, A/B-Boot, Watchdog: `config-txt.m
 Kernel-Header, Kernelmodule, eigene Kernel-Builds und Patches: `kernel.md`.
 Fernzugriff, Dateifreigaben und Netzwerk-Boot: `remote-access.md`.
 Kamera-Software, Tuning-Dateien, Post-Processing und Streaming: `camera.md`.
+Hailo-NPU, Installation, Versionspinning und lokale LLMs: `hailo.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -1061,10 +1062,18 @@ hailortcli fw-control measure-temperature
 
 | Fehler | Ursache | Lösung |
 |--------|---------|--------|
-| "Failed to identify" | PCIe nicht verbunden | FFC-Kabel prüfen, `hailo-all` installieren, Reboot |
-| "HEF parsing failed" | Falsches Modell-Format | .hef für Hailo-8L (nicht Hailo-8) verwenden |
-| Niedrige FPS | Gen 2 statt Gen 3 | `dtparam=pciex1_gen=3` in config.txt |
+| "Failed to identify" | PCIe nicht verbunden | FFC-Kabel prüfen, `sudo apt install hailo-all`, Reboot |
+| "HEF parsing failed" | Falsches Modell-Format | `.hef` passend zur Architektur (Hailo-8L ≠ Hailo-8 ≠ Hailo-10H) |
+| Niedrige FPS | Gen 2 statt Gen 3 | Beim **AI Kit** Gen 3 aktivieren (`raspi-config` → `A8`); AI HAT+ setzt es selbst |
 | Crash bei Start | Thermal | Active Cooler prüfen, Gehäuse-Lüftung |
+| **NPU nach Update weg** | DKMS-Neubau scheiterte still | Kernel-Header nachziehen, `dkms status` (Abschnitt 27, `kernel.md`) |
+| **Modell lief gestern noch** | Werkzeugketten- und Laufzeitversion passen nicht mehr | Versionen vergleichen, vier Pakete mit `apt-mark hold` festhalten (`hailo.md`) |
+| `<N/A>` bei Serial/Part/Product | – | **Kein Fehler** bei AI HAT+ und AI HAT+ 2 |
+| **LLM startet nicht auf der NPU** | Hailo-8/8L können kein GenAI | Nur **Hailo-10H** (AI HAT+ 2) führt Sprachmodelle aus |
+| `hailo-h10-all` nicht installierbar | `hailo-all` liegt noch drauf | Die beiden Pakete schliessen einander aus |
+
+> ℹ️ Die Meldungen `Force setting max_desc_page_size to 4096` und `Disabling ASPM L0s` in
+> `dmesg` sind **normal** – kein Anlass zur Fehlersuche.
 
 ### Whisper (Speech-to-Text)
 

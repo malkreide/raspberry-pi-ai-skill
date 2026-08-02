@@ -20,6 +20,7 @@ references/config-txt.md=docs/config-txt.md
 references/kernel.md=docs/kernel.md
 references/remote-access.md=docs/remote-access.md
 references/camera.md=docs/camera.md
+references/hailo.md=docs/hailo.md
 references/mechanical.md=docs/mechanical.md
 references/pcie.md=docs/pcie.md
 references/rp1-gpio.md=docs/rp1-gpio.md
