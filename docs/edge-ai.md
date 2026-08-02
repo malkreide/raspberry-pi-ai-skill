@@ -215,6 +215,21 @@ sudo lspci -vv | grep -A 10 Hailo
 
 ### Software-Installation
 
+> 🔴 **Reihenfolge einhalten – der PCIe-Treiber ist ein Kernelmodul.** Erst aktualisieren
+> und neu starten, dann die passenden Kernel-Header installieren, dann die Runtime. Wer
+> danach noch aktualisiert, hat ein Modul für den vorherigen Kernel.
+>
+> ```bash
+> sudo apt update && sudo apt full-upgrade
+> sudo reboot
+> sudo apt install linux-headers-rpi-v8    # dauert Minuten, ohne Fortschrittsanzeige
+> uname -r && ls /lib/modules/             # müssen zusammenpassen
+> ```
+>
+> Nach einem Kernel-Update kann es **Wochen** dauern, bis das Header-Paket nachzieht. In
+> dieser Zeit scheitert jeder Modulbau – auch der automatische über DKMS, und zwar still:
+> Das Gerät bootet, aber die NPU ist weg. Details in `kernel.md`.
+
 ```bash
 # Hailo Runtime installieren
 wget https://hailo.ai/downloads/hailort-linux-arm64.deb
