@@ -577,6 +577,12 @@ Repositories selbst.
 | Paket **ohne** `+rpt` | Debian – unveränderte Fassung |
 | Kernel: **Pi-spezifisch** | `raspberrypi/linux` |
 | Kernel: **allgemein** (neuer Treiber, generische Behebung) | **zuerst Upstream**, siehe `kernel.md` |
+| **Paketarchiv** selbst nicht erreichbar, Paket fehlt, Signatur falsch | [`RPi-Distro/repo`](https://github.com/RPi-Distro/repo) – Issue-Tracker für `archive.raspberrypi.com` |
+| `raspi-config` verhält sich falsch | [`RPi-Distro/raspi-config`](https://github.com/RPi-Distro/raspi-config) |
+
+> ℹ️ **Der Unterschied zählt:** Ein `apt`-Fehler wie «404 Not Found» oder eine
+> Signaturwarnung ist meist ein Problem des **Archivs**, nicht des Pakets – und gehört
+> deshalb an `RPi-Distro/repo`, nicht an den Paketbetreuer.
 
 ### Weitere Werkzeuge
 

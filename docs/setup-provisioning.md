@@ -406,6 +406,25 @@ Für mehrere identische Geräte – der typische Fall im Unterricht:
    aber die Peripherie auf 600 mA – und niemand findet den Fehler.
 7. **5-GHz-Fähigkeit prüfen**, wenn das Schul-WLAN kein 2,4 GHz anbietet.
 
+### Nachträgliche Änderungen im Bestand
+
+Wenn die Geräte schon laufen, ist der Imager keine Option mehr – und 20-mal durch ein
+Menü zu klicken auch nicht. Dafür gibt es **`raspi-config nonint`**, mit dem sich jeder
+Menüpunkt als Befehl aufrufen lässt:
+
+```bash
+sudo raspi-config nonint do_hostname "pi-07"
+sudo raspi-config nonint do_wifi_country CH
+sudo raspi-config nonint do_ssh 0        # 0 schaltet EIN
+```
+
+🔴 **`0` schaltet ein, `1` schaltet aus** – wer es verwechselt, deaktiviert SSH auf einem
+Headless-Gerät und kommt nicht mehr heran. Vollständige Funktionsliste und der Hinweis zur
+Stabilität dieser Schnittstelle: [`configuration.md`](configuration.md#raspi-config-nonint--dasselbe-menü-ohne-menü).
+
+➜ In Verbindung mit einem Schlüssel für den ganzen Satz (Punkt 2) lässt sich damit eine
+Änderung per `ssh` über alle Geräte ziehen, statt sie einzeln anzufassen.
+
 ---
 
 ## Weitere Ressourcen
