@@ -33,6 +33,17 @@ Empfohlene Komponenten für Raspberry Pi Projekte mit Bezugsquellen (Schweiz/Eur
 Listenpreise aus dem Raspberry Pi 5 Product Brief (RP-008348-DS, April 2026); CHF-Werte
 sind Richtwerte für den Schweizer Endkundenhandel.
 
+> 🔴 **Diese Listenpreise vor Verwendung gegen die aktuelle Preisliste prüfen.** Sie liegen
+> deutlich über den seit der Markteinführung breit publizierten Werten (4 GB ≈ 60 USD,
+> 8 GB ≈ 80 USD, 16 GB ≈ 120 USD) und lassen sich aus dieser Referenz heraus nicht
+> bestätigen. Für eine Beschaffungsentscheidung ist die tagesaktuelle Preisliste des
+> Händlers massgeblich, nicht diese Tabelle.
+>
+> Als Plausibilitätsanker dient die vertragliche Zusage gegenüber der Foundation: Das
+> **Basismodell bleibt bei höchstens 45 USD** (Stand Februar 2024, inflationsbereinigt).
+> Eine Preistabelle, in der die mittleren Varianten weit darüber liegen, verdient eine
+> Rückfrage.
+
 **Empfehlung:**
 - **Edge AI / Computer Vision:** Pi 5 4GB oder 8GB + Hailo-8L (das Modell liegt auf der NPU)
 - **Ollama / LLM:** Pi 5 8GB als Minimum, **16GB für 7B/8B-Modelle**

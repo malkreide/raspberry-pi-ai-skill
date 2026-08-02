@@ -297,11 +297,27 @@ Ein Gehäuse in der Sonne oder ein Schaltschrank ohne Belüftung kann die Umgebu
 verletzen, lange bevor der SoC auffällig wird.
 
 **Temperatur-Limits (SoC):**
-- **Idle:** 30–45°C (Raumtemperatur)
-- **Load:** 60–80°C (ohne Kühlung)
-- **Throttling Start:** 80°C (Soft Limit)
-- **Throttling Aggressiv:** 85°C (Hard Limit)
-- **Shutdown:** 95°C (Emergency)
+
+| Bereich | Verhalten |
+|---------|-----------|
+| Idle | 30–45 °C (Richtwert bei Raumtemperatur) |
+| Last ohne Kühlung | 60–80 °C (Richtwert) |
+| **80–85 °C** | **Die Arm-Kerne werden gedrosselt** |
+| **> 85 °C** | **Arm-Kerne *und* GPU werden gedrosselt** |
+
+⚠️ **Eine Abschalttemperatur nennt die offizielle Dokumentation nicht.** Sie beschreibt
+ausschliesslich die beiden Drosselschwellen 80 °C und 85 °C. Kursierende Werte wie
+«95 °C Emergency Shutdown» sind nicht belegt – für die Auslegung zählen die 80/85 °C, und
+das Erreichen dieser Grenze **schadet dem SoC nicht**, es kostet Leistung.
+
+➜ Wie viel Leistung, steht in `edge-ai.md`: gemessene **19 % Einbruch** nach etwa
+120 Sekunden CPU-Volllast.
+
+> 🔴 **`0x50000` heisst nicht «Unterspannung jetzt».** Es sind die Bits 16 und 18 – also
+> *aufgetreten seit dem Booten*: Unterspannung **und** Drosselung. Im Moment der Messung
+> ist alles in Ordnung. Wer nur auf die oberen Bits schaut, jagt einem Fehler nach, der
+> gerade nicht vorliegt; wer nur auf die unteren schaut, übersieht ihn ganz.
+> Vollständige Bit-Tabelle in `os-and-software.md`.
 
 **Kühlungs-Empfehlungen:**
 
@@ -320,17 +336,21 @@ vcgencmd measure_temp
 # Throttling-Status prüfen
 vcgencmd get_throttled
 # 0x0 = OK
-# 0x50000 = Undervoltage detected
-# 0x80000 = Soft temperature limit active
+# Untere 4 Bits = Zustand JETZT, obere 4 Bits (ab 0x10000) = seit dem Booten aufgetreten
+#   0x1 Unterspannung jetzt      | 0x10000 Unterspannung aufgetreten
+#   0x2 Frequenz jetzt begrenzt  | 0x20000 Begrenzung aufgetreten
+#   0x4 jetzt gedrosselt         | 0x40000 Drosselung aufgetreten
+#   0x8 Soft-Temp jetzt aktiv    | 0x80000 Soft-Temp war aktiv
 ```
 
 ### Raspberry Pi 4
 
-**Temperatur-Limits:**
-- **Idle:** 35–50°C
-- **Load:** 60–85°C (ohne Kühlung)
-- **Throttling Start:** 80°C
-- **Shutdown:** 85°C
+**Temperatur-Limits:** dieselben Drosselschwellen wie beim Pi 5 – **80 °C** (Arm-Kerne),
+**> 85 °C** (Arm-Kerne und GPU). Idle 35–50 °C, unter Last ohne Kühlung 60–85 °C.
+
+> ℹ️ Beim **Pi 3A+ und 3B+** kommt eine zusätzliche weiche Grenze dazu: ab **60 °C**
+> (einstellbar über `temp_soft_limit`, max. 70) wird von 1400 auf 1200 MHz zurückgetaktet,
+> um die Zeit bis zur harten Grenze zu verlängern (siehe `config-txt.md`).
 
 **Kühlungs-Empfehlungen:**
 - Passiv-Kühlkörper für meiste Anwendungen ausreichend
