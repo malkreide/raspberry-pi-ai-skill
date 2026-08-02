@@ -27,14 +27,47 @@ Grundlage für den Pre-Flight-Check in `SKILL.md`.
 |---------|--------------|----------------------------|
 | **Flagship-SBC** (Pi 4, Pi 5) | Klassische Einplatinenrechner | ✅ vollständig |
 | **Raspberry Pi Zero** | Kleiner, weniger USB, geringerer Verbrauch | teilweise – Besonderheiten unten |
-| **Keyboard-Computer** (400, 500, 500+) | Rechner im Tastaturgehäuse | teilweise |
-| **Compute Module** | System-on-Module für Industrie und Embedded | ❌ |
-| **Raspberry Pi Pico** | Mikrocontroller (RP2040 / RP2350), **kein Linux** | ❌ |
+| **Keyboard-Computer** (400, 500, 500+) | Rechner im Tastaturgehäuse | ✅ `hardware-specs.md`, `configuration.md` |
+| **Compute Module** | System-on-Module für Industrie und Embedded | ✅ `compute-module.md` |
+| **Raspberry Pi Pico** | Mikrocontroller (RP2040 / RP2350), **kein Linux** | nur die Abgrenzung unten |
 
-➜ **Wichtig für die Projektplanung:** Der Pico ist ein Mikrocontroller, kein
-Einplatinenrechner. Wenn ein Projekt an der Umgebungstemperatur des Pi 5 scheitert
-(0–70 °C, siehe `mechanical.md`) oder deterministisches Timing braucht, ist ein Pico als
-Aussenknoten oft die richtige Antwort – nicht ein weiterer Pi.
+### Pico oder Pi? Die Entscheidung vor allen anderen
+
+Der Pico ist **kein kleiner Raspberry Pi**, sondern ein Mikrocontroller: Er läuft ohne
+Betriebssystem, das Programm wird direkt in den Flash-Speicher geschrieben. Damit ist die
+Frage nicht «welches Modell», sondern **welche Gattung** – und sie fällt zuerst.
+
+| Anforderung | Antwort |
+|-------------|---------|
+| Betriebssystem, Netzwerkdienste, Dateisystem | **Pi** |
+| KI-Inferenz, Kamera, Videoverarbeitung | **Pi** |
+| **Deterministisches Timing**, harte Echtzeit | **Pico** |
+| Betrieb ausserhalb 0–70 °C | **Pico** (der Pi 5 ist nur dafür spezifiziert) |
+| Start in Millisekunden statt Sekunden | **Pico** |
+| Batteriebetrieb über Wochen | **Pico** |
+| Abrupte Stromtrennung ohne Herunterfahren | **Pico** – es gibt kein Dateisystem, das korrumpieren kann |
+
+➜ **Die ergiebigste Bauform für anspruchsvolle Projekte ist oft beides:** ein Pi für
+Inferenz und Netzwerk, ein Pico für Regelung, Sensorabfrage im festen Takt und den
+Aussenposten – verbunden über UART oder USB. Damit umgeht man genau die Grenzen, die
+`rp1-gpio.md` für GPIO-Timing und `hardware-specs.md` für die Umgebungstemperatur
+beschreiben, statt gegen sie anzuprogrammieren.
+
+**Die Modelle:**
+
+| Modell | SoC | SRAM | Flash | Funk |
+|--------|-----|------|-------|------|
+| Pico / Pico H | RP2040 | 264 kB | 2 MB | – |
+| **Pico W / WH** | RP2040 | 264 kB | 2 MB | **WLAN 2,4 GHz, BT 5.2/BLE** |
+| **Pico 2** | **RP2350** | **520 kB** | **4 MB** | – |
+| **Pico 2 W** | **RP2350** | **520 kB** | **4 MB** | **WLAN 2,4 GHz, BT 5.2/BLE** |
+
+Die Suffixe sind Konvention: **`H`** heisst vorbestückte Stiftleisten, **`W`** heisst Funk.
+Beim Pico 2 heisst die bestückte Variante ausgeschrieben **«with headers»** statt `H`.
+
+⚠️ **Der Pico 2 ist keine reine Aufwertung.** Zwischen RP2040 und RP2350 gibt es
+Änderungen, die Beispielcode und **in manchen Fällen die Beschaltung** betreffen – wer
+Anleitungen für den Pico 1 auf einen Pico 2 überträgt, prüft beides.
 
 ---
 
@@ -382,3 +415,15 @@ Für mehrere identische Geräte – der typische Fall im Unterricht:
 - [Raspberry Pi Connect](https://www.raspberrypi.com/documentation/services/connect.html)
 - [LED-Blinkcodes](https://www.raspberrypi.com/documentation/computers/configuration.html)
 - [Raspberry Pi Forum](https://forums.raspberrypi.com/)
+
+**Zum Pico** (nur relevant, wenn ein Projekt einen Mikrocontroller-Knoten enthält):
+
+- [Pico-Dokumentation](https://www.raspberrypi.com/documentation/microcontrollers/) – Datenblätter, SDK, Pinouts
+- [`gsw-micropython-on-raspberry-pi-pico-2e`](https://github.com/raspberrypipress/gsw-micropython-on-raspberry-pi-pico-2e)
+  – Beispielcode zum Einsteigerbuch, mit **aktualisierten Schaltbildern und Quelltexten für
+  den Pico 2** im Verzeichnis `eg/`. Nützlich als Referenz, wenn Pico-1-Anleitungen auf
+  einem Pico 2 nicht laufen.
+- [`raspberry-pi-pico-with-kicad`](https://github.com/raspberrypipress/raspberry-pi-pico-with-kicad)
+  – KiCad-Beispieldateien für **eigene RP2040-Platinen** (Lizenz CERN-OHL-P-2.0). Der
+  passende Einstieg, wenn aus einem Prototyp mit Pico eine eigene Platine werden soll –
+  siehe auch `compute-module.md` für denselben Schritt auf der Linux-Seite.

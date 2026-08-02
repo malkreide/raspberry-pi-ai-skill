@@ -29,10 +29,17 @@ Raspberry Pi selbst entwickelter Chip.
 | Eigenschaft | Wert |
 |-------------|------|
 | Anbindung an den AP (BCM2712) | **PCIe 2.0 x4** – chipintern, nicht der Steckverbinder |
+| Gehäuse | BGA, **ca. 12 × 12 mm**, Kugelraster 0,65 mm |
 | GPIO-Pins | **28** (GPIO 0–27), ein einziger elektrischer Bank: **VDDIO0** |
-| Interne Verwaltung | Dual-Core ARM Cortex-M3 |
+| Interne Verwaltung | Dual-Core ARM Cortex-M3 mit eng gekoppeltem Speicher |
 | Shared SRAM | 64 kB |
 | DMA | 8-Kanal-Controller |
+
+> ℹ️ **RP1 heisst nicht so, weil es der erste Raspberry Pi wäre.** Das `RP` steht für
+> Raspberry Pi, die Ziffer für die Generation – RP1 ist der **erste eingebettete
+> I/O-Controller**. Mit dem ursprünglichen Raspberry Pi Model B hat der Name nichts zu tun,
+> und mit den Mikrocontrollern RP2040 und RP2350 nur die Namenslogik: **RP1 ist kein
+> einzeln erhältlicher Chip**, sondern fest in Pi 5 und CM5 verbaut.
 
 > ⚠️ **Nicht verwechseln:** Die **x4**-Verbindung ist die chipinterne Anbindung zwischen
 > BCM2712 und RP1. Der **externe** PCIe-Anschluss des Pi 5 (der 16-Pin-FFC für M.2 HAT+
@@ -386,7 +393,8 @@ PWM-Auflösungen möglich als über Software-PWM.
 
 | Block | Details |
 |-------|---------|
-| **USB** | Zwei unabhängige XHCI-Controller, je ein USB-3.0- und ein USB-2.0-PHY – zusammen über **10 Gbps** |
+| **USB** | Zwei unabhängige XHCI-Controller, je ein USB-3.0- und ein USB-2.0-PHY – zusammen über **10 Gbps** und **mehr als die doppelte nutzbare Bandbreite des Pi 4** |
+| **SDIO/eMMC** | 2 Schnittstellen – **am Pi 5 ungenutzt**, aber für eigene CM5-Trägerboards verfügbar |
 | **MIPI** | 2× CSI-2 + 2× DSI auf zwei gemeinsam genutzten 4-Lane-DPHY, zusammen **8 Gbps**; jeder Kamera-Controller hat eine **ISP-Vorstufe (ISP-FE)** |
 | **Ethernet** | Integrierter MAC, externer Gigabit-PHY über RGMII |
 | **ADC** | 5 Eingänge, SAR, **12 Bit (ENOB 9,5)**, 500 kSPS – 4 externe Eingänge plus interner Temperatursensor |
@@ -396,6 +404,34 @@ PWM-Auflösungen möglich als über Software-PWM.
 ⚠️ **Zum ADC:** RP1 enthält ihn, aber in der Funktionsauswahl-Tabelle der Header-GPIOs
 (GPIO 0–27) taucht keine ADC-Funktion auf. Für Analogmessungen am 40-Pin-Header weiterhin
 einen externen ADC über I2C oder SPI einplanen (z.B. ADS1115, MCP3008).
+
+> ➜ **Warum die USB-Angabe zählt:** Am Pi 4 hängen alle vier Buchsen an einem einzigen
+> VL805-Controller, dessen USB-2.0-Leitungen sich **einen gemeinsamen internen Hub** teilen
+> – die Bandbreite für alle USB-2.0-Geräte zusammen entspricht dort einem einzigen Port
+> (siehe `interfaces.md`). Der Pi 5 hat **zwei getrennte Controller**. Für mehrere
+> USB-Kameras oder USB-Audio ist das der eigentliche Unterschied zwischen den Modellen,
+> nicht der Prozessor.
+
+### Multimedia- und Audioblöcke
+
+RP1 bringt Video- und Audiofunktionen mit, die **ohne externen Codec** auskommen:
+
+| Block | Was er kann |
+|-------|-------------|
+| **Video-DAC** | 3-kanalig, **PAL/NTSC und VGA** – am Pi 5 ist **nur ein Composite-Kanal** herausgeführt |
+| **DPI-Bildgenerator** | Paralleldisplay an der GPIO-Leiste (siehe `interfaces.md`) |
+| **CSI-2-Empfänger** | mit DMA und ISP-Vorstufe für Zuschnitt und Statistik |
+| **DSI-Sender** | mit eigenem DMA |
+| **Delta-Sigma-PWM** | **Analoger Audioausgang ohne Codec-Baustein** |
+| **PDM-Mikrofoneingang** | Taktgenerator und **Stereo-Bitstrom-Eingang** |
+
+➜ **Der PDM-Eingang ist für Sprachprojekte relevant.** PDM-Mikrofone lassen sich damit
+**direkt** anbinden – ohne USB-Mikrofon und ohne I2S-Codec-Platine. Für einen
+Sprachassistenten auf dem Pi 5 entfällt damit eine Komponente aus dem Bauplan.
+
+⚠️ **Der Video-DAC kann VGA, der Pi 5 führt es nicht heraus.** Wer analoge Bildausgabe
+jenseits von Composite braucht, muss ein eigenes Trägerboard entwerfen – auf dem
+Einplatinenrechner ist die Fähigkeit vorhanden, aber nicht zugänglich.
 
 **Atomare Registerzugriffe:** Jeder Registerblock mit Atomic Access belegt 4 kB und bietet
 Alias-Adressen – `+0x1000` XOR, `+0x2000` Bitmaske setzen, `+0x3000` Bitmaske löschen.

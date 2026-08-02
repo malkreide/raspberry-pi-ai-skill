@@ -32,8 +32,15 @@ zur Verfügung:
 | **Pi 4, Pi 400, CM4** | **SPI0 – SPI6** | SPI3–SPI6 über Alternativfunktionen |
 | **Pi 5, Pi 500** | **6 Instanzen** | über RP1, siehe `rp1-gpio.md` |
 
-➜ **Wer auf dem Pi 4 an Bus-Kollisionen scheitert, hat sieben Busse zur Auswahl** – nicht
-einen. Zwei SPI-Geräte mit inkompatibler Taktpolarität müssen sich keinen Bus teilen.
+➜ **Wer auf dem Pi 4 an Bus-Kollisionen scheitert, hat mehr als einen Bus zur Auswahl.**
+Zwei SPI-Geräte mit inkompatibler Taktpolarität müssen sich keinen teilen.
+
+> ℹ️ **Zur genauen Zahl widersprechen sich die Quellen.** Die Prozessorseite zum BCM2711
+> nennt «bis zu 6 SPI, davon fünf am Pi 4B herausgeführt», die SPI-Seite dokumentiert
+> Header-Pins für SPI0, SPI1 und SPI3–SPI6. Auf die Praxis wirkt sich das kaum aus – die
+> Belegungen unten sind belegt, und die Überschneidungen begrenzen die gleichzeitig
+> nutzbare Zahl ohnehin stärker als das Maximum. **Vor der Platinenauslegung mit
+> `dtoverlay -a | grep spi` prüfen, was die installierte Firmware tatsächlich anbietet.**
 
 ### Pinbelegung
 
@@ -215,8 +222,13 @@ vier Ports laufen über einen einzigen internen Hub**. Die verfügbare Bandbreit
 USB-1.1- und USB-2.0-Geräte zusammen entspricht damit **einem einzigen USB-2.0-Port** –
 egal, auf wie viele Buchsen man sie verteilt.
 
-➜ Für mehrere USB-Kameras oder USB-Audio am Pi 4 ist das die eigentliche Grenze. Der Pi 5
-hat diese Einschränkung nicht.
+➜ Für mehrere USB-Kameras oder USB-Audio am Pi 4 ist das die eigentliche Grenze.
+
+**Der Pi 5 hat diese Einschränkung nicht:** Der RP1 bringt **zwei unabhängige
+XHCI-Controller** mit, jeder mit eigenem USB-3.0- und USB-2.0-PHY. Das ergibt **mehr als
+die doppelte nutzbare USB-Bandbreite** – und ist für Aufbauten mit mehreren USB-Geräten der
+handfestere Unterschied zwischen Pi 4 und Pi 5 als der Prozessor. Details in
+[`rp1-gpio.md`](rp1-gpio.md#weitere-rp1-funktionen).
 
 ### Rückspeisung vermeiden
 

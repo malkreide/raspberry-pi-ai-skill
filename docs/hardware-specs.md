@@ -27,7 +27,7 @@ Boot-Medium, Netzteilwahl, Headless-Setup und erster Start: [`setup-provisioning
 | **SoC** | Broadcom BCM2712 (16nm) |
 | **CPU** | 4× Arm Cortex-A76 @ 2.4 GHz, 64-bit, mit Cryptographic Extension |
 | **Cache** | 512 KB L2 pro Kern, 2 MB gemeinsamer L3 |
-| **GPU** | VideoCore VII @ **910 MHz** (`v3d_freq` 960 MHz), OpenGL ES 3.1, Vulkan 1.2 |
+| **GPU** | VideoCore VII, **12 Kerne**, 3D-Einheit @ **960 MHz**, OpenGL ES 3.1, **Vulkan 1.3** |
 | **Video** | Dual 4Kp60 HDMI mit HDR, 4Kp60 HEVC-Decoder |
 | **RAM** | 1, 2, 4, 8 **oder 16 GB** LPDDR4X-4267 |
 | **I/O-Controller** | RP1 (separater Chip, via chipinternem PCIe 2.0 **x4**) |
@@ -38,11 +38,17 @@ Boot-Medium, Netzteilwahl, Headless-Setup und erster Start: [`setup-provisioning
 | **Netzwerk** | Gigabit Ethernet mit PoE+ (separater PoE+ HAT nötig), Dual-Band 802.11ac WLAN, Bluetooth 5.0/BLE |
 | **Sonstiges** | Echtzeituhr (RTC, externe Batterie), Power-Button, 40-Pin-Header |
 
-> ℹ️ **Zum GPU-Takt kursieren 800 MHz.** Die dokumentierten Voreinstellungen kennen diesen
-> Wert nicht: `core_freq`, `isp_freq` und `hevc_freq` stehen auf **910 MHz**, `v3d_freq` auf
-> **960 MHz** (siehe `config-txt.md`). Die Keyboard-Modelle 500 und 500+ sind offiziell
-> ebenfalls mit **VideoCore VII @ 910 MHz** angegeben. Für Taktrechnungen die Werte aus
-> `config-txt.md` verwenden, nicht die 800 MHz.
+> ℹ️ **Die GPU hat mehr als einen Takt** – daher kursieren drei verschiedene Zahlen:
+>
+> | Block | Takt | Parameter |
+> |---|---|---|
+> | **3D-Einheit (V3D)** | **960 MHz** | `v3d_freq` |
+> | Core, ISP, HEVC | 910 MHz | `core_freq`, `isp_freq`, `hevc_freq` |
+>
+> Für den Leistungsvergleich zählt die **3D-Einheit: 960 MHz gegen 500 MHz** beim Pi 4 –
+> zusammen mit der breiteren Hardware ergibt das rund **2- bis 2,5-fache Grafikleistung**.
+> Die für Pi 500/500+ genannten «910 MHz» sind der Core-Takt, nicht die 3D-Einheit. Der
+> ebenfalls kursierende Wert **800 MHz entspricht keiner dokumentierten Voreinstellung**.
 
 > ℹ️ **Verfügbarkeit als Planungsgrösse:** Raspberry Pi hat die Produktion des Pi 5 und der
 > KI-Erweiterungen **bis mindestens Januar 2030** zugesagt. Für Projekte mit langer
@@ -134,12 +140,25 @@ Peripherie-Übersicht: [`rp1-gpio.md`](rp1-gpio.md).
 | Komponente | Spezifikation |
 |------------|---------------|
 | **SoC** | Broadcom BCM2711 (28nm) |
-| **CPU** | 4× Arm Cortex-A72 @ 1.8 GHz |
+| **CPU** | 4× Arm Cortex-A72 @ **1,5 GHz** (1,8 GHz ab Rev. 1.4 mit `arm_boost=1`) |
+| **Cache** | 32 kB Daten + 48 kB Instruktionen L1 je Kern, **1 MB gemeinsamer L2** |
 | **GPU** | VideoCore VI @ 500 MHz |
-| **RAM** | 1GB, 2GB, 4GB oder 8GB LPDDR4-3200 |
+| **RAM** | 1, 2, 4 oder 8 GB LPDDR4-3200¹ |
+| **Video** | H.265 4Kp60 dekodieren, H.264 1080p60 dekodieren / 1080p30 kodieren |
 | **USB** | 2× USB 3.0, 2× USB 2.0 |
+| **Kamera/Display** | SoC bietet **je 2× CSI und DSI – am Pi 4B ist je einer herausgeführt** |
 | **Stromversorgung** | 5V/3A via USB-C |
 | **TDP** | ~6.4W (Peak: ~15W mit Peripherie) |
+
+¹ Das Prozessordatenblatt des BCM2711 nennt **LPDDR4-2400**, die Voreinstellung
+`sdram_freq` auf dem Pi 4B steht auf **3200** (siehe `config-txt.md`). Ab dem Pi 4 lässt
+sich der SDRAM ohnehin nicht mehr übertakten – für die Praxis ist der Wert also keine
+Stellgrösse.
+
+> ⚠️ **Die 1,8 GHz sind nicht der Grundtakt.** Der BCM2711 ist für **bis zu 1,5 GHz**
+> spezifiziert; die 1,8 GHz erreichen erst Boards ab Revision 1.4 mit `arm_boost=1`.
+> **CM4 und CM4S bleiben bei 1,5 GHz** (siehe `compute-module.md`) – wer Laufzeiten
+> zwischen Pi 4B und CM4 überträgt, liegt um rund 17 % daneben.
 
 ### GPIO-Besonderheiten Pi 4
 
@@ -471,6 +490,80 @@ dtparam=pciex1_gen=3
 
 **Rollback bei Instabilität** (Link-Fehler, Gerät verschwindet, `dmesg`-AER-Meldungen):
 Zeile auskommentieren oder entfernen, neu starten – das Gerät läuft dann mit Gen 2.
+
+---
+
+## Die Prozessoren im Überblick
+
+Welcher SoC in welchem Modell steckt – nützlich, wenn eine Anleitung oder ein Datenblatt
+nur den Chip nennt.
+
+| SoC | Modelle | CPU | GPU | Status |
+|-----|---------|-----|-----|--------|
+| **BCM2712** | Pi 5, 500, 500+, CM5 | 4× A76 @ 2,4 GHz | VideoCore VII, V3D 960 MHz | aktuell |
+| **BCM2711** | Pi 4B, 400, CM4, CM4S | 4× A72 @ 1,5 GHz | VideoCore VI @ 500 MHz | aktuell |
+| **RP3A0** | **Pi Zero 2 W** | 4× A53 @ **1 GHz** | VideoCore IV @ 400 MHz | aktuell |
+| BCM2837B0 | Pi 3A+, 3B+, spätere 3B und 2B, CM3+ | 4× A53 @ bis 1,4 GHz | VideoCore IV @ 400 MHz | aktuell |
+| BCM2837 | frühe 3B, manche 2B, CM3 | 4× A53 @ 1,2 GHz | VideoCore IV @ 400 MHz | 🔴 abgekündigt |
+| BCM2836 | frühe Pi 2B | 4× Cortex-A7 | VideoCore IV | 🔴 abgekündigt |
+| BCM2835 | Pi 1 (alle), Zero, Zero W, CM1 | 1× ARM1176JZF-S @ 700 MHz | VideoCore IV | aktuell |
+
+**Was die Generationen praktisch unterscheidet:**
+
+- **BCM2837B0 gegen BCM2837:** identische Kern-Hardware, nur höher eingestuft – 1,4 statt
+  1,2 GHz, rund **17 % schneller**. Der sichtbare Unterschied ist der **Wärmeverteiler
+  auf dem Gehäuse**, der die höheren Takte und eine genauere Temperaturmessung erst
+  ermöglicht.
+- **BCM2711 gegen BCM2837B0:** rund **50 % schneller**, dazu erstmals PCIe (daran hängen
+  USB 3.0 und Ethernet), mehr adressierbarer Speicher und ein deutlich stärkerer Grafikteil.
+- **BCM2712 gegen BCM2711:** in Summe **2- bis 3-fache Leistung** bei CPU- und
+  E/A-lastigen Aufgaben, Grafik 2- bis 2,5-fach.
+
+> ℹ️ **Der RP3A0 im Zero 2 W ist ein System-in-Package:** der nackte BCM2710A1-Die – also
+> dasselbe Silizium wie im BCM2837 des Pi 3 – zusammen mit **512 MB DRAM** in einem
+> Gehäuse. Er läuft mit **1 GHz**; mit Kühlkörper sind bis zu 1,2 GHz erreichbar.
+>
+> Der **ursprüngliche Zero** ist anders aufgebaut: Dort sitzt der DRAM als
+> Package-on-Package direkt **auf** dem BCM2835.
+
+### Videobeschleunigung: was der Pi 5 nicht mehr in Hardware kann
+
+| Codec | Pi 4 (BCM2711) | **Pi 5 (BCM2712)** |
+|-------|----------------|--------------------|
+| H.265 / HEVC dekodieren | 4Kp60 | **4Kp60** |
+| H.264 dekodieren | 1080p60 | 🔴 **nur Software** |
+| H.264 kodieren | 1080p30 | 🔴 **nur Software** |
+
+🔴 **Der Pi 5 hat keinen H.264-Hardware-Codec mehr.** Was das kostet:
+
+| Aufgabe | CPU-Last |
+|---------|----------|
+| H.264 1080p24 dekodieren | ~10–20 % |
+| H.264 1080p60 dekodieren | **~50–60 %** |
+| H.264 1080p30 kodieren (aus dem ISP) | ~30–40 % |
+
+➜ **Für Kameraprojekte ist das die wichtigste Einzelinformation dieses Abschnitts.** Ein
+Pi 5, der einen H.264-Stream mit 1080p60 aufnimmt oder wiedergibt, verbraucht dafür
+**gut die Hälfte einer CPU** – Leistung, die dann für Inferenz fehlt. Wo möglich **HEVC
+verwenden** (bleibt in Hardware) oder auf 1080p30 heruntergehen. Der Pi 4 erledigt
+H.264 nebenbei, der Pi 5 nicht.
+
+### Bekannte Sicherheitslücken
+
+Der Cortex-A76 des BCM2712 ist von Spectre- und verwandten Lücken betroffen; unter
+Raspberry Pi OS sind **alle Gegenmassnahmen aktiv**. Prüfen lässt sich das so:
+
+```bash
+lscpu | grep Vulnerability | grep -v "Not affected"
+```
+
+Was übrig bleibt, ist die Liste der Lücken, für die eine Massnahme greift – typischerweise
+Spec store bypass, Spectre v1 und Spectre v2.
+
+> ⚠️ **Bei Fremdbetriebssystemen selbst nachsehen.** Die Arm-Kerne von Raspberry Pi
+> verwenden **keinen Microcode** – sämtliche Gegenmassnahmen stecken im Kernel. Ein
+> Drittanbieter-Image mit altem Kernel ist damit tatsächlich ungeschützt, und `lscpu` gibt
+> nur wieder, was der **laufende Kernel** erkennt, nicht den wahren Zustand der Hardware.
 
 ---
 
