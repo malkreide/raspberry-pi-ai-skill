@@ -529,6 +529,18 @@ Netzwerk erst herstellt, in die erste.
 > production-hardened». Für Versuchsaufbauten und Klassensätze brauchbar, für ein Produkt
 > noch nicht. Vor dem Einsatz den aktuellen Stand des Repositories prüfen.
 
+### Noch kleiner: `pi-gen-micro`
+
+Für Geräte, bei denen jedes Megabyte zählt, gibt es
+[`pi-gen-micro`](https://github.com/raspberrypi/pi-gen-micro). Es baut aus **denselben
+Paketquellen** wie Raspberry Pi OS, erzeugt aber Systeme **ohne `apt` und `dpkg`** –
+konfigurierbar bis hinunter zu systemd, SSH, Netzwerk und Kernelmodulen. Unterstützt sind
+Pi 3, Pi 4, Pi 5 und die Compute Modules.
+
+⚠️ **Ohne Paketverwaltung ist auch kein Nachinstallieren möglich.** Was nicht im Abbild
+ist, kommt später nicht dazu – und Sicherheitsaktualisierungen bedeuten einen neuen Bau.
+Das ist für ein geschlossenes Seriengerät richtig und für alles andere eine Sackgasse.
+
 ### `pi-gen` oder `rpi-image-gen`?
 
 Die Namen sind verwechselbar, die Werkzeuge nicht:
