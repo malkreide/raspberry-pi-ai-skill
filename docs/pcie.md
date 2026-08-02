@@ -47,6 +47,22 @@ Der Raspberry Pi 5 ist das erste Raspberry-Pi-Produkt mit einem PCI-Express-Ansc
 > spezifiziert. Gen 3 ist damit dokumentiert als Möglichkeit, nicht als Zusage – bei
 > Instabilität ist der Rückfall auf Gen 2 der erste Schritt (siehe
 > `debugging-playbook.md`).
+>
+> Die **Configuration**-Dokumentation wird noch deutlicher: Der Pi 5 ist für **Gen 2.0
+> zertifiziert**, Gen 3 ist deshalb ab Werk deaktiviert, und ein Erzwingen kann zu
+> **Datenkorruption oder Systeminstabilität** führen, wenn Kabel oder HAT die höhere
+> Frequenz nicht mitmachen. Empfohlen wird die Umstellung nur, wenn ein PCIe-HAT sie
+> ausdrücklich verlangt.
+
+**Zwei Wege, dasselbe Ergebnis:**
+
+```bash
+sudo raspi-config      # 6 Advanced Options → A8 PCIe Speed
+```
+```ini
+# oder direkt in /boot/firmware/config.txt
+dtparam=pciex1_gen=3
+```
 
 ---
 
@@ -179,6 +195,21 @@ Power-Button bzw. die RTC-Weckfunktion starten.
 ➜ Wichtig für Dauerbetrieb: Nach `sudo halt` bleiben im Standardfall **alle Rails aktiv**
 (WARM-STANDBY). Wer erwartet, dass der Pi danach «stromlos» ist, misst trotzdem
 Verbrauch – und angeschlossene PCIe-Geräte bleiben versorgt.
+
+### Der Schalter dazu
+
+Was das PCIe-Dokument elektrisch beschreibt, heisst in der Bedienoberfläche
+**Shutdown Behaviour**:
+
+```
+raspi-config → 6 Advanced Options → A11 Shutdown Behaviour
+   B1 Full power off      – vollständig aus
+   B2 VPU sleep mode      – Restspannung bleibt (Standard auf Pi 4B, Pi 5, CM4)
+```
+
+➜ Für batterie- oder solargespeiste Aufbauten `B1` setzen. Die zweifarbige LED des Pi 5
+leuchtet nach dem Herunterfahren **rot** – das ist der Standby-Zustand, nicht «aus».
+Details in `configuration.md`.
 
 ---
 

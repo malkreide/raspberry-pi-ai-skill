@@ -10,12 +10,13 @@ Effekte lassen sich auf zwei Eigenschaften zurückführen: **andere Pad-Grenzwer
 ## Inhaltsverzeichnis
 1. [Was RP1 ist](#was-rp1-ist)
 2. [Verfügbare Peripherie am 40-Pin-Header](#verfügbare-peripherie-am-40-pin-header)
-3. [Elektrische Grenzwerte der Pads](#elektrische-grenzwerte-der-pads)
-4. [Latenz: warum Bit-Banging auf dem Pi 5 anders ist](#latenz-warum-bit-banging-auf-dem-pi-5-anders-ist)
-5. [Interrupts und Hardware-Entprellung](#interrupts-und-hardware-entprellung)
-6. [Taktversorgung](#taktversorgung)
-7. [Weitere RP1-Funktionen](#weitere-rp1-funktionen)
-8. [Konsequenzen für die Praxis](#konsequenzen-für-die-praxis)
+3. [UART auf dem Pi 5](#uart-auf-dem-pi-5)
+4. [Elektrische Grenzwerte der Pads](#elektrische-grenzwerte-der-pads)
+5. [Latenz: warum Bit-Banging auf dem Pi 5 anders ist](#latenz-warum-bit-banging-auf-dem-pi-5-anders-ist)
+6. [Interrupts und Hardware-Entprellung](#interrupts-und-hardware-entprellung)
+7. [Taktversorgung](#taktversorgung)
+8. [Weitere RP1-Funktionen](#weitere-rp1-funktionen)
+9. [Konsequenzen für die Praxis](#konsequenzen-für-die-praxis)
 
 ---
 
@@ -78,6 +79,119 @@ abbilden, statt sie in Software zu takten – siehe den Latenz-Abschnitt unten.
 
 Das ist eine leise Fehlerquelle: Ein zweiter, versehentlich auf dieselbe Funktion
 gesetzter Pin legt den Bus lahm, ohne dass eine Fehlermeldung erscheint.
+
+---
+
+## UART auf dem Pi 5
+
+Ergänzung aus der offiziellen **Configuration**-Dokumentation. Serielle Schnittstellen
+sind der häufigste Fall, in dem Pi-4-Anleitungen auf dem Pi 5 nicht mehr stimmen – weil
+sich sowohl die Hardware als auch die Voreinstellung geändert hat.
+
+### Was sich geändert hat
+
+| | Pi 4 / 400 / CM4 | **Pi 5 / 500 / 500+ / CM5** |
+|---|---|---|
+| UART0 | PL011 | PL011 |
+| UART1 | **Mini-UART** | **existiert nicht** |
+| Weitere | UART2–UART5 (PL011, ab Werk aus) | **UART0–UART4 + UART10** (alle PL011, ab Werk aus) |
+| Primäre UART | UART1 (Mini-UART) an GPIO 14/15 | **UART10 am dedizierten Debug-Header** |
+
+➜ **Der Pi 5 hat keinen Mini-UART mehr.** Damit entfällt die ganze Klasse von Problemen,
+die auf dem Pi 3 und 4 daher rührte, dass der Mini-UART seinen Takt aus dem VPU-Kern
+bezog: keine Baudratendrift bei Frequenzwechsel, kein `core_freq=250`, kein
+`enable_uart=1` als Krücke, kein `miniuart-bt`. Alle Schnittstellen sind vollwertige
+PL011.
+
+Die **fünf** am Header nutzbaren UARTs (siehe Tabelle oben) sind UART0–UART4. UART10 ist
+die Debug-Schnittstelle und liegt **nicht** am 40-Pin-Header.
+
+### 🔴 Der Fallstrick: `/dev/serial0` zeigt woanders hin
+
+Auf allen Modellen **ausser dem Pi 5** liegt die primäre UART auf:
+
+- **GPIO 14 (TX)** = Header-Pin **8**
+- **GPIO 15 (RX)** = Header-Pin **10**
+
+**Auf dem Pi 5 ist die primäre UART standardmässig UART10 am dreipoligen, mit `UART`
+beschrifteten Debug-Header** – also `/dev/ttyAMA10`, und dorthin zeigt auch
+`/dev/serial0`.
+
+> Wer ein Skript vom Pi 4 übernimmt, das `/dev/serial0` öffnet und ein Gerät an Pin 8/10
+> erwartet, redet auf dem Pi 5 mit dem Debug-Header. **Es kommen keine Daten – und keine
+> Fehlermeldung.**
+
+| Device-Node | Was |
+|-------------|-----|
+| `/dev/ttyAMA0` | Erste PL011 (UART0) |
+| `/dev/ttyAMA10` | **Debug-UART des Pi 5** |
+| `/dev/ttyS0` | Mini-UART (nicht auf dem Pi 5) |
+| `/dev/serial0` | Symlink auf die **primäre** UART – modellabhängig |
+| `/dev/serial1` | Symlink auf die sekundäre UART (meist Bluetooth) |
+
+**`/dev/serial1` existiert ab Bookworm oft nicht mehr.** Es lässt sich mit
+`dtparam=krnbt=off` in `config.txt` erzwingen – die Dokumentation rät ausdrücklich davon
+ab, das ohne Not zu tun, weil die Option künftig entfallen kann.
+
+### Zwei `config.txt`-Schalter, die die Zuordnung ändern
+
+| Schalter | Wirkung auf dem Pi 5 |
+|----------|----------------------|
+| `enable_rp1_uart=1` | Firmware-Debugmeldungen (inkl. **aller Dateizugriffe**) gehen auf **GPIO 14/15** |
+| `enable_uart=1` | Ohne Kabel am Debug-Header wandert die **Kernel-Ausgabe** auf GPIO 14/15 |
+
+➜ Beide belegen die Header-Pins mit Konsolenausgabe. Wer dort ein Gerät angeschlossen
+hat, bekommt eine unerklärlich «schwatzende» Leitung.
+
+### Zusätzliche UARTs freischalten
+
+```ini
+# Pi 5 / CM5
+dtoverlay=uart2-pi5           # uart0-pi5 … uart4-pi5
+
+# Pi 4 / 400 / CM4 / CM4S
+dtoverlay=uart2               # uart2 … uart5
+```
+
+```bash
+dtoverlay -h uart2-pi5        # welche Pins, welche Optionen
+cat /boot/firmware/overlays/README
+```
+
+Die Pin-Zuordnung steht im Overlay, nicht im Datenblatt – deshalb immer über
+`dtoverlay -h` prüfen und nicht raten. Mehr zum Umgang mit Overlays in
+[`configuration.md`](configuration.md).
+
+### Serielle Konsole abschalten, Hardware anlassen
+
+Für Projekte mit einem seriellen Gerät (GPS, Modem, Mikrocontroller) gilt fast immer:
+
+- **Serial Port hardware: ein** – die TX/RX-Pins werden freigegeben
+- **Serial console: aus** – sonst schickt Linux Boot-Meldungen und einen Login-Prompt auf
+  dieselbe Leitung
+
+Beides sind **getrennte** Schalter unter `raspi-config` → *Interface Options*.
+
+### ⚠️ 3,3 V – ausnahmslos
+
+> **Alle UARTs arbeiten mit 3,3 V. Der Anschluss an ein 5-V-System beschädigt den Pi.**
+> Für 5-V-Geräte einen Pegelwandler oder einen USB-auf-3,3-V-Seriell-Adapter verwenden.
+
+Das ist dieselbe Regel wie für alle GPIO – hier aber besonders relevant, weil viele
+Arduino-Boards und Industriemodule mit 5 V senden.
+
+### Frühe Boot-Ausgabe (Kernel-Debugging)
+
+Wenn das System so früh stehen bleibt, dass die reguläre Konsole noch nicht läuft, hilft
+`earlycon` in `cmdline.txt`:
+
+```
+# Pi 5, über den Debug-Header
+earlycon=pl011,0x107d001000,115200n8
+```
+
+> ⚠️ **Ein falsch gewählter Early-Console-Parameter kann das Booten ganz verhindern.**
+> Nur mit einem funktionierenden Rückweg (zweite Karte, Kartenleser) einsetzen.
 
 ---
 
@@ -256,12 +370,15 @@ kosten würde. Wer eigene Treiber schreibt, sollte das nutzen.
 | Enge GPIO-Polling-Schleife | ASPM deaktivieren, Write-Barrier vor dem Lesen |
 | Mehrere I2C-Geräte mit Adresskonflikt | Pi 5 bietet **4 I2C-Busse** am Header |
 | Analogwert messen | Externer ADC über I2C/SPI – der RP1-ADC liegt nicht am Header |
+| Serielles Gerät an Pin 8/10 | **Nicht `/dev/serial0`** – das zeigt auf dem Pi 5 auf den Debug-Header |
+| «Der Mini-UART macht Ärger» | Gibt es auf dem Pi 5 nicht mehr – Ursache liegt woanders |
 | Bibliothekswahl | `gpiozero` mit lgpio; `RPi.GPIO` kennt RP1 nicht |
 
 ---
 
 ## Weitere Ressourcen
 
+- [`configuration.md`](configuration.md) – Overlays, `config.txt`, `raspi-config`
 - [RP1 Peripherals Datasheet](https://datasheets.raspberrypi.com/rp1/rp1-peripherals.pdf)
 - [RP1 GPIO Linux Kernel Driver](https://github.com/raspberrypi/linux) – Referenzimplementierung
 - [gpiozero Dokumentation](https://gpiozero.readthedocs.io/)

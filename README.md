@@ -76,6 +76,7 @@ The skill is automatically activated when you say things like:
 - **[hardware-specs.md](docs/hardware-specs.md)** – Raspberry Pi 4/5 specifications, GPIO pinouts, power budgets, RAM variant selection
 - **[setup-provisioning.md](docs/setup-provisioning.md)** – Boot media, Imager, power supplies, headless setup, first boot, classroom fleets
 - **[os-and-software.md](docs/os-and-software.md)** – OS versions, updates, APT, venv, media playback, vcgencmd
+- **[configuration.md](docs/configuration.md)** – raspi-config, config.txt/cmdline.txt, Device Tree overlays, bootloader/EEPROM, fstab, firewall
 - **[mechanical.md](docs/mechanical.md)** – Board dimensions, mounting pattern, connector positions, official bumper, enclosure and 3D-print checklist
 - **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1 pad limits, GPIO latency, alternate functions, PIO, hardware debouncing

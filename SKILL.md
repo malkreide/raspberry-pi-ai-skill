@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), oder (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), oder (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall).
 ---
 
 # Raspberry Pi AI Skill
@@ -62,6 +62,14 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 - [ ] Modell kann das vorhandene WLAN-Band (Zero W, Zero 2 W, Pi 3B: nur 2,4 GHz)
 - [ ] Reihenfolge: Boot-Medium → Peripherie → **zuletzt Strom**
 
+**Bei Dauerbetrieb / Feldgerät zusätzlich:**
+- [ ] Alle Einstellungen als Datei oder Skript reproduzierbar (`config.txt`, `raspi-config`), nicht per GUI geklickt
+- [ ] Jeder `fstab`-Eintrag für externe Medien hat **`nofail`** – sonst bootet das Gerät ohne Medium nicht
+- [ ] Logging-Strategie entschieden: `Persistent` (Fehlersuche) vs. `Volatile` (SD-Schonung)
+- [ ] Read-only-Overlay-Dateisystem geprüft, wenn Stromausfälle zu erwarten sind
+- [ ] Abschaltverhalten geprüft (Pi 5 ist nach `sudo halt` standardmässig **nicht** stromlos)
+- [ ] Bei Netzzugang: SSH schlüsselbasiert, UFW eingerichtet – **`allow ssh` vor `enable`**
+
 **Bei Pi 5 zusätzlich:**
 - [ ] Mini-CSI-Kabel (22-Pin ≠ Pi 4 Standard 15-Pin)
 - [ ] RP1-Chip-Kompatibilität der HATs/Libraries geprüft
@@ -105,7 +113,11 @@ Software-Standards einhalten:
 - GPIO: `gpiozero` (nicht `RPi.GPIO`)
 - Netzwerk: `nmcli` (nicht `dhcpcd`)
 - I2C/SPI: `smbus2`, `spidev`, Adafruit Blinka
-- Firmware: über `apt`; `rpi-update` nur auf ausdrückliche Empfehlung
+- Firmware: über `apt`; Vorabsoftware über **Beta Access** in `raspi-config`, nicht über
+  `rpi-update` – dieses nur auf ausdrückliche Empfehlung
+- Konfiguration: über `raspi-config` oder als Zeile in `/boot/firmware/config.txt` –
+  **nicht** über die Desktop-GUI. Was nicht in einer Datei steht, ist beim nächsten
+  Aufsetzen verloren und gehört ins `plan.md`
 
 Inkrementeller Aufbau (nie Big Bang):
 1. OS-Grundkonfiguration
@@ -143,6 +155,10 @@ rpicam-hello --list-cameras   # Kameras
 sudo systemctl status <service> -l
 journalctl -u <service> --since "10 min ago"
 dmesg | tail -30              # Kernel-Meldungen
+sudo vclog --msg              # Firmware-Meldungen (Overlays/config.txt landen NICHT in dmesg)
+
+# Netzteil: was die Firmware ausgehandelt hat (Pi 5)
+od -v -An -t x1 /proc/device-tree/chosen/power/max_current | tr -d ' '
 
 # Edge AI
 hailortcli fw-control identify  # Hailo NPU
@@ -167,6 +183,12 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - Monitor bleibt schwarz → nicht an HDMI0, oder Video über USB-C erwartet (gibt es auf keinem Pi)
 - `apt upgrade` statt `full-upgrade` → Pakete bleiben zurück
 - `vcgencmd get_mem arm` als RAM-Prüfung → meldet auf >1-GB-Geräten immer ~1 GB
+- Serielles Gerät an Pin 8/10 antwortet nicht → `/dev/serial0` zeigt auf dem Pi 5 auf den **Debug-Header** (UART10), nicht auf GPIO 14/15
+- `dtoverlay`-Zeile wirkungslos → der Loader überspringt Fehler **stumm**; `sudo vclog --msg` statt `dmesg`
+- Overlay «tut auf dem Pi 5 nichts» → Plattform `bcm2712` fehlt in der Overlay-Map (z.B. `disable-bt` → `disable-bt-pi5`)
+- Aktivitäts-LED blinkt nicht → beim Booten von NVMe blinkt sie nicht; der Pi 5 hat nur **eine** zweifarbige LED
+- Neue NVMe wird ignoriert → Bootreihenfolge steht noch auf «SD zuerst» (`raspi-config` → `A4 Boot Order`)
+- Zeilenumbruch in `cmdline.txt` → alles nach der ersten Zeile wird ignoriert, ohne Fehlermeldung
 
 **Eskalationspfade** (zeitbasiert):
 - 0–15 Min: Isolationsmethode, Logs lesen
@@ -215,6 +237,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 
 **Raspberry Pi OS (Versionen, Updates, APT, venv, Medien, vcgencmd):**
 `/mnt/skills/user/raspberry-pi-ai/references/os-and-software.md`
+
+**Konfiguration (raspi-config, config.txt, Device Tree/Overlays, Bootloader, fstab, Firewall):**
+`/mnt/skills/user/raspberry-pi-ai/references/configuration.md`
 
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`

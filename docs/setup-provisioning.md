@@ -70,6 +70,12 @@ sprengen 32 GB schnell. Empfehlungen dazu in `component-catalog.md`.
 Neuere Modelle booten auch von USB-Massenspeicher, über Netzwerk (PXE) oder von **NVMe
 über PCIe** – für NVMe siehe `pcie.md`.
 
+⚠️ **Die Reihenfolge muss umgestellt werden.** Ab Werk sucht der Bootloader zuerst die
+SD-Karte. Wer von NVMe oder USB starten will, setzt in `raspi-config` unter
+`6 Advanced Options` → `A4 Boot Order` die Option `B2 NVMe/USB Boot`. Sonst bootet das
+Gerät bei eingelegter Karte weiterhin von dieser – und niemand merkt, dass die SSD gar
+nicht genutzt wird. Details in `configuration.md`.
+
 ---
 
 ## Netzteil
@@ -94,6 +100,26 @@ Neuere Modelle booten auch von USB-Massenspeicher, über Netzwerk (PXE) oder von
 > ⚠️ **Die Spannungsangaben gelten am Stecker, nicht am Netzteil.** Spannungsabfall im
 > Kabel einrechnen, besonders bei abnehmbaren Kabeln. Ein dünnes oder langes USB-C-Kabel
 > ist eine häufige und schwer zu findende Fehlerquelle.
+
+### Nachprüfen statt vermuten (Pi 5)
+
+Die Firmware legt ab, was das Netzteil ausgehandelt hat:
+
+```bash
+# Maximalstrom in mA
+od -v -An -t x1 /proc/device-tree/chosen/power/max_current | tr -d ' '
+
+# 0 = Peripherie auf die niedrige Grenze gedeckelt
+od -v -An -t x1 /proc/device-tree/chosen/power/usb_max_current_enable | tr -d ' '
+```
+
+➜ Damit lässt sich der 600-mA-Fall **beweisen**, statt ihn zu vermuten. Weitere
+Firmware-Werte in `configuration.md`.
+
+Die Begrenzung lässt sich unter `raspi-config` → *Performance Options* aufheben – aber
+**erst das Netzteil richtig wählen, dann allenfalls die Grenze anheben**. Zu wenig Leistung
+plus aufgehobene Grenze bedeutet laut Dokumentation Instabilität, Abstürze oder
+Datenverlust.
 
 ### Einschaltverhalten
 
@@ -248,7 +274,11 @@ Bei älterem Bootloader ist vorher ein Bootloader-Update nötig.
 ### Die 5-Minuten-Regel
 
 Bootet der Pi **nicht innerhalb von 5 Minuten**, den Status-LED prüfen. Blinkt sie, geben
-die **LED-Blinkcodes** die Ursache an.
+die **LED-Blinkcodes** die Ursache an – vollständige Tabelle im
+`debugging-playbook.md`, Abschnitt 20.
+
+⚠️ **Auf dem Pi 5 gibt es nur noch eine zweifarbige LED**, und sie blinkt **nur bei
+microSD-Zugriff**. Bei einem System auf NVMe bleibt sie ruhig grün – das ist kein Fehler.
 
 ### Vorgehen, wenn die LED nicht weiterhilft
 
