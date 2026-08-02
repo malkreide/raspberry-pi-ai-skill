@@ -32,8 +32,15 @@ zur Verfügung:
 | **Pi 4, Pi 400, CM4** | **SPI0 – SPI6** | SPI3–SPI6 über Alternativfunktionen |
 | **Pi 5, Pi 500** | **6 Instanzen** | über RP1, siehe `rp1-gpio.md` |
 
-➜ **Wer auf dem Pi 4 an Bus-Kollisionen scheitert, hat sieben Busse zur Auswahl** – nicht
-einen. Zwei SPI-Geräte mit inkompatibler Taktpolarität müssen sich keinen Bus teilen.
+➜ **Wer auf dem Pi 4 an Bus-Kollisionen scheitert, hat mehr als einen Bus zur Auswahl.**
+Zwei SPI-Geräte mit inkompatibler Taktpolarität müssen sich keinen teilen.
+
+> ℹ️ **Zur genauen Zahl widersprechen sich die Quellen.** Die Prozessorseite zum BCM2711
+> nennt «bis zu 6 SPI, davon fünf am Pi 4B herausgeführt», die SPI-Seite dokumentiert
+> Header-Pins für SPI0, SPI1 und SPI3–SPI6. Auf die Praxis wirkt sich das kaum aus – die
+> Belegungen unten sind belegt, und die Überschneidungen begrenzen die gleichzeitig
+> nutzbare Zahl ohnehin stärker als das Maximum. **Vor der Platinenauslegung mit
+> `dtoverlay -a | grep spi` prüfen, was die installierte Firmware tatsächlich anbietet.**
 
 ### Pinbelegung
 

@@ -207,9 +207,21 @@ rpicam-vid -t 10s -o test.h264
 
 Das hat drei Folgen, die in der Projektplanung auftauchen müssen:
 
-1. **CPU-Last.** Die Videokodierung belegt auf dem Pi 5 Rechenzeit, die auf dem Pi 4 der
-   Hardwareblock übernommen hat. Bei einer Pipeline, die gleichzeitig Inferenz macht, ist
-   das ein echter Posten im Budget.
+1. **CPU-Last** – und zwar eine erhebliche:
+
+   | Aufgabe auf dem Pi 5 | CPU-Last |
+   |----------------------|----------|
+   | H.264 1080p24 dekodieren | ~10–20 % |
+   | **H.264 1080p60 dekodieren** | **~50–60 %** |
+   | H.264 1080p30 kodieren (aus dem ISP) | ~30–40 % |
+
+   Bei einer Pipeline, die gleichzeitig Inferenz macht, ist das kein Randposten, sondern
+   **gut ein Drittel bis die Hälfte einer CPU**. Der Pi 4 erledigt dasselbe nebenbei im
+   Hardwareblock.
+
+   ➜ **HEVC bleibt auch auf dem Pi 5 in Hardware** (4Kp60 dekodieren). Wo die Gegenstelle
+   es akzeptiert, ist der Wechsel auf HEVC die wirksamste Entlastung – wirksamer als jede
+   Encoder-Option.
 2. **Latenz.** Die Software-Encoder liefern Einzelbilder später aus – für Echtzeit-Streaming
    spürbar.
 3. **`--save-pts` gibt es auf dem Pi 5 nicht.** Stattdessen `libav` verwenden, das
