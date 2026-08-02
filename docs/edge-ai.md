@@ -469,6 +469,35 @@ with open("model_int8.tflite", "wb") as f:
 
 ### Architektur-Patterns
 
+**Pattern 0: Der Niedrigauflösungs-Strom – die Grundlage jeder Kamera-Pipeline**
+
+```
+Sensor → ISP ─┬─→ Vollauflösung  → Aufzeichnung / Ausgabe
+              └─→ lores (z.B. 300×300) → Modell
+```
+
+Die Kamera liefert **parallel** einen zweiten, kleineren Bildstrom. Modelle arbeiten
+ohnehin auf kleinen Eingaben (224×224, 257×257, 300×300); ein Vollbild anzufordern und
+selbst zu skalieren, verschenkt Rechenzeit an eine Skalierung, die der ISP kostenlos
+mitliefert.
+
+```bash
+rpicam-hello --lores-width 400 --lores-height 300 --post-process-file object_detect_tf.json
+```
+
+➜ **Vorfilter vor teurer Inferenz:** Die Stage `motion_detect` läuft ohne jede
+Fremdbibliothek auf 128×96 und schreibt ihr Ergebnis in die Bildmetadaten. Auf einem
+thermisch oder energetisch begrenzten Gerät startet die eigentliche Erkennung erst, wenn
+sich überhaupt etwas bewegt hat. Details in `camera.md`.
+
+> ⚠️ **Hailo-Post-Processing-Stages sind in den ausgelieferten `rpicam-apps` nicht
+> enthalten.** Für die Integration in die Kamerapipeline muss `rpicam-apps` mit
+> `-Denable_hailo=enabled` neu übersetzt werden (`camera.md`) – dasselbe gilt für alle
+> OpenCV- und TFLite-Stages.
+
+> ⚠️ **Auf dem Pi 5 kodiert die Videoaufnahme in Software**, nicht in Hardware wie auf dem
+> Pi 4. Wer gleichzeitig aufzeichnet und Inferenz betreibt, muss diese CPU-Last einplanen.
+
 **Pattern 1: Hailo + Ollama Combo**
 ```
 Kamera → Hailo (Objekt-Erkennung, 45 FPS)

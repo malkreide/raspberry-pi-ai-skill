@@ -592,16 +592,24 @@ Begrenzt den nutzbaren Arbeitsspeicher. Ein 8-GB-Pi verhält sich damit wie ein 
 | `camera_auto_detect=1` | Overlays für erkannte CSI-Kameras automatisch laden – **in Raspberry Pi OS voreingestellt** |
 | `display_auto_detect=1` | Dasselbe für erkannte DSI-Displays – ebenfalls voreingestellt |
 | `disable_camera_led=1` | Rote Kamera-LED aus |
-| `awb_auto_is_greyworld=1` | Automatischer Weissabgleich nach **Greyworld** |
+| `awb_auto_is_greyworld=1` | Weissabgleich nach **Greyworld** – ⚠️ nur alter Kamera-Stack, siehe unten |
 | `ignore_lcd=1` | Erkennung des Touch-Displays am I2C-Bus überspringen |
 | `disable_touchscreen=1` | Touch-Funktion des offiziellen Displays abschalten |
 
-> ➜ **`awb_auto_is_greyworld=1` ist die Antwort auf «die NoIR-Kamera liefert unbrauchbare
-> Farben».** Ohne IR-Sperrfilter läuft der normale Weissabgleich aus dem Ruder. Die
-> Einstellung schaltet den Automatikmodus auf den Greyworld-Algorithmus um und wirkt damit
-> auch für Programme, die diese Option selbst nicht kennen. Gilt für NoIR-Kameras und für
-> HQ-Kameras mit ausgebautem IR-Filter – für Nachtsicht- und Pflanzenüberwachungsprojekte
-> mit Edge AI der entscheidende Schalter.
+> 🔴 **`awb_auto_is_greyworld` wirkt auf den heutigen Kamera-Stack nicht.** Die Option
+> stammt aus dem Firmware-Pfad des Legacy-Stacks. Die Dokumentation der Kamera-Software
+> hält ausdrücklich fest, dass **`rpicam-apps` den automatischen Weissabgleich nicht in den
+> Greyworld-Modus versetzen kann**.
+>
+> Für NoIR-Kameras – und HQ-Kameras mit ausgebautem IR-Filter – ist der richtige Weg eine
+> **NoIR-Tuning-Datei**:
+>
+> ```bash
+> rpicam-hello --tuning-file /usr/share/libcamera/ipa/rpi/pisp/imx219_noir.json   # ab Pi 5
+> rpicam-hello --tuning-file /usr/share/libcamera/ipa/rpi/vc4/imx219_noir.json    # Pi 4 und älter
+> ```
+>
+> Details in `camera.md`.
 
 ➜ **`disable_camera_led=1`** ist kein Kosmetikpunkt: Bei einer Kamera hinter Glas oder in
 einem Gehäuse spiegelt sich die LED im Bild und stört jede nachgelagerte Erkennung.

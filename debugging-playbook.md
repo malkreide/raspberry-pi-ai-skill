@@ -106,6 +106,7 @@ OS-Versionen, Updates, APT, venv und Diagnose-Werkzeuge: `os-and-software.md`.
 Dateiformat von `config.txt`, bedingte Filter, A/B-Boot, Watchdog: `config-txt.md`.
 Kernel-Header, Kernelmodule, eigene Kernel-Builds und Patches: `kernel.md`.
 Fernzugriff, Dateifreigaben und Netzwerk-Boot: `remote-access.md`.
+Kamera-Software, Tuning-Dateien, Post-Processing und Streaming: `camera.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -693,14 +694,23 @@ sind durchgehend rosa, magenta oder farbstichig; die Objekterkennung darauf ist 
 **Ursache:** Ohne IR-Sperrfilter fällt Infrarotlicht auf den Sensor, mit dem der normale
 automatische Weissabgleich nicht umgehen kann.
 
-```ini
-awb_auto_is_greyworld=1
+**Behebung – die passende Tuning-Datei:**
+
+```bash
+# Pi 5 und neuer
+rpicam-hello --tuning-file /usr/share/libcamera/ipa/rpi/pisp/imx219_noir.json
+# Pi 4 und älter
+rpicam-hello --tuning-file /usr/share/libcamera/ipa/rpi/vc4/imx219_noir.json
 ```
 
-➜ Schaltet den Automatikmodus auf den **Greyworld**-Algorithmus um. Wirkt auch für
-Programme und Bibliotheken, die diese Option selbst nicht anbieten – deshalb der richtige
-Ort dafür in `config.txt` statt im Anwendungscode. Für Nachtsicht-, Tier- und
-Pflanzenüberwachung mit Edge AI der entscheidende Schalter.
+> 🔴 **Nicht `awb_auto_is_greyworld=1` in `config.txt`.** Diese Option stammt aus dem
+> Legacy-Kamera-Stack; **`rpicam-apps` kann den Weissabgleich nicht in den Greyworld-Modus
+> versetzen**. Zeilen aus älteren Anleitungen bleiben hier wirkungslos.
+
+➜ **libcamera erkennt nur den Sensor, nicht das Modul** – die NoIR-Variante trägt denselben
+Sensor wie die Standardvariante. Deshalb muss die abweichende Tuning-Datei ausdrücklich
+angegeben werden; automatisch passiert das nicht. Der Pfad unterscheidet sich nach Modell
+(`pisp/` ab Pi 5, `vc4/` davor). Mehr in `camera.md`.
 
 Verwandt: `disable_camera_led=1` verhindert, dass sich die rote LED in einer Scheibe oder
 im Gehäuse spiegelt und die Erkennung stört.
