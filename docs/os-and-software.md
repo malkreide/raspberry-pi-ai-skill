@@ -342,6 +342,15 @@ sudo apt install rpd-wayland-extras   # bzw. rpd-x-extras
 sudo reboot
 ```
 
+> ℹ️ **Wenn im Control Centre eine Einstellung fehlt, fehlt meist ein Paket – keine
+> Funktion.** Das Control Centre (`rpcc`) ist nur die Hülle; die einzelnen Seiten sind
+> **eigenständige Plugins**: `rc_gui` (die Raspberry-Pi-Einstellungen), `appset`
+> (Erscheinungsbild), `rasputin` (Maus und Tastatur), `rpinters` (Drucker). Auf einem
+> nachgerüsteten Lite-System ist `rpd-preferences` der Metapaket-Eintrag, der sie mitbringt.
+>
+> Das erklärt auch die Angabe oben zu **`raindrop`**: Dort wurde ein **Plugin**
+> abgekündigt, nicht das ganze Werkzeug.
+
 Empfohlene Anwendungen aus der Full-Edition danach über
 **Preferences → Recommended Software**.
 
