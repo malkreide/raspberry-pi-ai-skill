@@ -1,12 +1,13 @@
-# Schnittstellen – SPI, USB und DPI
+# Schnittstellen – SPI, USB, DPI und DSI
 
 Quelle: **Offizielle Raspberry-Pi-Dokumentation, «Computers → Hardware»**
 ([raspberrypi.com/documentation](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)).
 
 Diese Referenz behandelt drei Schnittstellen, deren Tücken selten in Anleitungen stehen,
 aber regelmässig Projekte aufhalten: **SPI** (mehr Busse als bekannt, eine Falle im
-3-Draht-Modus), **USB** (Strombudget und ein Hub-Fehler, der Tastaturen verschwinden lässt)
-und **DPI** (ein Display an der GPIO-Leiste – belegt fast alle Pins).
+3-Draht-Modus), **USB** (Strombudget und ein Hub-Fehler, der Tastaturen verschwinden lässt),
+**DPI** (ein Display an der GPIO-Leiste – belegt fast alle Pins) und **DSI** (die offiziellen
+Touch-Displays – mit Kompatibilitätsgrenzen, die vor dem Kauf zählen).
 
 Ergänzt `rp1-gpio.md` (Pad-Grenzwerte, Alternativfunktionen, PIO) und
 `hardware-specs.md` (Pinbelegung, Modellunterschiede).
@@ -15,6 +16,7 @@ Ergänzt `rp1-gpio.md` (Pad-Grenzwerte, Alternativfunktionen, PIO) und
 1. [SPI](#spi)
 2. [USB](#usb)
 3. [DPI – Parallel-Display an der GPIO-Leiste](#dpi--parallel-display-an-der-gpio-leiste)
+4. [DSI – die offiziellen Touch-Displays](#dsi--die-offiziellen-touch-displays)
 
 ---
 
@@ -319,6 +321,132 @@ dtparam=clock-frequency=32000000,rgb666-padhi
 
 ➜ Die Timings stammen aus dem Datenblatt des Panels. Ein falscher Wert bei `hfp`/`hbp`
 zeigt sich als seitlich verschobenes oder gerissenes Bild – nicht als schwarzer Schirm.
+
+---
+
+## DSI – die offiziellen Touch-Displays
+
+Anders als DPI belegt DSI **keine GPIO-Pins** für Bilddaten – es hängt am eigenen
+Flachbandanschluss. Für Bedienoberflächen ist das der bessere Weg, weil die GPIO-Leiste
+frei bleibt.
+
+### Kompatibilität – hier liegen die Fallen
+
+| Display | Auflösung | Läuft auf | **Läuft nicht auf** |
+|---------|-----------|-----------|---------------------|
+| **Touch Display** (7″) | 800 × 480 | Pi B+ und neuer | Zero-Reihe, Keyboard-Modelle |
+| **Touch Display 2** 5″/7″ | 720 × 1280 | Pi B+ und neuer, alle CMIO | Zero-Reihe, Keyboard-Modelle |
+| **Touch Display 2** 10″ | 1200 × 1920 | **Pi 5 und neuer**, CM5IO; CM4IO nur an **DISP1** | 🔴 **Pi 4B und älter** |
+
+🔴 **Zwei Ausschlüsse, die vor dem Kauf zählen:**
+
+1. **Zero-Reihe und Keyboard-Computer haben keinen DSI-Anschluss.** Kein Adapter hilft.
+2. **Das 10-Zoll-Modell läuft nicht am Pi 4B und älter.** Am CM4IO nur an DISP1, nicht am
+   zweiten Anschluss.
+
+### Das richtige Flachbandkabel
+
+Der Pi 5 hat einen **kleineren DSI-Anschluss** als seine Vorgänger:
+
+| Ziel | Kabel |
+|------|-------|
+| Pi 4 und älter | 15-polig auf 15-polig |
+| **Pi 5, CMIO-Boards** | **22-polig auf 15-polig** (Standard–Mini) |
+| Pi 5 mit **10-Zoll**-Display | 22-polig auf 22-polig (Mini–Mini) |
+
+> ⚠️ **Beim Touch Display 2 liegt das passende Kabel bei, beim ersten Touch Display nicht** –
+> dort ist das 22-auf-15-Kabel für den Pi 5 **separat zu kaufen**. Das ist ein klassischer
+> Beschaffungsfehler: Display da, Pi da, Projekt steht.
+>
+> Die kleinere Seite des 22-auf-15-Kabels gehört an den **Pi 5**, die grössere ans Display.
+
+### 🔴 Die Stromversorgung falsch herum zerstört das Display
+
+Das Touch Display 2 wird über ein **dreipoliges GPIO-Kabel** versorgt (Anschluss `J1` am
+Display). Die Ausrichtung ist nicht beliebig:
+
+> Mit **USB- und Ethernet-Buchsen nach unten** gehört das Kabel **senkrecht an die rechte
+> obere Ecke** der GPIO-Leiste – die rote 5-V-Ader auf **Pin 2**, die schwarze Masse auf
+> **Pin 6**.
+
+Beim ersten Touch Display sind es zwei einzelne Drahtbrücken: **Pin 4 (5 V)** und
+**Pin 6 (GND)**, alternativ Pin 2 für 5 V.
+
+⚠️ **Wer das erste Touch Display über Micro-USB versorgt, darf die GPIO-Verbindung nicht
+zusätzlich herstellen** – eines von beidem, nicht beides.
+
+### Ausrichtung drehen
+
+Mit Desktop über *Control Centre → Screens*, pro Display getrennt. Ohne Desktop über
+`cmdline.txt`:
+
+```
+video=DSI-1:720x1280@60,rotate=90
+```
+
+> 🔴 **Zwei Einschränkungen dieses Wegs:**
+> 1. **`rotate=` dreht nur die Textkonsole.** Anwendungen, die direkt auf DRM schreiben –
+>    `cvlc`, die `rpicam`-Programme – brauchen ihre **eigene** Drehoption. Das erklärt ein
+>    gedrehtes Terminal mit ungedrehtem Kamerabild.
+> 2. **DSI und HDMI teilen sich denselben Wert.** Zwei Displays lassen sich über
+>    `cmdline.txt` nicht unterschiedlich drehen – dafür braucht es den Desktop.
+
+**Die Berührungsebene dreht sich nicht mit.** Sie wird über das Overlay gestellt:
+
+| Display | Overlay |
+|---------|---------|
+| Touch Display (7″) | `vc4-kms-dsi-7inch` |
+| Touch Display 2, 5″ | `vc4-kms-dsi-ili9881-5inch` |
+| Touch Display 2, 7″ | `vc4-kms-dsi-ili9881-7inch` |
+| Touch Display 2, 10″ | `vc4-kms-dsi-ili79600-10-1inch` |
+
+```ini
+dtoverlay=vc4-kms-dsi-ili9881-7inch,invx,invy
+```
+
+| Parameter | Wirkung |
+|-----------|---------|
+| `invx` / `invy` | Achse spiegeln |
+| `swapxy` | Achsen tauschen (90°-Drehung) |
+| `sizex` / `sizey` | Auflösung der Berührungsebene |
+| `disable_touch` | Berührung abschalten, Bild behalten |
+
+Boolesche Parameter gelten als gesetzt, sobald sie dastehen; `invx=0` schaltet sie ab.
+
+> ⚠️ **Nur nötig, wenn ohne Desktop gedreht wird.** Im Desktop die Drehung dort einstellen –
+> Device-Tree und Eingabebibliothek können sich sonst gegenseitig aufheben, und man dreht
+> zweimal.
+>
+> Wird das Overlay von Hand gesetzt, muss `display_auto_detect=1` aus der `config.txt`
+> **entfernt** werden.
+
+### Abschalten
+
+```ini
+ignore_lcd=1            # Display gar nicht erst erkennen
+disable_touchscreen=1   # Bild behalten, Berührung abschalten
+```
+
+### Was sonst noch zählt
+
+| | Touch Display (7″) |
+|---|---|
+| Stromaufnahme | **200 mA bei 5 V** (volle Helligkeit) |
+| Betriebstemperatur | **−20 bis +70 °C** |
+| Hintergrundbeleuchtung | 20 000 Stunden |
+| Berührungspunkte | 10 gleichzeitig |
+
+Beim Touch Display 2 sind es **fünf** Punkte bei 5″ und 7″, **zehn** beim 10-Zoll-Modell.
+
+➜ **Die 200 mA gehören ins Strombudget** (siehe `setup-provisioning.md`) – sie kommen zum
+Eigenverbrauch des Boards und zur Kamera hinzu.
+
+> ℹ️ Ab Bookworm bringt Raspberry Pi OS die Bildschirmtastatur **Squeekboard** mit. Sie
+> erscheint bei Texteingabe automatisch; dauerhaft ein- oder ausschalten über
+> `raspi-config` → *Display* oder *Control Centre → Display*.
+
+⚠️ **Das Display muss in ein Gehäuse eingebaut werden**, das im Betrieb keinen Zugang zur
+Platine lässt – ausdrückliche Herstellerauflage, nicht bloss eine Empfehlung.
 
 ---
 

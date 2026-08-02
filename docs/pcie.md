@@ -253,6 +253,28 @@ Der offizielle Adapter von der 16-Pin-FFC-Schnittstelle auf M.2 M Key.
 | Produktionszusage | mindestens bis **Januar 2032** |
 | Bohrbild | 58 × 49 mm, 3,5 mm Kantenabstand – deckungsgleich mit dem Pi |
 
+> 🔴 **Voraussetzung: Bootloader vom 6. Dezember 2023 oder neuer.** Mit älterer Firmware
+> wird der HAT+ nicht erkannt – ein Fehlerbild, das leicht dem Kabel oder dem Modul
+> zugeschrieben wird.
+>
+> ```bash
+> sudo rpi-eeprom-update            # Datum prüfen
+> sudo raspi-config                 # bei älterem Datum: Advanced Options →
+>                                   # Bootloader Version → Latest
+> sudo rpi-eeprom-update -a && sudo reboot
+> ```
+
+⚠️ **Vor jedem Ein- oder Ausbau eines M.2-Geräts den Pi vom Strom trennen.** Der Steckplatz
+ist nicht für den Wechsel im Betrieb ausgelegt.
+
+**Beim Einbau des Moduls:** Es gleitet **leicht schräg nach oben** in den Steckplatz und
+darf **nicht hineingedrückt** werden. Erst danach flach herunterdrücken und mit der
+gerändelten Schraube sichern – **nicht überdrehen**.
+
+> ℹ️ **Das Flachbandkabel hat auf beiden Seiten eine andere Ausrichtung:** Am **Pi** zeigen
+> die Kontakte **nach innen zu den USB-Buchsen**, am **HAT+ nach oben**. Verdreht eingelegt
+> wird das Gerät nicht erkannt.
+
 ### Warnungen aus dem Product Brief
 
 - Das Produkt darf **nur über die PCIe-Schnittstelle** mit einem Raspberry Pi verbunden
