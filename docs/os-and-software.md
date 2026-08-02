@@ -377,6 +377,38 @@ ffmpeg -r 30 -i video.h264 -c:v copy video.mp4
 `-c:v copy` kopiert den Videostrom unverändert – kein Neucodieren, keine
 Qualitätseinbusse, läuft auch auf dem Pi schnell.
 
+### 🔴 `h264_omx` und `*_mmal` gibt es nicht mehr
+
+Unzählige Anleitungen beschleunigen `ffmpeg` auf dem Pi mit `-c:v h264_omx` zum Kodieren
+oder `-c:v h264_mmal` zum Dekodieren. **Im `ffmpeg` von Raspberry Pi OS existieren diese
+Codecs nicht.** Die Paketierung übersetzt ausdrücklich mit:
+
+```
+--disable-omx --disable-mmal --enable-v4l2-request
+```
+
+OpenMAX und MMAL sind die **alten Broadcom-Schnittstellen**; sie sind abgeschaltet. An
+ihre Stelle tritt auf ARM die **V4L2-Request-API**, der heutige Weg zur
+Hardwarebeschleunigung.
+
+➜ **Damit ist das der Alterstest für `ffmpeg`-Anleitungen zum Raspberry Pi** – analog zu
+`raspistill`/`raspivid` bei der Kamera (siehe `camera.md`): Steht `omx` oder `mmal` im
+Befehl, ist die Anleitung überholt. Der Fehler lautet dann `Unknown encoder 'h264_omx'`,
+was zuverlässig in die Suche nach einem fehlenden Paket führt – das es nicht gibt.
+
+**Was das Gerät tatsächlich kann:**
+
+```bash
+ffmpeg -hide_banner -hwaccels                    # verfügbare Beschleuniger
+ffmpeg -hide_banner -encoders | grep -i v4l2     # Hardware-Encoder
+ffmpeg -hide_banner -decoders | grep -i v4l2     # Hardware-Decoder
+```
+
+> ⚠️ **Auf dem Pi 5 fehlt der H.264-Hardwarepfad ohnehin** – der Chip hat keinen
+> H.264-Encoder mehr, HEVC dagegen bleibt in Hardware. Die CPU-Kosten dafür stehen in
+> `hardware-specs.md` und `camera.md`. Auf dem Pi 5 also nicht nach einem
+> H.264-Hardwareweg suchen: Es gibt keinen.
+
 ---
 
 ## Diagnose-Werkzeuge

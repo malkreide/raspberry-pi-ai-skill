@@ -193,6 +193,11 @@ ffmpeg -r 10 -f image2 -pattern_type glob -i 'timelapse/*.jpg' \
 
 Für sehr lange Zeiträume ist ein `cron`-Eintrag robuster als ein tagelang laufender Prozess.
 
+> ℹ️ `libx264` kodiert in **Software**. Einen Hardware-Encoder für H.264 gibt es auf dem
+> Pi 5 nicht mehr, und die alten Wege `h264_omx` und `h264_mmal` sind im `ffmpeg` von
+> Raspberry Pi OS **abgeschaltet** – Einzelheiten und der Prüfbefehl in
+> [`os-and-software.md`](os-and-software.md#-h264_omx-und-_mmal-gibt-es-nicht-mehr).
+
 ---
 
 ## Video – und der Encoder-Bruch beim Pi 5
