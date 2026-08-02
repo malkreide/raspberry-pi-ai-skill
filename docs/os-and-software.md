@@ -381,6 +381,56 @@ Qualitätseinbusse, läuft auch auf dem Pi schnell.
 
 ## Diagnose-Werkzeuge
 
+### 🔴 `raspinfo` – der erste Befehl bei jedem Problem
+
+```bash
+raspinfo                 # vollständiger Systemzustand
+raspinfo > bericht.txt
+```
+
+`raspinfo` sammelt in einem Durchlauf, was sonst ein Dutzend Einzelbefehle liefert:
+Modell und Revision, Firmware- und Bootloader-Version, `config.txt` und `cmdline.txt`,
+Drosselungsstatus, Temperaturen, Takte, geladene Module, erkannte Kameras, USB-Baum,
+`dmesg`-Auszug.
+
+➜ **Es ist ausdrücklich für Fehlerberichte gedacht** – wer im Forum oder auf GitHub fragt,
+hängt diese Ausgabe an. Für dieses Skill gilt dasselbe: **Bevor eine Ferndiagnose beginnt,
+`raspinfo` anfordern.** Das erspart die Rückfragerunde nach Modell, OS-Stand und
+Firmware-Version fast vollständig.
+
+> ⚠️ Die Ausgabe enthält Hostname, Seriennummer, MAC- und IP-Adressen sowie die WLAN-SSID.
+> Vor dem Veröffentlichen durchsehen.
+
+### Der Werkzeugkasten aus `raspberrypi/utils`
+
+Diese Werkzeuge liegen im Paket `raspi-utils` beziehungsweise unter
+[`raspberrypi/utils`](https://github.com/raspberrypi/utils). Mehrere davon lösen Probleme,
+für die sonst umständliche Umwege nötig sind:
+
+| Werkzeug | Wofür |
+|----------|-------|
+| **`raspinfo`** | Systemzustand für Fehlerberichte – siehe oben |
+| **`pinctrl`** | GPIO-Zustand und Pin-Muxing anzeigen und ändern, **am Kernel vorbei**; Nachfolger von `raspi-gpio` |
+| **`rpi-gpu-usage`** | **GPU-Auslastung pro Prozess** (V3D, Pi 4 und 5) |
+| **`ovmerge`** | Overlay-Quellen zusammenführen, flachklopfen und sortieren; zeigt den Include-Baum |
+| **`dtapply`** | Wendet **alle** `dtparam`- und `dtoverlay`-Zeilen einer `config.txt` auf eine `.dtb` an |
+| `dtmerge` | Einzelne übersetzte Overlays (`.dtbo`) auf eine `.dtb` anwenden |
+| **`eeptools`** | EEPROMs für **HAT+ und HAT** erzeugen und verwalten |
+| **`otpset`** | Kunden-OTP-Bits lesen und setzen – bequemer als `vcmailbox` von Hand |
+| `piolib` | Zugriff auf die **PIO-Hardware des Pi 5** (siehe `rp1-gpio.md`) |
+| `vclog`, `vcmailbox`, `vcgencmd` | VideoCore-Logs, Mailbox-Schnittstelle, Firmware-Befehle |
+| `overlaycheck`, `kdtc` | Overlays im Kernelbaum prüfen und übersetzen (siehe `kernel.md`) |
+| `rpieepromab` | A/B-EEPROM-Partitionen der Pi-5-Familie verwalten |
+
+➜ **`rpi-gpu-usage` ist für Edge-AI-Projekte der interessanteste Eintrag.** Bei einer
+Pipeline aus Kamera, Encoder und Inferenz beantwortet es die Frage, **welcher Prozess** die
+GPU belegt – etwas, das `top` und `htop` nicht zeigen.
+
+➜ **`dtapply` beantwortet die Frage «greift meine `config.txt` überhaupt?»** ohne Neustart:
+Es baut den Device Tree so zusammen, wie die Firmware es beim Booten täte. Zusammen mit
+`ovmerge` lässt sich damit prüfen, ob zwei Overlays denselben Pin beanspruchen – **bevor**
+das Gerät nicht mehr bootet.
+
 ### `vcgencmd get_throttled` – vollständige Bit-Tabelle
 
 ```bash

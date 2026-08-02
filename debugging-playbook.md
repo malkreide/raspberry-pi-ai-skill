@@ -1,6 +1,7 @@
 # Debugging-Playbook für Raspberry Pi Projekte
 
 ## Inhaltsverzeichnis
+0. [Schritt 0: Den Systemzustand erfassen](#schritt-0-den-systemzustand-erfassen)
 1. [Isolationsmethode](#isolationsmethode)
 2. [Pi-5-spezifische Stolpersteine](#pi-5-spezifische-stolpersteine)
 3. [Software-Debugging](#software-debugging)
@@ -9,6 +10,29 @@
 6. [Eskalationspfade](#eskalationspfade)
 7. [Stalled-Projekt-Analyse](#stalled-projekt-analyse)
 8. [Pre-Flight Quick Checks](#pre-flight-quick-checks)
+
+---
+
+## Schritt 0: Den Systemzustand erfassen
+
+Vor jeder Hypothese steht die Frage, **auf welchem Gerät und welchem Stand** man eigentlich
+sucht. Ein Befehl beantwortet sie vollständig:
+
+```bash
+raspinfo > bericht.txt
+```
+
+`raspinfo` liefert Modell und Revision, Firmware- und Bootloader-Version, `config.txt` und
+`cmdline.txt`, Drosselungsstatus, Temperaturen, Takte, geladene Module, erkannte Kameras,
+den USB-Baum und einen `dmesg`-Auszug – in einem Durchlauf.
+
+➜ **Bei einer Ferndiagnose ist das die erste Anforderung**, nicht die dritte. Es erspart
+die gesamte Rückfragerunde nach Modell, OS-Stand und Firmware – und deckt regelmässig
+Ursachen auf, nach denen niemand gefragt hätte (gedrosseltes Board, alte Firmware, ein
+Overlay, von dem der Nutzer nichts wusste).
+
+> ⚠️ Die Ausgabe enthält Hostname, Seriennummer, MAC- und IP-Adressen sowie die WLAN-SSID.
+> Vor dem Weitergeben durchsehen.
 
 ---
 
