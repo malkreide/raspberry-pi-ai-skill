@@ -123,6 +123,68 @@ alphabetisch (z.B. `E` in der Zeitzonenliste zu *Europe*).
 > Menü**namen** sind der verlässlichere Anker; die Nummern hier entsprechen dem aktuellen
 > Stand der offiziellen Dokumentation.
 
+### `raspi-config nonint` – dasselbe Menü ohne Menü
+
+Jeder Menüpunkt ist eine Shell-Funktion, die sich **direkt aufrufen** lässt. Damit wird aus
+der Klickstrecke ein Skript – der eigentliche Weg, einen Klassensatz oder eine Geräteflotte
+gleich zu konfigurieren.
+
+```bash
+sudo raspi-config nonint <funktion> [argumente]
+```
+
+> 🔴 **Die Logik ist umgekehrt, als man erwartet: `0` schaltet EIN, `1` schaltet AUS.**
+> Das folgt der Shell-Konvention (0 = Erfolg), liest sich aber genau falsch herum. Wer
+> `do_ssh 1` schreibt, um SSH zu aktivieren, schaltet es ab – und sperrt sich bei einem
+> Headless-Gerät unter Umständen aus.
+
+| Funktion | Wirkung |
+|----------|---------|
+| `do_ssh 0` | **SSH einschalten** |
+| `do_vnc 0` | VNC einschalten |
+| `do_i2c 0` | I2C einschalten |
+| `do_spi 0` | SPI einschalten |
+| `do_camera 0` | Kameraschnittstelle einschalten |
+| `do_serial 0` | Serielle Konsole einschalten (zur Hardware-UART siehe `rp1-gpio.md`) |
+| `do_hostname "messknoten-01"` | Hostnamen setzen |
+| `do_wifi_country CH` | **WLAN-Land setzen** – ohne dies bleibt das Funkmodul stumm |
+| `do_change_locale de_CH.UTF-8` | Locale |
+| `do_change_timezone Europe/Zurich` | Zeitzone |
+| `do_boot_behaviour B1` | Konsole ohne Autologin (`B2` mit, `B3`/`B4` Desktop) |
+| `do_memory_split 128` | GPU-Speicher in MB |
+| `do_gldriver G2` | Vollständiges KMS |
+
+Das Ausdehnen der Root-Partition hat einen eigenen Schalter, keine `nonint`-Funktion:
+
+```bash
+sudo raspi-config --expand-rootfs
+```
+
+**Beispiel – Erstkonfiguration eines Messknotens in einem Durchlauf:**
+
+```bash
+sudo raspi-config nonint do_hostname "messknoten-01"
+sudo raspi-config nonint do_wifi_country CH
+sudo raspi-config nonint do_change_timezone Europe/Zurich
+sudo raspi-config nonint do_ssh 0
+sudo raspi-config nonint do_i2c 0
+sudo raspi-config nonint do_boot_behaviour B1
+sudo raspi-config --expand-rootfs
+sudo reboot
+```
+
+> ⚠️ **`nonint` ist keine zugesicherte Schnittstelle.** Die Funktionen sind Interna des
+> Skripts; Namen und Argumente können sich zwischen OS-Versionen ändern. Vor dem Einsatz in
+> einem Provisionierungsskript prüfen, was die installierte Fassung tatsächlich kennt:
+>
+> ```bash
+> grep -o '^do_[a-z_]*' /usr/bin/raspi-config | sort -u
+> ```
+
+➜ **Für die Erstinstallation ist der Imager der bessere Weg** – er setzt Hostname, SSH,
+Benutzer und WLAN schon beim Schreiben des Mediums (siehe `setup-provisioning.md`).
+`nonint` ist das Mittel für **bereits laufende** Geräte und für Änderungen im Bestand.
+
 ---
 
 ## Einstellungen mit Projektrelevanz
