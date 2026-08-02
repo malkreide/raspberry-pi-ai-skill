@@ -18,7 +18,8 @@ ist – meistens nämlich nicht.
 8. [Installieren – ohne sich auszusperren](#installieren--ohne-sich-auszusperren)
 9. [Kernel konfigurieren mit menuconfig](#kernel-konfigurieren-mit-menuconfig)
 10. [Patches anwenden](#patches-anwenden)
-11. [Änderungen beitragen](#änderungen-beitragen)
+11. [PREEMPT_RT – harte Echtzeit für Robotik](#preempt_rt--harte-echtzeit-für-robotik)
+12. [Änderungen beitragen](#änderungen-beitragen)
 
 ---
 
@@ -398,6 +399,71 @@ bestimmten Commit** als Basis voraus, nicht nur eine Version.
 |--------|--------------|
 | **Neue Hardware** | Hersteller liefern Patchsets als Übergangslösung, bis die Änderungen im Upstream und danach im Pi-Kernel angekommen sind |
 | **`PREEMPT_RT`** | Vollständig unterbrechbarer Kernel für harte Echtzeit |
+
+---
+
+## PREEMPT_RT – harte Echtzeit für Robotik
+
+Der wichtigste Grund, überhaupt einen eigenen Kernel zu bauen. Er verdient eigene Zahlen,
+weil «Echtzeit» sonst ein Gefühl bleibt.
+
+### Warum der Standardkernel nicht reicht
+
+Ein gewöhnlicher Linux-Kernel ist ein **General Purpose OS** und damit **nicht
+deterministisch**. Unter Last – Protokolldateien, Netzwerkverkehr, KI-Inferenz – werden
+Hardware-Ereignisse als *SoftIRQs* verzögert abgearbeitet.
+
+| Konfiguration | Worst-Case-Latenz bei einem 250-Hz-Regelkreis |
+|---------------|-----------------------------------------------|
+| Standardkernel | **> 9 ms** |
+| **`PREEMPT_RT` + CPU-Isolation** (`isolcpus=2,3`) | **< 225 µs** |
+
+➜ **Ein Flugregler, der 9 ms auf einen Sensorwert wartet, wird instabil.** Der Unterschied
+ist nicht «etwas flotter», sondern der Unterschied zwischen fliegt und stürzt ab. Für
+Aktorik mit engem Regelkreis – Drohnen, Balancierroboter, Schrittmotorprofile – ist es
+das ausschlaggebende Kriterium.
+
+> ⚠️ **`isolcpus` gehört zur Lösung dazu.** Der Patch allein bringt einen Teil des Gewinns;
+> die zitierte Zahl gilt für PREEMPT_RT **plus** exklusiv reservierte Kerne für den
+> Regelkreis. Der Parameter steht in `cmdline.txt` (siehe `configuration.md` – eine Zeile!).
+
+### Was der Patch technisch ändert
+
+| Mechanismus | Ohne Patch | Mit `PREEMPT_RT` |
+|-------------|-----------|------------------|
+| **Spinlocks** | Blockierter Prozess wartet aktiv in einer Schleife, frisst CPU-Zeit, nicht unterbrechbar | **Schlafende Spinlocks** auf Mutex-Basis – der Task wird schlafen gelegt, hochpriorisierte Aufgaben laufen weiter |
+| **Interrupts** | Hardware-Interrupts haben absolute Priorität und stoppen alles | **Threaded Interrupts**: fast alle Handler laufen als Kernel-Threads unter dem normalen Scheduler |
+| **Prioritätsinversion** | Ein niederpriorer Prozess kann einen hochprioren beliebig lange blockieren | **`rtmutex` mit Priority Inheritance**: Der blockierende Prozess erbt vorübergehend die hohe Priorität, wird schnell fertig und gibt frei |
+
+➜ **Threaded Interrupts sind der praktisch nutzbarste Teil.** Damit lässt sich festlegen,
+dass der Interrupt der Motorsteuerung Vorrang vor dem Netzwerk-Interrupt hat – auch wenn
+Letzterer tausende Pakete pro Sekunde liefert. Ohne den Patch gewinnt immer die Hardware.
+
+### Der Preis
+
+> 🔴 **Determinismus kostet Durchsatz.** In Vergleichsmessungen ist der **Standardkernel
+> etwa 9–12 % schneller** bei gewöhnlichen Berechnungen. Die laufende Verwaltung von
+> Interrupt-Prioritäten und Sperren ist nicht umsonst.
+
+➜ **Das ist ein echter Zielkonflikt, kein Detail:** Wer auf demselben Gerät KI-Inferenz
+*und* harte Echtzeit will, zahlt bei der Inferenz. Die saubere Antwort ist meist eine
+**Aufgabenteilung** – Wahrnehmung auf dem Pi mit NPU, zeitkritische Regelung auf einem
+Mikrocontroller (Pico, STM32) – statt beides in einen Kernel zu zwingen.
+
+Dazu kommt der Aufwand: Cross-Compilation, Kernel-Build-Skripte und die Pflege bei jedem
+Update. Alles aus [«Zuerst: brauchen Sie das überhaupt?»](#zuerst-brauchen-sie-das-überhaupt)
+gilt hier verschärft.
+
+### Vorgehen
+
+1. Kernelversion feststellen (`head Makefile -n 4`) und den **passenden** RT-Patch laden.
+2. `cat patch-<version>-rt<n>.patch | patch -p1`
+3. In `menuconfig` unter *General setup → Preemption Model* das vollständig unterbrechbare
+   Modell wählen.
+4. Bauen, unter **neuem Namen** installieren und über `kernel=` in `config.txt` auswählen –
+   damit der Rückweg offen bleibt.
+5. `isolcpus=` in `cmdline.txt` ergänzen und die Latenz **selbst messen**, statt sie
+   anzunehmen.
 
 ---
 

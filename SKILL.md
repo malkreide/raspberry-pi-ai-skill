@@ -31,8 +31,10 @@ Vor jeder Implementierung klären:
 - Strombudget und Kühlung
 - Echtzeit-Anforderungen – **harte** Echtzeit (garantierte Latenz) bedeutet
   `PREEMPT_RT` und damit einen eigenen Kernel-Build: gehört in die Aufwandsschätzung,
-  nicht in eine spätere Überraschung. Für weiche Echtzeit sind RP1-Hardware und PIO
-  fast immer der bessere Hebel.
+  nicht in eine spätere Überraschung. Grössenordnung: Standardkernel **>9 ms**
+  Worst-Case-Jitter, mit `PREEMPT_RT` + `isolcpus` **<225 µs** – Preis sind 9–12 %
+  Rechenleistung. Für weiche Echtzeit sind RP1-Hardware und PIO fast immer der bessere
+  Hebel; für Echtzeit **neben** KI-Last eher ein Mikrocontroller für die Regelung.
 - Netzwerk-Konnektivität
 - **Einsatzumgebung**: Umgebungstemperatur, Gehäuse, Montage, Feuchtigkeit
 - **PCIe-Bedarf**: NVMe, NPU oder beides? Beide belegen denselben Anschluss – nur eines geht.
@@ -245,6 +247,11 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - `hailo-all` und `hailo-h10-all` gleichzeitig installiert → schliessen einander aus
 - Selbst kompiliertes Hailo-Modell läuft nach einem Update nicht mehr → Werkzeugketten- und Laufzeitversion müssen zusammenpassen; die vier Pakete mit `apt-mark hold` festhalten
 - `<N/A>` bei Serial/Part/Product in `hailortcli` → **kein Fehler** bei AI HAT+ und AI HAT+ 2
+- Modell für 26 TOPS ausgelegt, Hailo-**8L** beschafft → der 8L leistet **13 TOPS**; 26 TOPS hat der Hailo-**8**
+- Inferenz im Kurztest gut, im Dauerbetrieb schlecht → thermische Drosselung setzt nach ~120 s ein (84 °C, 2,4 → 2,18 GHz, −19 %)
+- PCIe für NVMe **und** NPU gebraucht → geht nicht; **AI Camera** (IMX500) rechnet im Kameramodul und lässt PCIe frei
+- `lspci` zeigt gar nichts, `dmesg` meldet «Link Down» → Link-Training gescheitert; FFC-Richtung, ZIF-Konnektor, Kontakte unter Lupe prüfen
+- 7B-Modell auf der CPU «zu langsam» → unter 3B bleiben und quantisieren; mehr RAM löst es nicht, der Engpass ist die Rechenkapazität
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`
 - Modulbau scheitert direkt nach dem Kernel-Update → das `apt`-Header-Paket zieht erst Wochen später nach
 - 32-Bit-Kernel gebaut, Pi bootet den alten → auf 4er-Modellen braucht es `ARCH=arm` **und** `arm_64bit=0`

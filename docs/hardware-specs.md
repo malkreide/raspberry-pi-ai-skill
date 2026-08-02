@@ -37,6 +37,16 @@ Boot-Medium, Netzteilwahl, Headless-Setup und erster Start: [`setup-provisioning
 | **Speicherkarte** | microSD mit SDR104-Highspeed-Modus |
 | **Netzwerk** | Gigabit Ethernet mit PoE+ (separater PoE+ HAT nötig), Dual-Band 802.11ac WLAN, Bluetooth 5.0/BLE |
 | **Sonstiges** | Echtzeituhr (RTC, externe Batterie), Power-Button, 40-Pin-Header |
+| **Cache** | 512 KB L2 je Kern, **2 MB gemeinsamer L3** |
+
+> ℹ️ **Verfügbarkeit als Planungsgrösse:** Raspberry Pi hat die Produktion des Pi 5 und der
+> KI-Erweiterungen **bis mindestens Januar 2030** zugesagt. Für Projekte mit langer
+> Laufzeit oder Nachbeschaffung ist das ein belastbarer Anker – anders als bei den meisten
+> Einplatinenrechnern.
+>
+> Ebenfalls vertraglich abgesichert: Die kommerzielle Raspberry Pi Ltd. ist gegenüber der
+> Foundation verpflichtet, weiterhin Low-Cost-Computer anzubieten – seit Februar 2024 mit
+> einer festgeschriebenen Obergrenze von **45 USD** für das Basismodell.
 | **Stromversorgung** | 5V/5A via USB-C mit Power Delivery |
 | **TDP** | ~12W (Peak: ~27W mit Peripherie) |
 | **Betriebstemperatur** | **0 °C bis 70 °C** (Umgebung) |
