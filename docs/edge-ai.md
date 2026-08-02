@@ -189,7 +189,7 @@ auf Computer Vision.
 gleichzeitig».** Für eine einzelne Objekterkennung genügt der 8L; sobald Erkennung,
 Posenschätzung und Tracking parallel laufen sollen, ist der 8 die richtige Wahl.
 
-- **6W TDP** (zusätzlich zum Pi 5)
+- **~2,5 W typische Leistungsaufnahme** (zusätzlich zum Pi 5)
 - Beim **AI HAT+ ist der Chip aufgelötet**, beim älteren AI Kit steckt ein M.2-Modul im
   Sockel. Das Auflöten baut flacher und koppelt thermisch besser – der Grund, warum das
   AI Kit abgelöst wurde.
@@ -349,14 +349,23 @@ with VDevice() as target:
 | Hardware | FPS | Latenz |
 |----------|-----|--------|
 | **Hailo-8L** | **~45 FPS** | **~22 ms** |
-| Pi 5 CPU (Cortex-A76) | ~2 FPS | ~500 ms |
-| Pi 5 CPU + TFLite | ~5 FPS | ~200 ms |
+| Pi 5 CPU + TFLite (quantisiert) | ~5 FPS | ~200 ms |
+| Pi 5 CPU ohne Quantisierung | ~2 FPS | ~500 ms |
 
-**→ Hailo ist ~20× schneller als CPU-Inferenz**
+**→ Gegenüber der realistischen CPU-Variante (TFLite, quantisiert) ist die NPU rund
+9× schneller.** Der oft zitierte Faktor 20 entsteht nur im Vergleich zur **unoptimierten**
+CPU-Inferenz – ein fairer Vergleich zieht die quantisierte Variante heran.
+
+> ⚠️ **Richtwerte ohne benannte Messquelle.** Die gemessenen Zahlen einer
+> Vergleichsstudie stehen unter [Performance-Vergleich](#performance-vergleich); dort
+> ergibt sich für den Hailo-**8** gegenüber CPU-TFLite ein Faktor von rund 23.
 
 ### Thermisches Management
 
-⚠️ **Kritisch:** Hailo-8L + Pi 5 = ~15W Gesamt-TDP
+⚠️ **Kritisch:** Pi 5 unter Last (~12,5 W) + NPU (~2,5 W) ≈ **15 W** – vor Kamera, NVMe
+und USB-Peripherie. Die Messung im Abschnitt [Performance-Vergleich](#performance-vergleich)
+nennt **12,35 W** für ein Gesamtsystem mit Hailo-8 unter Volllast; beide Werte passen
+zusammen, weil die NPU die CPU entlastet.
 
 ```bash
 # Thermal Monitoring (kontinuierlich)
@@ -536,12 +545,16 @@ with open("model_int8.tflite", "wb") as f:
 
 ### Computer Vision (YOLOv8s, 640×640)
 
-| Hardware | FPS | Latenz | Power | Kosten |
-|----------|-----|--------|-------|--------|
-| **Hailo-8L (Pi 5)** | **45** | **22 ms** | **+6W** | **~$70** |
-| TFLite CPU (Pi 5) | 5 | 200 ms | +0W | $0 |
-| TFLite CPU (Pi 4) | 2 | 500 ms | +0W | $0 |
-| Coral Edge TPU | 30 | 33 ms | +2W | $60 |
+> ⚠️ **Diese Tabelle enthält Richtwerte ohne benannte Messquelle** – Grössenordnungen für
+> die Vorauswahl, keine zugesicherten Werte. Für belastbare Zahlen die **gemessene**
+> Tabelle darunter verwenden und für das eigene Modell selbst messen.
+
+| Hardware | FPS | Latenz | Zusatzleistung | Kosten |
+|----------|-----|--------|----------------|--------|
+| **Hailo-8L (Pi 5)** | ~45 | ~22 ms | **~+2,5 W** | ~$70 |
+| TFLite CPU (Pi 5) | ~5 | ~200 ms | +0 W | $0 |
+| TFLite CPU (Pi 4) | ~2 | ~500 ms | +0 W | $0 |
+| Coral Edge TPU | ~30 | ~33 ms | ~+2 W | $60 |
 
 ### Gemessener Vergleich CPU / GPU / NPU (YOLOv8n, 640×640)
 
