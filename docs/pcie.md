@@ -235,6 +235,12 @@ Der offizielle Adapter von der 16-Pin-FFC-Schnittstelle auf M.2 M Key.
 - **Compact:** L-förmig ausgeschnitten, damit im offiziellen Gehäuse der integrierte
   Lüfter frei bleibt. Der Preis dafür: **nur 2230**, keine 2242-Module.
 
+> ℹ️ **Der interne M.2-Steckplatz des Pi 500+ ist grosszügiger als beide HAT+-Varianten:**
+> Er nimmt **2230, 2242, 2260 und 2280** auf – also auch die langen, meist günstigsten
+> Module. Wer NVMe-Speicher als Hauptkriterium hat und keine GPIO-Erweiterung braucht,
+> bekommt ihn dort ohne HAT und ohne Flachbandkabel. Der Steckplatz ist nicht auf SSDs
+> beschränkt, sondern nimmt auch andere PCIe-Peripherie auf.
+
 ### Gemeinsame Eigenschaften
 
 | Eigenschaft | Wert |
