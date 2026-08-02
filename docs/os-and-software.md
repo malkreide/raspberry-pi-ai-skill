@@ -442,7 +442,7 @@ für die sonst umständliche Umwege nötig sind:
 | Werkzeug | Wofür |
 |----------|-------|
 | **`raspinfo`** | Systemzustand für Fehlerberichte – siehe oben |
-| **`pinctrl`** | GPIO-Zustand und Pin-Muxing anzeigen und ändern, **am Kernel vorbei**; Nachfolger von `raspi-gpio` |
+| **`pinctrl`** | GPIO-Zustand und Pin-Muxing anzeigen und ändern, **am Kernel vorbei** |
 | **`rpi-gpu-usage`** | **GPU-Auslastung pro Prozess** (V3D, Pi 4 und 5) |
 | **`ovmerge`** | Overlay-Quellen zusammenführen, flachklopfen und sortieren; zeigt den Include-Baum |
 | **`dtapply`** | Wendet **alle** `dtparam`- und `dtoverlay`-Zeilen einer `config.txt` auf eine `.dtb` an |

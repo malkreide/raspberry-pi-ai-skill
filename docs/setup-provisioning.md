@@ -543,3 +543,23 @@ an.
   – KiCad-Beispieldateien für **eigene RP2040-Platinen** (Lizenz CERN-OHL-P-2.0). Der
   passende Einstieg, wenn aus einem Prototyp mit Pico eine eigene Platine werden soll –
   siehe auch `compute-module.md` für denselben Schritt auf der Linux-Seite.
+
+### Eigene RP2040-Platine mit USB: braucht es eine Produkt-ID?
+
+Wer ein eigenes Gerät mit RP2040 oder RP2350 baut, das sich per USB meldet, steht vor der
+Frage nach einer Produkt-ID. **Raspberry Pi darf seine Vendor-ID `0x2E8A` unterlizenzieren**
+– die USB-IF hat das ausdrücklich erlaubt, weil der Chip in fremden Produkten steckt.
+
+➜ **Meist braucht es aber gar keine eigene PID.** Nötig ist sie vor allem dann, wenn
+**Windows einen herstellereigenen Treiber** verlangt. Nutzt das Gerät die
+Standardklassen – **CDC** für serielle Schnittstellen, **HID** für Eingabegeräte –, kann es
+sich eine gemeinsame PID teilen und sich über den Produktnamen unterscheiden.
+
+Für eine eigene PID gibt es ein Antragsformular; Reservierungen vor der Markteinführung
+laufen über einen Pull Request an
+[`raspberrypi/usb-pid`](https://github.com/raspberrypi/usb-pid). Dort steht auch die Liste
+der bereits vergebenen IDs.
+
+> ⚠️ **Keine fremde VID/PID-Kombination erfinden oder abschreiben.** Kollidierende IDs
+> führen dazu, dass Windows den falschen Treiber lädt – ein Fehlerbild, das auf dem eigenen
+> Entwicklungsrechner nie auftritt und beim Kunden sofort.

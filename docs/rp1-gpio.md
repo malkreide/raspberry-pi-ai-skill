@@ -440,6 +440,28 @@ kosten würde. Wer eigene Treiber schreibt, sollte das nutzen.
 
 ---
 
+## 🔴 `raspi-gpio` funktioniert auf dem Pi 5 nicht
+
+Das Werkzeug **`raspi-gpio` ist abgekündigt** – es wird ausdrücklich weder gewartet noch
+unterstützt und ist durch **`pinctrl`** ersetzt.
+
+Für den Pi 5 kommt ein zweiter, härterer Grund dazu: `raspi-gpio` schreibt **direkt in die
+GPIO-Register des BCM283x**. Auf dem Pi 5 liegen die GPIO aber am **RP1**, nicht am SoC –
+das Werkzeug greift dort schlicht ins Leere.
+
+```bash
+pinctrl              # alle Pins mit Funktion und Pegel
+pinctrl get 17       # ein einzelner Pin
+pinctrl set 17 op dh # als Ausgang, High
+```
+
+➜ **Damit ist `raspi-gpio` der Alterstest für GPIO-Anleitungen** – parallel zu
+`raspistill`/`raspivid` bei der Kamera und `h264_omx` bei `ffmpeg` (siehe `SKILL.md`).
+Taucht es in einer Anleitung auf, stammt diese aus der Zeit vor dem Pi 5, und ihre übrigen
+Annahmen zu Treiberstrom, Timing und Pin-Verhalten sind ebenfalls zu prüfen.
+
+---
+
 ## Konsequenzen für die Praxis
 
 | Situation | Regel auf dem Pi 5 |
