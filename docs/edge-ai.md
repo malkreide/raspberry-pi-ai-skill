@@ -169,11 +169,30 @@ sudo systemctl disable ollama
 > bei dem Ollama auf der CPU alle Kerne und den Arbeitsspeicher belegt. Details in
 > `hailo.md`.
 
-Der Hailo-8L ist ein Edge AI Accelerator (Neural Processing Unit) für Raspberry Pi 5. Bietet:
-- **26 TOPS** bei INT8-Precision
-- **6W TDP** (zusätzlich zu Pi 5)
-- M.2-Modul am PCIe-Anschluss des Pi 5
-- Spezialisiert auf Computer Vision
+Ein Edge AI Accelerator (Neural Processing Unit) am PCIe-Anschluss des Pi 5, spezialisiert
+auf Computer Vision.
+
+### 🔴 Leistungsklassen – 13 ≠ 26 TOPS
+
+| Chip | Inferenzleistung | Produkt | Richtpreis | Wofür |
+|------|------------------|---------|-----------|-------|
+| **Hailo-8L** | **13 TOPS** | AI Kit, AI HAT+ 13 TOPS | ~70 USD | Einzelnes Modell (z.B. nur Objekterkennung); Einstieg, Bildung |
+| **Hailo-8** | **26 TOPS** | AI HAT+ 26 TOPS | ~110 USD | **Mehrere Modelle parallel** (Erkennung + Pose + Tracking) auf hochauflösenden Strömen |
+| **Hailo-10H** | GenAI-fähig | AI HAT+ 2 | – | Zusätzlich Sprachmodelle (`hailo.md`) |
+
+> ⚠️ **Der Hailo-8L leistet 13 TOPS, nicht 26.** Die 26 TOPS gehören zum **Hailo-8**. Die
+> Verwechslung ist verbreitet, weil beide Chips im selben Formfaktor und unter demselben
+> Produktnamen «AI HAT+» verkauft werden – unterschieden nur durch die TOPS-Angabe im
+> Namen. Wer ein Modell für 26 TOPS auslegt und einen 8L beschafft, hat die halbe Leistung.
+
+➜ **Die Frage bei der Auswahl ist nicht «wie schnell», sondern «wie viele Modelle
+gleichzeitig».** Für eine einzelne Objekterkennung genügt der 8L; sobald Erkennung,
+Posenschätzung und Tracking parallel laufen sollen, ist der 8 die richtige Wahl.
+
+- **6W TDP** (zusätzlich zum Pi 5)
+- Beim **AI HAT+ ist der Chip aufgelötet**, beim älteren AI Kit steckt ein M.2-Modul im
+  Sockel. Das Auflöten baut flacher und koppelt thermisch besser – der Grund, warum das
+  AI Kit abgelöst wurde.
 
 ⚠️ **PCIe-Spezifikation:** Der Product Brief spezifiziert für den Pi 5 **PCIe 2.0 x1**
 (bis 500 MB/s über den M.2 HAT+). Das Steckerdokument formuliert es unmissverständlich:
@@ -374,6 +393,65 @@ sudo lspci -vv | grep -A 5 "Hailo" | grep LnkSta
 
 ---
 
+## AI Camera (IMX500) – wenn PCIe schon belegt ist
+
+Der PCIe-Anschluss des Pi 5 ist **einfach vorhanden**. NVMe **oder** NPU – beides
+gleichzeitig geht nur über fehleranfällige Multiplexer. Genau dafür gibt es eine zweite
+Architektur.
+
+Die **Raspberry Pi AI Camera** (~70 USD) vereint einen 12-MP-Sensor **Sony IMX500** mit
+einem eigenen KI-Beschleuniger **im Kameramodul**. Sie hängt am **CSI-Anschluss** und lässt
+PCIe frei.
+
+| | AI HAT+ (Hailo) | **AI Camera (IMX500)** |
+|---|---|---|
+| Anschluss | PCIe | **CSI – PCIe bleibt frei** |
+| Ort der Inferenz | Beschleuniger auf dem HAT | **Im Kameramodul** |
+| Was über den Bus geht | Vollbilder | **Nur Tensor-Metadaten** |
+| Kamerawahl | frei | fest – die Kamera *ist* der Beschleuniger |
+| Mehrere Modelle parallel | ja (Hailo-8) | nein |
+
+> ➜ **Der eigentliche Gewinn ist die Datenreduktion.** Das Modul wertet das Bild selbst aus
+> und schickt nur noch das Ergebnis – «Person bei X/Y» – an den Pi. Es wandert kein
+> unkomprimierter Videostrom über CSI und Arbeitsspeicher. Latenz und Systemlast sinken,
+> und die Ressourcen des Pi bleiben praktisch unangetastet.
+
+**Wann welche Variante:**
+
+| Anforderung | Wahl |
+|-------------|------|
+| NVMe als Systemlaufwerk **und** Objekterkennung | **AI Camera** |
+| Mehrere Modelle parallel, hochauflösende Ströme | AI HAT+ 26 TOPS (Hailo-8) |
+| Sprachmodelle auf der NPU | AI HAT+ 2 (Hailo-10H) |
+| Vorhandene Kamera weiterverwenden | AI HAT+ |
+| Mehrere Kameras an einem Gerät | AI HAT+ (die AI Camera beschleunigt nur sich selbst) |
+
+---
+
+## Warum die NPU die CPU so stark entlastet
+
+`rpicam-apps` arbeitet über **DMA-BUF mit Zero-Copy**:
+
+```
+Kamera → RP1 schreibt Rohbild in den RAM
+              ↓  (nur ein Speicherzeiger)
+         Hailo-NPU holt die Daten per DMA über PCIe
+              ↓
+         Ergebnis zurück – die CPU hat nichts kopiert
+```
+
+Die CPU übergibt lediglich einen **Zeiger**; der Beschleuniger holt sich die Daten selbst
+per Direct Memory Access. Deshalb bleibt die Host-Last bei rund 46 % statt bei 100 % –
+gebraucht wird sie nur noch für Vorverarbeitung, Datenverschiebung und das Zeichnen der
+Rahmen (Non-Maximum Suppression).
+
+➜ **Konsequenz für eigene Anwendungen:** Wer die Bilder aus der Pipeline herauskopiert, um
+sie in eigenem Python-Code zu verarbeiten, gibt genau diesen Vorteil auf. Das
+Post-Processing-Gerüst von `rpicam-apps` (`camera.md`) bleibt der günstigere Weg – oder
+Picamera2 mit den Puffern, die es liefert, statt eigener Kopien.
+
+---
+
 ## TensorFlow Lite
 
 ### Überblick
@@ -465,12 +543,58 @@ with open("model_int8.tflite", "wb") as f:
 | TFLite CPU (Pi 4) | 2 | 500 ms | +0W | $0 |
 | Coral Edge TPU | 30 | 33 ms | +2W | $60 |
 
+### Gemessener Vergleich CPU / GPU / NPU (YOLOv8n, 640×640)
+
+Aus einer veröffentlichten Vergleichsstudie – die Zahlen sind aussagekräftiger als
+Datenblattwerte, weil sie **Auslastung und Dauerverhalten** mitmessen:
+
+| Plattform | FPS | Latenz | Host-CPU-Last | Bemerkung |
+|-----------|-----|--------|---------------|-----------|
+| **Pi 5, nur CPU** (TFLite INT8) | **2,6 → 2,1** | 335 ms | **100 %** | Bricht nach ~120 s thermisch ein |
+| NVIDIA Jetson Nano (TensorRT FP16) | 12,0–14,5 | ~48,5 ms | GPU **99,4 %** | Effizient, aber **keine Reserve** |
+| **Pi 5 + Hailo-8 (AI HAT+)** | **60,8** | ~78 ms | **45,9 %** | ~12,35 W Gesamtsystem |
+
+### 🔴 Thermische Drosselung ist messbar, nicht theoretisch
+
+> **Reine CPU-Inferenz treibt den BCM2712 nach etwa 120 Sekunden Volllast auf 84 °C.**
+> Das DVFS senkt daraufhin den Takt von **2,4 GHz auf 2,18 GHz**, und die Bildrate fällt
+> von 2,6 auf **2,1 FPS** – **über 19 % Verlust allein durch Wärme**, dauerhaft.
+
+➜ **Das ist die Zahl, die «Active Cooler ist Pflicht» belegt.** Und es erklärt, warum ein
+Kurztest gute Werte liefert und das Gerät im Dauerbetrieb enttäuscht: Wer zwei Minuten
+misst, misst die Drosselung nicht.
+
+### Die drei Zahlen, die die Architekturentscheidung tragen
+
+1. **Host-CPU-Last 45,9 %** mit NPU gegenüber **100 %** ohne. Die NPU verschafft nicht nur
+   mehr Bilder pro Sekunde, sondern lässt **die Hälfte der CPU für alles Übrige frei** –
+   Vorverarbeitung, Anwendungslogik, Netzwerk, Aufzeichnung.
+2. **Der Jetson Nano ist mit 99,4 % GPU-Auslastung am Anschlag.** Höhere Bildraten als der
+   Pi ohne NPU, aber keinerlei Reserve für eine zweite Kamera oder Hintergrundaufgaben. Für
+   Multitasking ist die NPU-Variante die bessere Architektur, nicht nur die schnellere.
+3. **12,35 W Gesamtsystem** (~2,47 A bei 5 V) bei 60,8 FPS – rund **1 Erkennung pro Watt**
+   bzw. 310 mJ pro Erkennung. Das ist die Grundlage für jede Solar- oder
+   Batterieauslegung.
+
+> ⚠️ **12,35 W unter Volllast heisst: das 27-W-Netzteil ist keine Grosszügigkeit.** Mit
+> Kamera, NVMe und Peripherie ist die Reserve schneller aufgebraucht, als die
+> Einzelangaben vermuten lassen (`setup-provisioning.md`).
+
 ### LLM Inference (Phi-3 Mini, 3.8B)
 
 | Hardware | Speed | Latenz/Token | RAM |
 |----------|-------|--------------|-----|
 | Ollama (Pi 5, 8GB) | 5 tok/s | 200 ms | ~3 GB |
 | Ollama (Pi 4, 8GB) | 2 tok/s | 500 ms | ~3 GB |
+
+> 🔴 **Für produktive CPU-Inferenz unter 3 Milliarden Parametern bleiben** (unter ~2 GB
+> Speicherbedarf) **und quantisieren – INT8 oder INT4.** Modelle der 7B- und 13B-Klasse
+> liefern auf der ARM-CPU auch übertaktet nur wenige Tokens pro Sekunde. Der Engpass ist
+> die arithmetische Durchsatzkapazität der Kerne, nicht der Speicher; mehr RAM allein löst
+> das nicht.
+>
+> Wer mehr braucht, wechselt die Architektur statt die RAM-Variante: **Hailo-10H
+> (AI HAT+ 2)** führt Sprachmodelle auf der NPU aus (`hailo.md`).
 
 ---
 

@@ -301,6 +301,40 @@ Das ist der Punkt, der in Projektplänen am häufigsten fehlt:
 
 Befehle und ausführliche Diagnose: `debugging-playbook.md`.
 
+### «Link Down» – der Fehler auf der physischen Ebene
+
+Meldet `dmesg` beim Host-Bridge-Controller (`brcm-pcie`) ein **«Link Down»** und `lspci`
+zeigt gar kein Gerät, ist das **Link-Training** gescheitert – die LTSSM-Zustandsmaschine
+kommt nicht zustande. Das passiert **vor** jeder Treiberfrage; Treiberkompatibilität ist
+dann nicht die Ursache.
+
+Die drei häufigsten physischen Ursachen:
+
+1. **FFC falsch herum.** Die Metallkontakte müssen zur Platine zeigen.
+2. **ZIF-Konnektor beschädigt.** Diese Steckverbinder sind **nicht für hunderte
+   Steckzyklen ausgelegt**. Wer beim Aufbauen oft umsteckt, verschleisst sie.
+3. **Verschmutzte oder gerissene Kontakte.** Unter **zehnfacher Vergrösserung** prüfen;
+   reinigen mit **99-prozentigem Isopropanol**.
+
+➜ **Das gehört an den Anfang der Fehlersuche, nicht ans Ende.** Softwareseitige
+Diagnose an einem Link, der physisch nicht steht, führt zu nichts.
+
+### ASPM abschalten
+
+```ini
+dtparam=pciex1_aspm=off
+```
+
+Kann die Stabilität verbessern, wenn Aussetzer im Zusammenhang mit Energiesparzuständen
+auftreten.
+
+> ⚠️ **Es löst das Grundproblem nicht.** Bei Gen-3-Betrieb sind Einstreuungen im
+> Gigahertz-Bereich die eigentliche Ursache; ASPM abzuschalten kaschiert sie
+> bestenfalls. Die belastbare Massnahme bleibt `dtparam=pciex1_gen=2`.
+
+> ℹ️ Der Hailo-Treiber schaltet **ASPM L0s von sich aus ab** – die entsprechende
+> `dmesg`-Zeile ist erwartet (`hailo.md`).
+
 ---
 
 ## Begriffe: HAT, HAT+ und «kein HAT»

@@ -296,12 +296,21 @@ Line-Pegel, keinen Lautsprecherpegel.
 
 | Komponente | Performance | Interface | Preis (CHF) | Bezugsquelle |
 |------------|-------------|-----------|-------------|--------------|
-| **Raspberry Pi AI Kit** | 26 TOPS (Hailo-8L) | PCIe (Pi 5) | ~70 | [pi-shop.ch](https://www.pi-shop.ch/), [raspberrypi.com](https://www.raspberrypi.com/) |
-| Hailo-8L M.2 Modul | 26 TOPS | M.2 (Pi 5 HAT+) | ~70 | [hailo.ai](https://hailo.ai/) |
+| **AI HAT+ 13 TOPS** | 13 TOPS (**Hailo-8L**) | PCIe (Pi 5), Chip aufgelötet | ~70 | [pi-shop.ch](https://www.pi-shop.ch/), [raspberrypi.com](https://www.raspberrypi.com/) |
+| **AI HAT+ 26 TOPS** | 26 TOPS (**Hailo-8**) | PCIe (Pi 5), Chip aufgelötet | ~110 | [raspberrypi.com](https://www.raspberrypi.com/) |
+| **AI HAT+ 2** | GenAI-fähig (**Hailo-10H**) | PCIe (Pi 5) | – | [raspberrypi.com](https://www.raspberrypi.com/) |
+| **AI Camera** (IMX500) | Inferenz **im Kameramodul** | CSI – **belegt kein PCIe** | ~70 | [raspberrypi.com](https://www.raspberrypi.com/) |
+| ~~Raspberry Pi AI Kit~~ | 13 TOPS (Hailo-8L, M.2-Modul) | PCIe (Pi 5) | ~70 | 🔴 **Nicht mehr in Produktion** |
 | Coral USB Accelerator | 4 TOPS | USB 3.0 | ~80 | [coral.ai](https://coral.ai/), [mouser.com](https://www.mouser.com/) |
 
+> ⚠️ **13 TOPS = Hailo-8L, 26 TOPS = Hailo-8.** Beide werden als «AI HAT+» verkauft und
+> unterscheiden sich im Namen nur durch die TOPS-Zahl.
+
 **Empfehlung:**
-- **Pi 5 Computer Vision:** Raspberry Pi AI Kit (Hailo-8L)
+- **Ein Modell, Einstieg, Bildung:** AI HAT+ 13 TOPS (Hailo-8L)
+- **Mehrere Modelle parallel:** AI HAT+ 26 TOPS (Hailo-8)
+- **Zusätzlich Sprachmodelle auf der NPU:** AI HAT+ 2 (Hailo-10H)
+- **PCIe wird für NVMe gebraucht:** **AI Camera** – die Inferenz läuft im Kameramodul
 - **Pi 4 (kein PCIe):** Coral USB Accelerator
 
 **Wichtig:**
