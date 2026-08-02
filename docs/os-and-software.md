@@ -622,6 +622,7 @@ Repositories selbst.
 |----------|-------|
 | [`rpi-imager`](https://github.com/raspberrypi/rpi-imager) | Boot-Medien schreiben |
 | [`rpi-image-gen`](https://github.com/raspberrypi/rpi-image-gen) | **Eigenes OS-Image für eingebettete Systeme bauen** |
+| [`pi-gen`](https://github.com/RPi-Distro/pi-gen) | Das Werkzeug, mit dem **Raspberry Pi OS selbst** gebaut wird – Stufenmodell in `setup-provisioning.md` |
 | [`usbboot`](https://github.com/raspberrypi/usbboot) | `rpiboot`, `mass-storage-gadget` – siehe `compute-module.md` |
 | [`rpi-sb-provisioner`](https://github.com/raspberrypi/rpi-sb-provisioner) | Serienprovisionierung mit Secure Boot und verschlüsseltem Dateisystem (Pi 5, CM4, CM5) |
 | [`rpi-analyse-boot`](https://github.com/raspberrypi/rpi-analyse-boot) | Bootzeiten messen |

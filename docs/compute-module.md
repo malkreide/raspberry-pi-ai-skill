@@ -396,4 +396,5 @@ erklärt Fälle, in denen die Reichweite nach dem Anbau unverändert schlecht bl
 - `configuration.md` – `BOOT_ORDER`, EEPROM, Device Tree und Overlays
 - [Compute Module hardware](https://www.raspberrypi.com/documentation/computers/compute-module.html)
 - [usbboot auf GitHub](https://github.com/raspberrypi/usbboot) – `rpiboot`, `mass-storage-gadget`
-- [pi-gen](https://github.com/RPi-Distro/pi-gen) – eigene OS-Images bauen
+- [pi-gen](https://github.com/RPi-Distro/pi-gen) – eigene OS-Images bauen; Stufenmodell und
+  Vorgehen in [`setup-provisioning.md`](setup-provisioning.md#eigenes-os-abbild-bauen-mit-pi-gen)

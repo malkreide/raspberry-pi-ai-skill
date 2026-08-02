@@ -18,6 +18,7 @@ Grundlage für den Pre-Flight-Check in `SKILL.md`.
 8. [Erster Start & Troubleshooting](#erster-start--troubleshooting)
 9. [Herunterfahren](#herunterfahren)
 10. [Klassensatz und Flottenbetrieb](#klassensatz-und-flottenbetrieb)
+11. [Eigenes OS-Abbild bauen mit pi-gen](#eigenes-os-abbild-bauen-mit-pi-gen)
 
 ---
 
@@ -424,6 +425,102 @@ Stabilität dieser Schnittstelle: [`configuration.md`](configuration.md#raspi-co
 
 ➜ In Verbindung mit einem Schlüssel für den ganzen Satz (Punkt 2) lässt sich damit eine
 Änderung per `ssh` über alle Geräte ziehen, statt sie einzeln anzufassen.
+
+---
+
+## Eigenes OS-Abbild bauen mit pi-gen
+
+Ab einer gewissen Stückzahl kippt die Rechnung: Statt jedes Gerät nach dem Schreiben
+einzurichten, wird die Einrichtung **in das Abbild hineingebaut**. Dafür gibt es
+[`pi-gen`](https://github.com/RPi-Distro/pi-gen) – dasselbe Werkzeug, mit dem Raspberry Pi
+OS selbst entsteht.
+
+➜ **Die Faustregel:** Bis etwa fünf Geräte ist der Imager plus `raspi-config nonint` der
+schnellere Weg. Darüber, und immer dann, wenn dasselbe Abbild später **reproduzierbar**
+erneut gebraucht wird, lohnt sich `pi-gen`.
+
+### Die Stufen
+
+Der Bau läuft in sechs aufeinander aufbauenden Stufen. Entscheidend ist, **wo man
+aufhört** – das bestimmt, welches Abbild herauskommt:
+
+| Stufe | Ergebnis |
+|-------|----------|
+| `stage0` | Minimales Dateisystem (`debootstrap`) plus Bootloader |
+| `stage1` | Bootfähig: `fstab`, Bootloader, Netzwerkgrundlage |
+| **`stage2`** | **Das Lite-Abbild** – Hardwarewerkzeuge, WLAN, Entwicklungsgrundlagen |
+| `stage3` | Desktop (X11, LXDE, Browser) |
+| **`stage4`** | **Das Standard-Abbild** |
+| `stage5` | Das Full-Abbild – zusätzliche Entwicklungs- und Lernsoftware |
+
+**Für Embedded- und Edge-AI-Geräte ist `stage2` fast immer der richtige Endpunkt.**
+
+### Steuerung über zwei Dateien
+
+| Datei im Stufenverzeichnis | Wirkung |
+|----------------------------|---------|
+| `SKIP` | Diese Stufe **wird nicht ausgeführt** |
+| `SKIP_IMAGES` | Die Stufe läuft, es wird aber **kein Abbild** erzeugt |
+
+➜ Für ein reines Lite-Abbild: `SKIP` in `stage3` bis `stage5`, `SKIP_IMAGES` in `stage4`
+und `stage5`.
+
+### Eigene Pakete und Dateien einbringen
+
+Innerhalb einer Stufe liegen nummerierte Unterverzeichnisse, die **in alphanumerischer
+Reihenfolge** abgearbeitet werden:
+
+| Datei | Wirkung |
+|-------|---------|
+| `00-packages` | Paketliste – wird installiert |
+| `00-run.sh` | Skript, läuft **ausserhalb** der Chroot-Umgebung |
+| `00-run-chroot.sh` | Skript, läuft **im** entstehenden System |
+| `00-debconf` | Voreinstellungen über `debconf` |
+| `00-patches/` | Patches für das Dateisystem |
+
+➜ **Damit landen Hailo-Pakete, ein `venv`, Systemd-Dienste und die eigene Anwendung im
+Abbild** – jedes Gerät startet fertig eingerichtet. Für einen Klassensatz oder eine
+Messstation-Serie ist das der Unterschied zwischen einmal Arbeit und zwanzigmal Arbeit.
+
+### Bauen
+
+```bash
+git clone https://github.com/RPi-Distro/pi-gen
+cd pi-gen
+cp config.example config          # IMG_NAME, RELEASE, WORK_DIR, DEPLOY_DIR setzen
+./build.sh -c config
+```
+
+**Auf einem Nicht-Debian-Rechner** – etwa unter macOS oder Windows – geht es über einen
+Container:
+
+```bash
+./build-docker.sh
+CONTINUE=1 ./build-docker.sh          # abgebrochenen Lauf fortsetzen
+PRESERVE_CONTAINER=1 ./build-docker.sh # Container behalten, für schrittweise Änderungen
+```
+
+> ⚠️ **Ein Durchlauf dauert lange und braucht Platz** – mehrere Gigabyte im `WORK_DIR`.
+> `PRESERVE_CONTAINER=1` zusammen mit `CONTINUE=1` erspart beim Entwickeln der eigenen
+> Stufe den vollständigen Neubau.
+
+> ℹ️ Der Bau läuft auf einem x86-Rechner per Emulation. Ein Pi als Baurechner funktioniert,
+> ist aber deutlich langsamer.
+
+### `pi-gen` oder `rpi-image-gen`?
+
+Die Namen sind verwechselbar, die Werkzeuge nicht:
+
+| | [`pi-gen`](https://github.com/RPi-Distro/pi-gen) | [`rpi-image-gen`](https://github.com/raspberrypi/rpi-image-gen) |
+|---|---|---|
+| Herkunft | `RPi-Distro` | `raspberrypi` |
+| Zweck | Damit wird **Raspberry Pi OS selbst** gebaut | Abbilder für **eingebettete Systeme** |
+| Ansatz | Stufenmodell auf Debian-Basis, abwärtskompatibel | Neuer, stärker auf schlanke Sonderabbilder ausgerichtet |
+
+➜ **Wer ein angepasstes Raspberry Pi OS will, nimmt `pi-gen`** – die Stufen liefern ein
+vertrautes System, und alles ab `stage2` verhält sich wie das gewohnte Lite-Abbild. **Wer
+ein möglichst kleines Spezialabbild für ein Seriengerät will**, sieht sich `rpi-image-gen`
+an.
 
 ---
 
