@@ -15,6 +15,7 @@ Quelle: **Offizielle Raspberry-Pi-Dokumentation, «Raspberry Pi OS»**
 9. [Audio und Video](#audio-und-video)
 10. [Diagnose-Werkzeuge](#diagnose-werkzeuge)
 11. [Barrierefreiheit](#barrierefreiheit)
+12. [Wo der Quellcode liegt](#wo-der-quellcode-liegt)
 
 ---
 
@@ -162,6 +163,51 @@ sudo apt purge <paket>            # entfernen inkl. Konfigurationsdateien
 ```
 
 Im Desktop: **Preferences → Add / Remove Software**.
+
+### 🔴 Das Kürzel `+rpt` – Raspberry Pi oder Debian?
+
+Raspberry Pi patcht zahlreiche Debian-Pakete. Solche Fassungen tragen ein **`+rpt` in der
+Versionsnummer**:
+
+```bash
+apt-cache policy labwc
+#   Installed: 0.8.4-1+rpt1      ← von Raspberry Pi angepasst
+#   Installed: 0.8.4-1           ← unveränderte Debian-Fassung
+```
+
+➜ **Das ist bei der Fehlersuche die erste Frage, wenn sich ein Paket anders verhält als
+die Debian-Dokumentation beschreibt.** Steht ein `+rpt` in der Version, gilt die
+Debian-Dokumentation nur eingeschränkt – und ein Fehlerbericht gehört zu Raspberry Pi,
+nicht zu Debian. Ohne `+rpt` ist es umgekehrt.
+
+### Quellcode eines Pakets holen
+
+Die Quellpakete sind ab Werk **nicht** in den APT-Listen eingetragen. Dazu in diesen
+Dateien jede Zeile `Types: deb` auf `Types: deb deb-src` erweitern:
+
+| Datei | Gilt für |
+|-------|----------|
+| `/etc/apt/sources.list.d/debian.sources` | 64-Bit-Images |
+| `/etc/apt/sources.list.d/raspbian.sources` | 32-Bit-Images |
+| `/etc/apt/sources.list.d/raspi.sources` | **beide** – die Raspberry-Pi-eigenen Pakete |
+
+⚠️ **Die zweite Datei nicht vergessen.** Wer nur `debian.sources` anpasst, bekommt die
+Debian-Quellen, aber nicht die `+rpt`-Fassungen – also gerade nicht die, wegen derer man
+nachsieht.
+
+```bash
+sudo apt update
+apt source labwc                    # Quellen holen (ohne sudo!)
+
+sudo apt install devscripts         # Hilfswerkzeuge
+sudo apt build-dep labwc            # Build-Abhängigkeiten
+cd labwc-0.8.4
+debuild -uc -us                     # bauen, ohne zu signieren
+```
+
+➜ Sinnvoll, wenn ein Paket einen kleinen Patch braucht oder man wissen will, **was
+Raspberry Pi gegenüber Debian geändert hat**. Für den Kernel gilt ein eigener Weg – siehe
+`kernel.md`.
 
 ---
 
@@ -444,10 +490,62 @@ automatisch ein gesprochener Hinweis ab, wie Orca installiert wird.
 
 ---
 
+## Wo der Quellcode liegt
+
+Raspberry Pi verteilt seine Software auf drei GitHub-Organisationen. Für die Fehlersuche
+ist vor allem wichtig, **wo die massgebliche Fassung einer Angabe steht** – nicht die
+Repositories selbst.
+
+| Was man sucht | Wo es steht |
+|---------------|-------------|
+| **Overlay-Parameter**, die auf dem Gerät fehlen | [`firmware/boot/overlays/README`](https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README) |
+| Was eine Firmware geändert hat | [Firmware-Commits](https://github.com/raspberrypi/firmware/commits/master/) |
+| Bootloader-Versionen und ihre Änderungen | [`rpi-eeprom` releases.md](https://github.com/raspberrypi/rpi-eeprom/blob/master/releases.md) |
+| Kernelquellen aller Modelle | [`raspberrypi/linux`](https://github.com/raspberrypi/linux) |
+| `pinctrl`, `raspinfo`, `piolib`, `gpiolib` | [`raspberrypi/utils`](https://github.com/raspberrypi/utils) |
+| Kamera-Stack | [`libcamera`](https://github.com/raspberrypi/libcamera), [`rpicam-apps`](https://github.com/raspberrypi/rpicam-apps), [`picamera2`](https://github.com/raspberrypi/picamera2) |
+
+> ➜ **Der Overlay-README ist der wichtigste Eintrag dieser Tabelle.** Er ist die einzige
+> vollständige Liste der `dtoverlay`- und `dtparam`-Parameter. Die Fassung **auf dem Gerät**
+> (`/boot/firmware/overlays/README`) passt zur installierten Firmware und ist der
+> Online-Fassung vorzuziehen, wenn beide sich unterscheiden.
+
+**Die drei Organisationen:**
+
+| Organisation | Inhalt |
+|--------------|--------|
+| [`raspberrypi`](https://github.com/raspberrypi) | Kernel, Firmware, Bootloader, Kamera, Werkzeuge |
+| [`raspberrypi-ui`](https://github.com/raspberrypi-ui) | Desktop, Taskleiste, Control Centre, Anwendungen |
+| [`RPi-Distro`](https://github.com/RPi-Distro) | Distributionspakete und Build-Werkzeuge |
+
+### Wohin mit einem Fehlerbericht
+
+| Fall | Adresse |
+|------|---------|
+| Fehler in der **aktuellen OS-Fassung** | [`trixie-feedback`](https://github.com/raspberrypi/trixie-feedback) |
+| Paket mit **`+rpt`** in der Version | Raspberry Pi – das Paket ist angepasst |
+| Paket **ohne** `+rpt` | Debian – unveränderte Fassung |
+| Kernel: **Pi-spezifisch** | `raspberrypi/linux` |
+| Kernel: **allgemein** (neuer Treiber, generische Behebung) | **zuerst Upstream**, siehe `kernel.md` |
+
+### Weitere Werkzeuge
+
+| Werkzeug | Zweck |
+|----------|-------|
+| [`rpi-imager`](https://github.com/raspberrypi/rpi-imager) | Boot-Medien schreiben |
+| [`rpi-image-gen`](https://github.com/raspberrypi/rpi-image-gen) | **Eigenes OS-Image für eingebettete Systeme bauen** |
+| [`usbboot`](https://github.com/raspberrypi/usbboot) | `rpiboot`, `mass-storage-gadget` – siehe `compute-module.md` |
+| [`rpi-sb-provisioner`](https://github.com/raspberrypi/rpi-sb-provisioner) | Serienprovisionierung mit Secure Boot und verschlüsseltem Dateisystem (Pi 5, CM4, CM5) |
+| [`rpi-analyse-boot`](https://github.com/raspberrypi/rpi-analyse-boot) | Bootzeiten messen |
+
+---
+
 ## Weitere Ressourcen
 
 - `kernel.md` – Kernel-Header für Kernelmodule, eigene Builds, Patches, Beitragswege
+- `compute-module.md` – `rpiboot`, eMMC beschreiben, Serienprovisionierung
 - [Raspberry Pi OS](https://www.raspberrypi.com/documentation/computers/os.html)
+- [Software sources](https://www.raspberrypi.com/documentation/computers/software-sources.html)
 - [gpiozero](https://gpiozero.readthedocs.io/)
 - [piwheels](https://www.piwheels.org/) – vorkompilierte Python-Wheels für den Pi
 - [PEP 668](https://peps.python.org/pep-0668/)
