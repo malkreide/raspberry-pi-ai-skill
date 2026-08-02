@@ -117,9 +117,10 @@ print(answer)
 
 **System-Tuning:**
 ```bash
-# GPU-Memory reduzieren (mehr RAM für Ollama)
+# GPU-Memory reduzieren (mehr RAM für Ollama) – NUR Pi 4 und älter!
 # /boot/firmware/config.txt
 gpu_mem=64
+# Auf dem Pi 5 wirkungslos – siehe Warnung weiter unten
 
 # Swap erhöhen (für grössere Modelle) – klassischer Weg
 sudo dphys-swapfile swapoff
@@ -782,12 +783,23 @@ Sensor → TFLite (lokale Klassifikation)
 # Hailo-Projekt (Pi 5 + Hailo-8L):
 over_voltage=2           # Leichte Übertaktung für Stabilität
 arm_freq=2400            # Standard (nicht höher!)
-gpu_mem=128              # GPU-Memory für Kamera
 dtparam=pciex1_gen=3     # Hailo Gen 3 aktivieren
 
 # Ollama-Projekt (Pi 5, kein Hailo):
-gpu_mem=64               # Weniger GPU, mehr RAM
+# (kein gpu_mem - siehe Warnung unten)
 ```
+
+> 🔴 **`gpu_mem` wirkt auf dem Pi 5 nicht.** Der Pi 5 reserviert **keinen** GPU-Speicher für
+> das Betriebssystem; die Einstellung ist dort wirkungslos. Wer sie setzt, um RAM für Ollama
+> freizuräumen, gewinnt **nichts** – und glaubt fälschlich, etwas getan zu haben.
+>
+> **Auch für die Kamera bringt sie nichts:** `libcamera` legt seine Puffer im **CMA-Speicher**
+> von Linux an, nicht im GPU-Speicher. Die verbreitete Empfehlung `gpu_mem=128` «für die
+> Kamera» stammt aus der Zeit des alten Firmware-Stacks.
+>
+> Auf **Pi 4 und älter** wirkt `gpu_mem` weiterhin. Dort gilt: **so klein wie möglich** –
+> mehr GPU-Speicher bringt anders als bei PC-Grafikkarten **keine Mehrleistung** und kann
+> sie sogar kosten. Empfohlenes Maximum auf dem Pi 4: **76 MB**.
 
 **Thermisches Monitoring:**
 

@@ -22,11 +22,12 @@ GPIO-Startzustände und Übertaktung.
 6. [GPIO-Zustände beim Booten](#gpio-zustände-beim-booten)
 7. [Übertakten, Spannung und Temperatur](#übertakten-spannung-und-temperatur)
 8. [Speicher](#speicher)
-9. [Kamera und Display](#kamera-und-display)
-10. [Video- und Audio-Ausgabe](#video--und-audio-ausgabe)
-11. [Bootzeit und Boot-Diagnose](#bootzeit-und-boot-diagnose)
-12. [EEPROM-Schreibschutz und Secure Boot](#eeprom-schreibschutz-und-secure-boot)
-13. [Werte prüfen](#werte-prüfen)
+9. [🔴 Optionen, die es nicht mehr gibt](#-optionen-die-es-nicht-mehr-gibt)
+10. [Kamera und Display](#kamera-und-display)
+11. [Video- und Audio-Ausgabe](#video--und-audio-ausgabe)
+12. [Bootzeit und Boot-Diagnose](#bootzeit-und-boot-diagnose)
+13. [EEPROM-Schreibschutz und Secure Boot](#eeprom-schreibschutz-und-secure-boot)
+14. [Werte prüfen](#werte-prüfen)
 
 ---
 
@@ -609,6 +610,76 @@ Begrenzt den nutzbaren Arbeitsspeicher. Ein 8-GB-Pi verhält sich damit wie ein 
 > ℹ️ Die physisch verbaute Grösse steht unabhängig davon in
 > `/proc/device-tree/chosen/rpi-sdram-size-gbit` (siehe `configuration.md`) – ein
 > gesetztes `total_mem` verfälscht diesen Wert nicht.
+
+### 🔴 `gpu_mem` – auf dem Pi 5 wirkungslos
+
+**Der Pi 5 reserviert keinen GPU-Speicher für das Betriebssystem.** `gpu_mem`,
+`gpu_mem_256`, `gpu_mem_512` und `gpu_mem_1024` haben dort **keine Wirkung**.
+
+Auf **Pi 4 und älter** wirkt die Einstellung – dort gilt aber eine Regel, die der Intuition
+widerspricht:
+
+> **Mehr GPU-Speicher bringt keine Mehrleistung.** Anders als bei PC-Grafikkarten hat die
+> VideoCore-Architektur keinen Vorteil von grosszügiger Zuteilung; zu viel **schadet** der
+> Systemleistung, weil der Speicher dem Betriebssystem fehlt. Der Wert gehört **so klein
+> wie möglich** gesetzt und nur erhöht, wenn eine Grafikfunktion tatsächlich fehlschlägt.
+
+| Gesamt-RAM | Empfohlenes Maximum |
+|------------|---------------------|
+| 256 MB | 128 |
+| 512 MB | 384 |
+| **1 GB und mehr** | 512 – **auf dem Pi 4 nur 76** |
+
+Der Pi 4 kommt mit so wenig aus, weil seine 3D-Einheit eine **eigene Speicherverwaltung**
+hat und ihren Bedarf dynamisch aus Linux deckt. Minimum ist 16, was allerdings
+GPU-Funktionen abschaltet.
+
+⚠️ **Für die Kamera bringt `gpu_mem` nichts** – `libcamera` legt seine Puffer im
+**CMA-Speicher** von Linux an. Die verbreitete Empfehlung, für Kameraprojekte den
+GPU-Speicher zu erhöhen, stammt aus der Zeit des alten Firmware-Stacks und ist heute
+wirkungslos.
+
+---
+
+## 🔴 Optionen, die es nicht mehr gibt
+
+**Ab Bookworm ist eine ganze Klasse von `config.txt`-Optionen ohne Funktion** und
+offiziell nicht mehr unterstützt. Sie sind nur noch für **Bare-Metal-Entwicklung**
+dokumentiert. Taucht eine davon in einer Anleitung auf, ist diese überholt – analog zu den
+Alterstests in `SKILL.md`.
+
+| Gruppe | Betroffene Optionen |
+|--------|---------------------|
+| **HDMI-Modus** | `hdmi_group`, `hdmi_mode`, `hdmi_safe`, `hdmi_drive`, `hdmi_timings`, `hdmi_cvt`, `hdmi_force_hotplug`, `hdmi_ignore_edid`, `config_hdmi_boost`, `hdmi_blanking`, `hdmi_pixel_encoding`, `hdmi_max_pixel_freq` |
+| **Overscan** | `disable_overscan`, `overscan_left/right/top/bottom`, `overscan_scale` |
+| **Framebuffer** | `framebuffer_width/height/depth`, `max_framebuffers`, `framebuffer_ignore_alpha`, `framebuffer_priority` |
+| **Drehung** | `display_rotate`, `display_hdmi_rotate`, `display_lcd_rotate`, `lcd_rotate` |
+| **Composite** | `sdtv_mode`, `sdtv_aspect`, `sdtv_disable_colourburst` |
+| **CEC** | `hdmi_ignore_cec`, `hdmi_ignore_cec_init`, `cec_osd_name` |
+| **Boot** | `start_x`, `start_debug`, `kernel_old`, `kernel_address`, `arm_control`, `disable_commandline_tags` |
+| **Sonstiges** | `gpu_mem` (nur Pi 5), `disable_l2cache`, `avoid_warnings`, `dispmanx_offline`, `never_over_voltage` |
+
+➜ **Der Grund ist immer derselbe:** Mit dem **KMS-Grafiktreiber** verwaltet **Linux** die
+gesamte Anzeigekette. Auflösung, Drehung, Overscan und Bildwiederholrate gehören damit in
+die Anzeigeeinstellungen des Systems (`raspi-config`, Control Centre, `kmsprint`,
+`wlr-randr`), **nicht** in die `config.txt`.
+
+> ⚠️ **Das erklärt eine häufige Sackgasse:** Ein Bildschirm zeigt ein falsches Bild, die
+> Anleitung empfiehlt `hdmi_group=2` und `hdmi_mode=82` – und nichts passiert. Nicht der
+> Wert war falsch, sondern der ganze Mechanismus greift nicht mehr.
+
+**Zwei Optionen bleiben nützlich**, weil sie vor dem Kernel wirken:
+
+```ini
+bootcode_delay=1     # Sekunden Wartezeit vor dem Laden von start.elf
+boot_delay=1         # Sekunden Wartezeit vor dem Laden des Kernels
+boot_delay_ms=500    # zusätzlich, in Millisekunden
+```
+
+➜ `bootcode_delay` hilft bei einem konkreten Fehlerbild: **Pi und Bildschirm hängen am
+selben Netzteil, der Bildschirm startet langsamer.** Beim Kaltstart wird das EDID zu früh
+gelesen und die Auflösung falsch gewählt – nach einem Soft-Reboot stimmt sie. `boot_delay`
+hilft entsprechend, wenn die SD-Karte länger braucht, als der Bootvorgang wartet.
 
 ---
 
