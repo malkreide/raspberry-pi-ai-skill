@@ -507,6 +507,40 @@ PRESERVE_CONTAINER=1 ./build-docker.sh # Container behalten, für schrittweise �
 > ℹ️ Der Bau läuft auf einem x86-Rechner per Emulation. Ein Pi als Baurechner funktioniert,
 > ist aber deutlich langsamer.
 
+### Die dritte Möglichkeit: `rpi-preseed`
+
+Zwischen «im Imager einstellen» und «ein eigenes Abbild bauen» liegt ein dritter Weg:
+[`rpi-preseed`](https://github.com/raspberrypi/rpi-preseed) beschreibt die Einrichtung in
+einer **TOML-Datei**, die beim **ersten Start** angewendet wird – über systemd-Oneshots,
+ohne cloud-init.
+
+Es kann beliebige Befehle ausführen, und zwar **in zwei Phasen: vor und nach dem
+Netzwerkstart**. Das ist der praktisch entscheidende Punkt – alles, was ein Paket
+nachinstalliert oder eine Datei herunterlädt, gehört in die zweite Phase, alles, was das
+Netzwerk erst herstellt, in die erste.
+
+| Weg | Wann |
+|-----|------|
+| **Imager** | Einzelgerät, Standardeinstellungen |
+| **`rpi-preseed`** | Gleiche Einrichtung auf vielen Karten, **ohne** ein Abbild zu bauen |
+| **`pi-gen`** | Software soll **im Abbild** stecken, reproduzierbar und wiederverwendbar |
+
+> 🔴 **Ausdrücklich ein Prototyp** – laut eigener Beschreibung «not yet
+> production-hardened». Für Versuchsaufbauten und Klassensätze brauchbar, für ein Produkt
+> noch nicht. Vor dem Einsatz den aktuellen Stand des Repositories prüfen.
+
+### Noch kleiner: `pi-gen-micro`
+
+Für Geräte, bei denen jedes Megabyte zählt, gibt es
+[`pi-gen-micro`](https://github.com/raspberrypi/pi-gen-micro). Es baut aus **denselben
+Paketquellen** wie Raspberry Pi OS, erzeugt aber Systeme **ohne `apt` und `dpkg`** –
+konfigurierbar bis hinunter zu systemd, SSH, Netzwerk und Kernelmodulen. Unterstützt sind
+Pi 3, Pi 4, Pi 5 und die Compute Modules.
+
+⚠️ **Ohne Paketverwaltung ist auch kein Nachinstallieren möglich.** Was nicht im Abbild
+ist, kommt später nicht dazu – und Sicherheitsaktualisierungen bedeuten einen neuen Bau.
+Das ist für ein geschlossenes Seriengerät richtig und für alles andere eine Sackgasse.
+
 ### `pi-gen` oder `rpi-image-gen`?
 
 Die Namen sind verwechselbar, die Werkzeuge nicht:
@@ -543,3 +577,23 @@ an.
   – KiCad-Beispieldateien für **eigene RP2040-Platinen** (Lizenz CERN-OHL-P-2.0). Der
   passende Einstieg, wenn aus einem Prototyp mit Pico eine eigene Platine werden soll –
   siehe auch `compute-module.md` für denselben Schritt auf der Linux-Seite.
+
+### Eigene RP2040-Platine mit USB: braucht es eine Produkt-ID?
+
+Wer ein eigenes Gerät mit RP2040 oder RP2350 baut, das sich per USB meldet, steht vor der
+Frage nach einer Produkt-ID. **Raspberry Pi darf seine Vendor-ID `0x2E8A` unterlizenzieren**
+– die USB-IF hat das ausdrücklich erlaubt, weil der Chip in fremden Produkten steckt.
+
+➜ **Meist braucht es aber gar keine eigene PID.** Nötig ist sie vor allem dann, wenn
+**Windows einen herstellereigenen Treiber** verlangt. Nutzt das Gerät die
+Standardklassen – **CDC** für serielle Schnittstellen, **HID** für Eingabegeräte –, kann es
+sich eine gemeinsame PID teilen und sich über den Produktnamen unterscheiden.
+
+Für eine eigene PID gibt es ein Antragsformular; Reservierungen vor der Markteinführung
+laufen über einen Pull Request an
+[`raspberrypi/usb-pid`](https://github.com/raspberrypi/usb-pid). Dort steht auch die Liste
+der bereits vergebenen IDs.
+
+> ⚠️ **Keine fremde VID/PID-Kombination erfinden oder abschreiben.** Kollidierende IDs
+> führen dazu, dass Windows den falschen Treiber lädt – ein Fehlerbild, das auf dem eigenen
+> Entwicklungsrechner nie auftritt und beim Kunden sofort.

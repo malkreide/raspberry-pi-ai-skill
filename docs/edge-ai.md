@@ -3,9 +3,11 @@
 ## Inhaltsverzeichnis
 1. [Ollama](#ollama)
 2. [Hailo-8L NPU](#hailo-8l-npu)
-3. [TensorFlow Lite](#tensorflow-lite)
-4. [Performance-Vergleich](#performance-vergleich)
-5. [Use Cases & Best Practices](#use-cases--best-practices)
+3. [AI Camera (IMX500)](#ai-camera-imx500--wenn-pcie-schon-belegt-ist)
+4. [TensorFlow Lite](#tensorflow-lite)
+5. [Schwachlicht-Aufhellung mit `AI_enhance`](#schwachlicht-aufhellung-mit-ai_enhance)
+6. [Performance-Vergleich](#performance-vergleich)
+7. [Use Cases & Best Practices](#use-cases--best-practices)
 
 ---
 
@@ -119,13 +121,42 @@ print(answer)
 # /boot/firmware/config.txt
 gpu_mem=64
 
-# Swap erhöhen (für grössere Modelle)
+# Swap erhöhen (für grössere Modelle) – klassischer Weg
 sudo dphys-swapfile swapoff
 sudo nano /etc/dphys-swapfile
 # CONF_SWAPSIZE=4096
 sudo dphys-swapfile setup
 sudo dphys-swapfile swapon
 ```
+
+### 🔴 Swap auf die SD-Karte ist die schlechteste aller Lösungen
+
+Ein Modell, das nicht in den RAM passt, wird ausgelagert – und dann bestimmt die
+Schreibrate der Karte die Antwortzeit. Zwei Folgen, die beide teuer sind:
+
+- **Die Latenz bricht ein.** Aus Sekunden werden Minuten, weil jede Gewichtsmatrix von der
+  Karte gelesen wird.
+- **Die Karte verschleisst.** Dauerhaftes Auslagern ist genau das Schreibmuster, an dem
+  SD-Karten sterben.
+
+**`rpi-swap` ist der neuere Weg** und ersetzt `dphys-swapfile`. Es beherrscht vier
+Betriebsarten:
+
+| Art | Wann sinnvoll |
+|-----|---------------|
+| **zram** (komprimierter RAM) | **Der interessante Fall für Edge AI** – kostet CPU-Zyklen statt Kartenschreibvorgänge |
+| Datei-Swap | Nur mit schnellem Speicher, also **NVMe**, nicht SD |
+| Hybrid | zram mit Datei als Rückfallebene |
+| Kein Swap | Wenn das Modell ohnehin passen muss |
+
+➜ **zram tauscht Rechenzeit gegen Arbeitsspeicher.** Weil beim Auslagern eines
+Sprachmodells ohnehin die Speicherbandbreite und nicht die CPU der Engpass ist, ist das
+meist der bessere Handel – und die Karte bleibt verschont.
+
+> ⚠️ **Keine dieser Optionen ersetzt genügend RAM.** Swap verhindert den Absturz, nicht
+> den Einbruch. Wer ein 7B-Modell auf einem 8-GB-Gerät fahren will, verschiebt mit Swap nur
+> das Problem; die Modellwahl aus `hardware-specs.md` ist der wirksamere Hebel. Für Vision
+> **und** LLM gleichzeitig bleiben 16 GB die Antwort.
 
 **Thermal Management:**
 ```bash
@@ -538,6 +569,53 @@ with open("model_int8.tflite", "wb") as f:
 - Modellgrösse: ~4× kleiner
 - Inferenz-Geschwindigkeit: ~2× schneller
 - Genauigkeit: ~1-2% Verlust (akzeptabel)
+
+---
+
+## Schwachlicht-Aufhellung mit `AI_enhance`
+
+Für Aussen- und Nachtaufnahmen gibt es ein offizielles Werkzeug:
+[`raspberrypi/AI_enhance`](https://github.com/raspberrypi/AI_enhance) hellt dunkle Bilder
+mit neuronalen Netzen auf, ohne sie unnatürlich wirken zu lassen.
+
+```bash
+pip install numpy opencv-python pillow tqdm ai-edge-litert
+python enhance_dcenet.py eingang.jpg ausgang.jpg --gain 2.0
+python enhance_dprnet.py eingang.jpg ausgang.jpg
+```
+
+**Zwei Verfahren mit deutlich verschiedenem Kostenprofil:**
+
+| | **Zero-DCE** (`enhance_dcenet.py`) | **DPRNet** (`enhance_dprnet.py`) |
+|---|---|---|
+| Vorgehen | Punktweise Kurvenanpassung, **kachelweise** | **Herunterskalieren**, feste Netzgrösse |
+| Tempo auf dem Pi 5 | **knapp 1 Megapixel/Sekunde** | **ein bis zwei Sekunden pro Bild** |
+| RAM | mindestens 1 GB | mindestens **2 GB** |
+| Auflösungsabhängig | ✅ – doppelte Fläche, doppelte Zeit | ❌ – konstant |
+
+➜ **Für ein 12-Megapixel-Bild der HQ-Kamera bedeutet Zero-DCE gut zwölf Sekunden**, DPRNet
+ein bis zwei. Wer viele Bilder verarbeitet oder aus einem Videostrom kommt, nimmt DPRNet;
+wer die volle Sensorauflösung erhalten will, Zero-DCE.
+
+**Stellschrauben:** `--gain` (Aufhellung), `--local-strength` (lokaler Kontrast),
+`--num-threads`. Bei Zero-DCE zusätzlich `--patch-size`, `--batch-size` und
+`--overlap-pixels` für die Kachelung.
+
+> ⚠️ **Speicher beachten:** Das grosse Modell `DPRNet_1024.tflite` kommt auf 2-GB-Geräten
+> an die Grenze – dort `DPRNet_512.tflite` verwenden. Auf 1-GB-Geräten braucht es
+> zusätzlichen Swap (siehe oben), was den Zeitvorteil wieder auffrisst.
+>
+> Die **int8-quantisierte** Zero-DCE-Variante läuft rund **doppelt so schnell**, liefert
+> aber **andere Ergebnisse** – vor dem Serieneinsatz an eigenen Bildern vergleichen.
+
+🔴 **Das läuft auf der CPU, nicht auf der NPU.** Es ist keine Hailo-Anwendung und keine
+Alternative zur NoIR-Kamera mit Infrarotbeleuchtung. In einer Pipeline mit gleichzeitiger
+Inferenz konkurriert es unmittelbar um dieselben Kerne – die CPU-Last aus dem
+Performance-Vergleich unten kommt oben drauf.
+
+➜ **Die Reihenfolge in der Projektplanung:** Erst optisch lösen (grössere Blende, längere
+Belichtung, IR-Beleuchtung mit NoIR-Kamera), dann rechnerisch. Aufhellung im Nachhinein
+kann kein Licht erfinden, das der Sensor nicht gesehen hat.
 
 ---
 

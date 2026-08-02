@@ -206,6 +206,15 @@ earlycon=pl011,0x107d001000,115200n8
 > ⚠️ **Ein falsch gewählter Early-Console-Parameter kann das Booten ganz verhindern.**
 > Nur mit einem funktionierenden Rückweg (zweite Karte, Kartenleser) einsetzen.
 
+**Womit man mitliest:** Am anderen Ende braucht es einen UART-Adapter mit 3,3 V. Raspberry
+Pi bietet dafür die **Debug Probe** an – ein RP2040-basiertes Zubehör, das **SWD und UART**
+bereitstellt. Die
+[Firmware](https://github.com/raspberrypi/debugprobe) läuft auch auf einem gewöhnlichen
+**Pico oder Pico 2**, ein vorhandener Pico ersetzt das Zubehör also.
+
+> ⚠️ **Kein 5-V-Adapter.** Die Pegel am Debug-Header sind 3,3 V; ein 5-V-USB-Seriell-Kabel
+> beschädigt den Anschluss. Das gilt für den Debug-Header genauso wie für GPIO 14/15.
+
 ---
 
 ## Elektrische Grenzwerte der Pads
@@ -437,6 +446,28 @@ Einplatinenrechner ist die Fähigkeit vorhanden, aber nicht zugänglich.
 Alias-Adressen – `+0x1000` XOR, `+0x2000` Bitmaske setzen, `+0x3000` Bitmaske löschen.
 Damit entfällt der Read-Modify-Write-Zyklus, der sonst die doppelte PCIe-Round-Trip-Zeit
 kosten würde. Wer eigene Treiber schreibt, sollte das nutzen.
+
+---
+
+## 🔴 `raspi-gpio` funktioniert auf dem Pi 5 nicht
+
+Das Werkzeug **`raspi-gpio` ist abgekündigt** – es wird ausdrücklich weder gewartet noch
+unterstützt und ist durch **`pinctrl`** ersetzt.
+
+Für den Pi 5 kommt ein zweiter, härterer Grund dazu: `raspi-gpio` schreibt **direkt in die
+GPIO-Register des BCM283x**. Auf dem Pi 5 liegen die GPIO aber am **RP1**, nicht am SoC –
+das Werkzeug greift dort schlicht ins Leere.
+
+```bash
+pinctrl              # alle Pins mit Funktion und Pegel
+pinctrl get 17       # ein einzelner Pin
+pinctrl set 17 op dh # als Ausgang, High
+```
+
+➜ **Damit ist `raspi-gpio` der Alterstest für GPIO-Anleitungen** – parallel zu
+`raspistill`/`raspivid` bei der Kamera und `h264_omx` bei `ffmpeg` (siehe `SKILL.md`).
+Taucht es in einer Anleitung auf, stammt diese aus der Zeit vor dem Pi 5, und ihre übrigen
+Annahmen zu Treiberstrom, Timing und Pin-Verhalten sind ebenfalls zu prüfen.
 
 ---
 

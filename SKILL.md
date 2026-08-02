@@ -376,6 +376,22 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 - **Fehlende Masse nicht schätzen.** Werte, die in keiner Quelle stehen (Platinendicke,
   Header-Höhe, Cooler-Höhe), nachmessen lassen und den Messwert im `plan.md` dokumentieren.
 
+### Alterstest für fremde Anleitungen
+
+Vier Namen entlarven veraltetes Material sofort – **unabhängig davon, wie plausibel der
+Rest wirkt und wie aktuell die Seite aussieht**:
+
+| Kommt im Material vor | Dann ist es überholt, weil |
+|-----------------------|----------------------------|
+| `raspistill`, `raspivid`, `import picamera` | Der Legacy-Kamera-Stack ist tot; er kennt Camera Module 3, GS und AI Camera nicht (`camera.md`) |
+| `h264_omx`, `*_mmal` | OpenMAX und MMAL sind im ausgelieferten `ffmpeg` abgeschaltet (`os-and-software.md`) |
+| **`raspi-gpio`** | **Unmaintained, ersetzt durch `pinctrl`** – und es schreibt direkt in BCM283x-Register, kennt den Pi 5 also gar nicht (`rp1-gpio.md`) |
+| `dhcpcd`, `wpa_supplicant.conf` | Ab Bookworm übernimmt NetworkManager; die Dateien bleiben wirkungslos (`setup-provisioning.md`) |
+
+➜ **Diesen Test bei jeder fremden Quelle zuerst anwenden**, bevor deren Inhalt in einen
+Plan übernommen wird. Er kostet Sekunden und erspart es, einen Fehler zu übernehmen, der
+sich später als Eigenschaft der Anleitung statt der Hardware herausstellt.
+
 ## Bauplan-Ausgabeformat
 
 Jeder Bauplan enthält:

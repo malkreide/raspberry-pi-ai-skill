@@ -367,6 +367,35 @@ rpicam-hello --tuning-file /usr/share/libcamera/ipa/rpi/vc4/imx219_noir.json
 Tuning-Dateien lassen sich kopieren und anpassen, um das Kameraverhalten dauerhaft zu
 verändern. libcamera pflegt auch Dateien für Module von Drittanbietern.
 
+### Eine eigene Tuning-Datei erzeugen
+
+Für einen Sensor, für den es keine Datei gibt, oder für eine abweichende Optik gibt es das
+offizielle **Camera Tuning Tool** ([`raspberrypi/ctt`](https://github.com/raspberrypi/ctt)).
+Es erzeugt aus **DNG-Kalibrierbildern** eine libcamera-JSON-Datei – wahlweise für **PiSP**
+(ab Pi 5) oder **VC4** (Pi 4 und älter). Bedienbar über Kommandozeile oder eine
+Weboberfläche; die Aufnahme der Kalibrierbilder lässt sich über eine USB-Lichtbox
+automatisieren.
+
+**Wann es sich lohnt:**
+
+| Fall | Eigenes Tuning nötig? |
+|------|-----------------------|
+| Offizielles Modul, Standardoptik | ❌ – die mitgelieferte Datei nutzen |
+| **NoIR-Variante** | ❌ – die `*_noir.json` reicht (siehe oben) |
+| **Fremdsensor ohne Tuning-Datei** | ✅ |
+| **Getauschte Optik**, Objektivschattierung fällt auf | ✅ |
+| Bandpassfilter, ungewöhnliche Beleuchtung | ✅ |
+
+⚠️ **Für die meisten Projekte ist das der falsche Hebel.** Wer Farben oder Helligkeit
+korrigieren will, kommt mit `--awbgains`, `--ev` und den Belichtungsparametern schneller ans
+Ziel. Das Tuning-Tool zielt auf die Fälle, in denen die **Kalibrierung selbst** nicht passt
+– erkennbar an über das Bild wandernden Farbstichen oder abfallenden Rändern, nicht an
+einem insgesamt zu warmen Bild.
+
+➜ **Für Edge AI relevant, wenn ein Modell auf Farbtreue angewiesen ist:** Ein Klassifikator,
+der auf Bildern mit korrekter Farbwiedergabe trainiert wurde, verliert Genauigkeit, wenn die
+Kamera systematisch danebenliegt. Dann ist die Tuning-Datei die Ursache und nicht das Modell.
+
 ---
 
 ## Mehrere Kameras und Software-Synchronisation
