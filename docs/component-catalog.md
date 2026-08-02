@@ -113,6 +113,40 @@ Stapelhöhe ändert sich aber. Masse, Materialfrage und CAD-Daten:
 - **Ollama / grosse Modelle:** 128 GB oder NVMe SSD
 - **Vermeiden:** No-Name SD-Karten (Korruptions-Risiko)
 
+### 🔴 Die MB/s auf der Verpackung sind die falsche Zahl
+
+Kartenhersteller werben mit **sequenzieller** Übertragungsrate – 160 MB/s, 170 MB/s. Ein
+Betriebssystem liest und schreibt aber überwiegend **kleine, verstreute Blöcke**. Dafür
+zählen **IOPS bei 4 kB Zufallszugriff**, und die stehen auf keiner Verpackung.
+
+Die offiziellen Raspberry-Pi-Karten sind damit spezifiziert:
+
+| Gerät | Bus | Lesen | Schreiben |
+|-------|-----|-------|-----------|
+| Pi 4 | DDR50 | 3 200 IOPS | 1 200 IOPS |
+| **Pi 5** | **SDR104** | **5 000 IOPS** | **2 000 IOPS** |
+
+Zum Vergleich die offiziellen NVMe-SSDs (ebenfalls 4 kB zufällig):
+
+| Grösse | Lesen | Schreiben |
+|--------|-------|-----------|
+| 256 GB | 40 000 IOPS | 70 000 IOPS |
+| 512 GB | 50 000 IOPS | 90 000 IOPS |
+| 1 TB | **90 000 IOPS** | **90 000 IOPS** |
+
+➜ **Das ist der Faktor 8 bis 18 – und der Grund, warum ein Pi 5 mit NVMe sich wie ein
+anderes Gerät anfühlt**, obwohl die sequenzielle Rate durch PCIe 2.0 x1 auf rund 500 MB/s
+begrenzt bleibt. Für Paketinstallationen, Datenbanken, das Laden von Ollama-Modellen und
+alles, was viele kleine Dateien anfasst, entscheidet die IOPS-Zahl, nicht die MB/s.
+
+> ℹ️ **Command Queueing** ist das zweite Merkmal, das den Unterschied macht: Die offiziellen
+> Karten beherrschen die CQ-Erweiterung, mit der sich zufällige Lesezugriffe überlappen
+> lassen. Karten ohne CQ arbeiten dieselbe Warteschlange seriell ab.
+
+**Worauf beim Kartenkauf zu achten ist:** Klasse **A2** (das ist das IOPS-Kriterium, nicht
+V30 oder U3 – die betreffen die sequenzielle Rate) und **SDR104**-Fähigkeit, damit der Pi 5
+seinen schnelleren Bus überhaupt nutzen kann.
+
 **Offizielle Mindestgrössen nach OS-Variante:**
 
 | OS | Minimum |
