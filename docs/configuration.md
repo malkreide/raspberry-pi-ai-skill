@@ -7,6 +7,10 @@ Diese Referenz beantwortet die Frage **«wo stelle ich das ein?»**. Sie ergänz
 `os-and-software.md` (welche Software, welche Version) und `setup-provisioning.md`
 (erstmaliges Aufsetzen) um die Konfigurationsfläche eines bereits laufenden Systems.
 
+➜ **Für die Datei selbst gibt es eine eigene Referenz:** `config-txt.md` behandelt das
+Dateiformat mit seinen stillen Grenzen (98 Zeichen pro Zeile), bedingte Filter, A/B-Boot,
+Watchdog, GPIO-Startzustände und Übertaktung.
+
 ## Inhaltsverzeichnis
 1. [Drei Wege, ein Ziel](#drei-wege-ein-ziel)
 2. [Die zwei Dateien](#die-zwei-dateien)
@@ -258,6 +262,11 @@ dtoverlay=                            # beendet den Geltungsbereich des letzten 
 > ⚠️ **Overlay-Parameter gelten nur bis zum nächsten `dtoverlay=`.** Wer `dtparam`-Zeilen
 > unter das falsche Overlay schreibt, setzt sie am eigentlichen Ziel vorbei – ohne
 > Fehlermeldung.
+
+> 🔴 **Eine Zeile in `config.txt` darf maximal 98 Zeichen lang sein** – alles darüber wird
+> stillschweigend verworfen. Das trifft genau die Zeilen, die lang werden: ein Overlay mit
+> mehreren angehängten Parametern. Ab etwa 80 Zeichen die Parameter besser auf eigene
+> `dtparam=`-Zeilen unterhalb des Overlays verteilen. Details in `config-txt.md`.
 
 ### Zur Laufzeit
 
@@ -606,6 +615,8 @@ Die Boot-Partition ist FAT-formatiert und unter Linux als `/boot/firmware/` eing
 |-------|-------|
 | `config.txt` | Firmware-Konfiguration – **Pi 5: darf nicht leer sein** |
 | `cmdline.txt` | Kernel-Kommandozeile (eine Zeile!) |
+| `autoboot.txt` | Optional: aus welcher Partition gebootet wird – Grundlage des A/B-Boots (max. 512 Bytes, siehe `config-txt.md`) |
+| `boot.img` / `tryboot.img` | Optional: Boot-Dateisystem als RAM-Disk (max. 96 MB) |
 | `bootcode.bin` | Bootloader – **entfällt bei Pi 4 und Pi 5** (im EEPROM) |
 | `start*.elf` / `fixup*.dat` | VideoCore-Firmware – **entfällt beim Pi 5** (im EEPROM) |
 | `*.dtb` | Device-Tree-Blobs je Modell |
@@ -633,6 +644,7 @@ Die Boot-Partition ist FAT-formatiert und unter Linux als `/boot/firmware/` eing
 
 ## Weitere Ressourcen
 
+- `config-txt.md` – Dateiformat, bedingte Filter, A/B-Boot, Watchdog, Übertakten
 - [Configuration](https://www.raspberrypi.com/documentation/computers/configuration.html)
 - [config.txt](https://www.raspberrypi.com/documentation/computers/config_txt.html)
 - [Device Trees, Overlays und Parameter](https://www.raspberrypi.com/documentation/computers/configuration.html#device-trees-overlays-and-parameters)

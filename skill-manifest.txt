@@ -16,6 +16,7 @@ references/hardware-specs.md=docs/hardware-specs.md
 references/setup-provisioning.md=docs/setup-provisioning.md
 references/os-and-software.md=docs/os-and-software.md
 references/configuration.md=docs/configuration.md
+references/config-txt.md=docs/config-txt.md
 references/mechanical.md=docs/mechanical.md
 references/pcie.md=docs/pcie.md
 references/rp1-gpio.md=docs/rp1-gpio.md

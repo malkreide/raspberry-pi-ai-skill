@@ -76,6 +76,7 @@ Das Skill wird automatisch aktiviert bei:
 - **[setup-provisioning.md](docs/setup-provisioning.md)** – Boot-Medium, Imager, Netzteile, Headless-Setup, erster Start, Klassensatz
 - **[os-and-software.md](docs/os-and-software.md)** – OS-Versionen, Updates, APT, venv, Medienwiedergabe, vcgencmd
 - **[configuration.md](docs/configuration.md)** – raspi-config, config.txt/cmdline.txt, Device-Tree-Overlays, Bootloader/EEPROM, fstab, Firewall
+- **[config-txt.md](docs/config-txt.md)** – config.txt im Detail: Dateiformat und seine stillen Grenzen, bedingte Filter, A/B-Boot mit tryboot, Watchdog, GPIO-Startzustände, Übertakten
 - **[mechanical.md](docs/mechanical.md)** – Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper, Gehäuse- und 3D-Druck-Checkliste
 - **[pcie.md](docs/pcie.md)** – PCIe-Pinout, FFC-Anforderungen, Sideband-Signale, Power States, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1-Pad-Grenzwerte, GPIO-Latenz, Alternativfunktionen, PIO, Hardware-Entprellung
