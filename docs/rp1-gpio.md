@@ -206,6 +206,15 @@ earlycon=pl011,0x107d001000,115200n8
 > ⚠️ **Ein falsch gewählter Early-Console-Parameter kann das Booten ganz verhindern.**
 > Nur mit einem funktionierenden Rückweg (zweite Karte, Kartenleser) einsetzen.
 
+**Womit man mitliest:** Am anderen Ende braucht es einen UART-Adapter mit 3,3 V. Raspberry
+Pi bietet dafür die **Debug Probe** an – ein RP2040-basiertes Zubehör, das **SWD und UART**
+bereitstellt. Die
+[Firmware](https://github.com/raspberrypi/debugprobe) läuft auch auf einem gewöhnlichen
+**Pico oder Pico 2**, ein vorhandener Pico ersetzt das Zubehör also.
+
+> ⚠️ **Kein 5-V-Adapter.** Die Pegel am Debug-Header sind 3,3 V; ein 5-V-USB-Seriell-Kabel
+> beschädigt den Anschluss. Das gilt für den Debug-Header genauso wie für GPIO 14/15.
+
 ---
 
 ## Elektrische Grenzwerte der Pads

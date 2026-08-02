@@ -507,6 +507,28 @@ PRESERVE_CONTAINER=1 ./build-docker.sh # Container behalten, für schrittweise �
 > ℹ️ Der Bau läuft auf einem x86-Rechner per Emulation. Ein Pi als Baurechner funktioniert,
 > ist aber deutlich langsamer.
 
+### Die dritte Möglichkeit: `rpi-preseed`
+
+Zwischen «im Imager einstellen» und «ein eigenes Abbild bauen» liegt ein dritter Weg:
+[`rpi-preseed`](https://github.com/raspberrypi/rpi-preseed) beschreibt die Einrichtung in
+einer **TOML-Datei**, die beim **ersten Start** angewendet wird – über systemd-Oneshots,
+ohne cloud-init.
+
+Es kann beliebige Befehle ausführen, und zwar **in zwei Phasen: vor und nach dem
+Netzwerkstart**. Das ist der praktisch entscheidende Punkt – alles, was ein Paket
+nachinstalliert oder eine Datei herunterlädt, gehört in die zweite Phase, alles, was das
+Netzwerk erst herstellt, in die erste.
+
+| Weg | Wann |
+|-----|------|
+| **Imager** | Einzelgerät, Standardeinstellungen |
+| **`rpi-preseed`** | Gleiche Einrichtung auf vielen Karten, **ohne** ein Abbild zu bauen |
+| **`pi-gen`** | Software soll **im Abbild** stecken, reproduzierbar und wiederverwendbar |
+
+> 🔴 **Ausdrücklich ein Prototyp** – laut eigener Beschreibung «not yet
+> production-hardened». Für Versuchsaufbauten und Klassensätze brauchbar, für ein Produkt
+> noch nicht. Vor dem Einsatz den aktuellen Stand des Repositories prüfen.
+
 ### `pi-gen` oder `rpi-image-gen`?
 
 Die Namen sind verwechselbar, die Werkzeuge nicht:
