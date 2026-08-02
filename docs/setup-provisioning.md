@@ -227,6 +227,10 @@ ssh benutzer@hostname.local
 # alternativ: hostname.lan
 ```
 
+> ⚠️ **mDNS setzt voraus, dass das Netz Multicast weiterleitet.** Viele Gast- und
+> Schul-WLANs unterbinden das (Client Isolation); dort hilft nur die IP-Adresse oder eine
+> DHCP-Reservation am Router. Wege, das Gerät zu finden: `remote-access.md`.
+
 ### 🔴 `wpa_supplicant.conf` funktioniert nicht mehr
 
 Ältere Anleitungen empfehlen, eine `wpa_supplicant.conf` in die Boot-Partition zu legen.
@@ -332,7 +336,11 @@ Für mehrere identische Geräte – der typische Fall im Unterricht:
 2. **SSH mit Public Key** statt Passwort – ein Schlüssel für den ganzen Satz spart das
    Passwort-Handling und ist sicherer.
 3. **Hostnamen systematisch vergeben** (`pi-01`, `pi-02`, …). Über mDNS sind die Geräte
-   dann ohne IP-Liste erreichbar.
+   dann ohne IP-Liste erreichbar. 🔴 **Zwingend vor dem ersten Netzkontakt:** Jedes frische
+   System heisst `raspberrypi`, und mehrere Geräte mit diesem Namen im selben Netz
+   beantworten `raspberrypi.local` unvorhersehbar – ein Befehl landet dann auf dem falschen
+   Gerät. Der Fehler tritt bei einem einzelnen Pi nie auf und beim zweiten sofort
+   (`remote-access.md`).
 4. **OS Lite verwenden**, wo kein Desktop gebraucht wird: 8 GB statt 32 GB, schnellerer
    Start, weniger Angriffsfläche. Achtung: **kein VNC**.
 5. **WLAN-Regulierungsdomäne** über die Lokalisierung korrekt setzen – sonst schlagen

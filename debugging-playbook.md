@@ -105,6 +105,7 @@ OS-Versionen, Updates, APT, venv und Diagnose-Werkzeuge: `os-and-software.md`.
 `raspi-config`, Device Tree, Bootloader, fstab und Firewall: `configuration.md`.
 Dateiformat von `config.txt`, bedingte Filter, A/B-Boot, Watchdog: `config-txt.md`.
 Kernel-Header, Kernelmodule, eigene Kernel-Builds und Patches: `kernel.md`.
+Fernzugriff, Dateifreigaben und Netzwerk-Boot: `remote-access.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -742,6 +743,84 @@ installieren → Modul bauen. Wer nach dem Modulbau noch aktualisiert, fängt vo
 `full-upgrade` kann genau die Hardware abschalten, für die das Gerät gebaut wurde. Entweder
 Kernel-Updates zurückhalten oder über A/B-Boot absichern (`config-txt.md`). Mehr zu
 Headern, Modulen und eigenen Kernel-Builds in `kernel.md`.
+
+---
+
+### 28. Der Befehl landet auf dem falschen Pi
+
+**Symptom:** Eine Änderung wirkt nicht, eine Datei ist «verschwunden», oder ein Dienst läuft
+plötzlich auf einem Gerät, auf dem er nichts zu suchen hat. Beim erneuten Verbinden warnt
+SSH über einen geänderten Hostschlüssel.
+
+**Ursache:** Mehrere Geräte melden per mDNS **denselben Namen**. Jedes frische Raspberry Pi
+OS heisst `raspberrypi`; wer zwei Geräte aufsetzt, ohne den Hostnamen zu ändern, bekommt
+zwei Antworten auf `raspberrypi.local` – welche gewinnt, ist nicht vorhersagbar.
+
+**Diagnose:**
+```bash
+avahi-browse -a                    # alle mDNS-Hosts im Netz
+sudo nmap -sn 192.168.1.0/24       # Subnetz durchsuchen (Bereich anpassen)
+ping raspberrypi.local             # welche IP antwortet gerade?
+hostname                           # auf dem Gerät selbst
+```
+
+➜ **Die Warnung über einen geänderten Hostschlüssel ist hier keine Formalität.** Sie ist
+das verlässlichste Anzeichen dafür, dass unter derselben Adresse ein anderes Gerät antwortet.
+Nicht wegklicken, sondern prüfen.
+
+**Behebung:** Hostnamen eindeutig vergeben (`raspi-config`, Control Centre oder
+`/etc/hostname`); Avahi zieht automatisch nach. Details und die Grenzen von mDNS in
+verwalteten Netzen: `remote-access.md`.
+
+---
+
+### 29. «Host is down» beim Einbinden einer Netzwerkfreigabe
+
+**Symptom:** `mount.cifs` bricht mit *Host is down* ab, obwohl der Server erreichbar ist und
+auf `ping` antwortet.
+
+**Ursache:** Die Meldung ist **irreführend**. Client und Server einigen sich nicht auf eine
+**SMB-Protokollversion**. Raspberry Pi OS spricht voreingestellt 2.1 und neuer; ältere
+NAS-Geräte, Drucker und Windows-Versionen brauchen 1.0.
+
+```bash
+sudo mount.cifs //<ip>/<freigabe> /mnt/punkt -o user=<name>,vers=3.0
+sudo mount.cifs //<ip>/<freigabe> /mnt/punkt -o user=<name>,vers=1.0   # letzte Wahl
+```
+
+➜ Vom höchsten plausiblen Wert nach unten durchprobieren. SMBv1 gilt als unsicher und ist
+nur für Altgeräte vertretbar. Vollständige Versionstabelle in `remote-access.md`.
+
+**Verwandt bei Samba:** «Das Passwort stimmt doch» – `smbpasswd` pflegt eine **eigene**
+Datenbank. Ein geändertes Systempasswort ändert das Samba-Passwort nicht.
+
+---
+
+### 30. NFS: einzelne Verzeichnisse unerwartet unzugänglich
+
+**Symptom:** Auf einer NFS-Freigabe sind manche Dateien lesbar, andere nicht – scheinbar
+willkürlich, und lokal auf dem Server stimmen die Rechte.
+
+**Ursachen, in dieser Reihenfolge prüfen:**
+
+1. **UIDs stimmen nicht überein.** NFS entscheidet anhand der **numerischen** Benutzer- und
+   Gruppenkennung, nicht anhand des Namens. Ein `pi` mit UID 1000 auf dem Server und UID
+   1001 auf dem Client sind zwei verschiedene Benutzer.
+   ```bash
+   id                     # auf beiden Seiten vergleichen
+   ls -ln /mnt/freigabe   # numerische statt symbolischer Anzeige
+   ```
+2. **🔴 Mehr als 16 Gruppen.** Vom Client zum Server werden **maximal 16 Gruppen**
+   übertragen. Wer darüber liegt, verliert den Zugriff auf einen Teil der Dateien – ohne
+   nachvollziehbares Muster. Auf einem Pi mit den üblichen Zusatzgruppen (`gpio`, `i2c`,
+   `spi`, `video`, `dialout`, `plugdev`, `netdev`, `audio`, …) ist diese Grenze
+   erreichbar.
+   ```bash
+   id -G | wc -w          # Anzahl Gruppen des aktuellen Benutzers
+   ```
+   Behebung: Mitgliedschaften ausdünnen oder einen eigenen, schlank gehaltenen
+   Dienstbenutzer für den NFS-Zugriff verwenden.
+3. `/etc/idmapd.conf` unterscheidet sich zwischen Server und Client.
 
 ---
 

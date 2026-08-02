@@ -645,6 +645,7 @@ Die Boot-Partition ist FAT-formatiert und unter Linux als `/boot/firmware/` eing
 ## Weitere Ressourcen
 
 - `config-txt.md` – Dateiformat, bedingte Filter, A/B-Boot, Watchdog, Übertakten
+- `remote-access.md` – SSH-Schlüssel, VNC, Dateifreigaben, Netzwerk-Boot
 - [Configuration](https://www.raspberrypi.com/documentation/computers/configuration.html)
 - [config.txt](https://www.raspberrypi.com/documentation/computers/config_txt.html)
 - [Device Trees, Overlays und Parameter](https://www.raspberrypi.com/documentation/computers/configuration.html#device-trees-overlays-and-parameters)
