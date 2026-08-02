@@ -29,8 +29,10 @@ Dieses Claude AI Skill unterstützt die systematische Entwicklung robuster, sich
   Betriebstemperatur – aus dem offiziellen Product Brief und den Massblättern von Raspberry Pi
 - **PCIe & M.2**: Steckerpinout, FFC-Anforderungen, Sideband-Signale für eigene Platinen,
   M.2-HAT+-Varianten und die Temperaturgrenze im Stapel
-- **RP1 & GPIO**: Pad-Grenzwerte (12 mA statt 16 mA), PCIe-Latenz beim GPIO-Zugriff,
-  vier I2C- und sechs SPI-Instanzen, PIO, Hardware-Entprellung
+- **RP1 & GPIO**: Pad-Grenzwerte je Generation (Pi 5 12 mA, Pi 4 nur 8 mA, 16 mA bis Pi 3),
+  PCIe-Latenz beim GPIO-Zugriff, vier I2C- und sechs SPI-Instanzen, PIO, Hardware-Entprellung
+- **Compute Modules**: CM1–CM5, IO-Board-Kompatibilität, eMMC über rpiboot beschreiben,
+  umschaltbare 1,8-V-/3,3-V-GPIO, Trägerboard-Entwurf
 
 ## 🚀 Schnellstart
 
@@ -85,6 +87,7 @@ Das Skill wird automatisch aktiviert bei:
 - **[pcie.md](docs/pcie.md)** – PCIe-Pinout, FFC-Anforderungen, Sideband-Signale, Power States, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1-Pad-Grenzwerte, GPIO-Latenz, Alternativfunktionen, PIO, Hardware-Entprellung
 - **[interfaces.md](docs/interfaces.md)** – SPI-Busse und die 3-Draht-Falle, USB-Strombudget und Hub-Eigenheiten, DPI-Parallel-Display
+- **[compute-module.md](docs/compute-module.md)** – Compute Modules CM1–CM5, IO-Boards, eMMC beschreiben, Trägerboard-Entwurf, Kameras am CM
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite Setup und Best Practices
 - **[component-catalog.md](docs/component-catalog.md)** – Empfohlene Komponenten mit Bezugsquellen
 
