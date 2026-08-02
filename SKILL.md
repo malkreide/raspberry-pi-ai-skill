@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit), oder (15) mit dem Linux-Kernel arbeitet (Kernel-Header, Kernelmodule, DKMS, Treiber nach Update verschwunden, eigenen Kernel bauen oder cross-kompilieren, menuconfig, Patches, PREEMPT_RT/Echtzeit, Beiträge an raspberrypi/linux).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit), oder (15) mit dem Linux-Kernel arbeitet (Kernel-Header, Kernelmodule, DKMS, Treiber nach Update verschwunden, eigenen Kernel bauen oder cross-kompilieren, menuconfig, Patches, PREEMPT_RT/Echtzeit, Beiträge an raspberrypi/linux), oder (16) auf ein Gerät aus der Ferne zugreift oder Daten austauscht (SSH, SSH-Schlüssel, VNC, Raspberry Pi Connect, IP-Adresse finden, mDNS/.local, scp, rsync, NFS, Samba/SMB, Apache, Netzwerk-Boot/PXE).
 ---
 
 # Raspberry Pi AI Skill
@@ -64,6 +64,10 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 - [ ] WLAN im Imager konfiguriert (`wpa_supplicant.conf` funktioniert ab Bookworm nicht mehr)
 - [ ] Modell kann das vorhandene WLAN-Band (Zero W, Zero 2 W, Pi 3B: nur 2,4 GHz)
 - [ ] Reihenfolge: Boot-Medium → Peripherie → **zuletzt Strom**
+- [ ] **Eindeutiger Hostname im Imager gesetzt** – mehrere Geräte mit dem Standardnamen
+      `raspberrypi` beantworten `raspberrypi.local` unvorhersehbar
+- [ ] Fernzugriff von aussen: **VPN oder Raspberry Pi Connect**, nicht SSH/VNC offen ins
+      Internet
 
 **Bei Dauerbetrieb / Feldgerät zusätzlich:**
 - [ ] Alle Einstellungen als Datei oder Skript reproduzierbar (`config.txt`, `raspi-config`), nicht per GUI geklickt
@@ -165,6 +169,12 @@ free -h                       # RAM-Situation
 vcgencmd get_config int       # alle gesetzten Ganzzahlen (nicht jede Option erscheint!)
 vcgencmd get_config str       # alle gesetzten Zeichenketten
 
+# Netz & Erreichbarkeit
+hostname -I                   # eigene IP-Adresse
+nmcli device show             # je Schnittstelle: Typ, Status, IP, Gateway
+avahi-browse -a               # welche Geraete melden sich per mDNS (Namenskonflikte!)
+ethtool -P eth0               # MAC-Adresse; ab Pi 4 NICHT aus der Seriennummer ableitbar
+
 # Hardware-Interfaces
 i2cdetect -y 1                # I2C-Geräte
 lsusb -t                      # USB-Baum
@@ -224,6 +234,13 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - Eigener Kernel bootet nicht, System unerreichbar → nie `kernel8.img` überschreiben, sondern `kernel=` in `config.txt` setzen
 - Selbstgebaute Module überschreiben die des Systemkernels → `CONFIG_LOCALVERSION` setzen
 - 32-Bit-DTBs landen nirgends → Pfad hat sich mit Kernel 6.5 nach `arch/arm/boot/dts/broadcom/` verschoben
+- Befehl wirkt auf dem falschen Gerät → mehrere Pi heissen `raspberrypi`; `raspberrypi.local` antwortet unvorhersehbar
+- `.local` funktioniert im Schul- oder Gast-WLAN nicht → Multicast unterbunden (Client Isolation); IP oder DHCP-Reservation nutzen
+- SSH-Schlüssel eines Kollegen weg → `scp … :.ssh/authorized_keys` **überschreibt**; `ssh-copy-id` oder `>>` verwenden
+- `mount.cifs` meldet «Host is down» → SMB-Versionskonflikt, nicht ein toter Host; `vers=` setzen
+- Samba-Passwort «stimmt nicht» → `smbpasswd` führt eine eigene Datenbank, unabhängig vom Systempasswort
+- NFS-Zugriff willkürlich verweigert → UIDs stimmen nicht überein, oder der Benutzer ist in **mehr als 16 Gruppen**
+- DHCP-Reservation aus der Seriennummer abgeleitet → ab Pi 4 besteht **kein Zusammenhang** mehr zur MAC-Adresse (`ethtool -P eth0`)
 
 **Eskalationspfade** (zeitbasiert):
 - 0–15 Min: Isolationsmethode, Logs lesen
@@ -281,6 +298,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 
 **Linux-Kernel (Header für Kernelmodule, DKMS, eigene Builds, Cross-Compilation, Patches, PREEMPT_RT):**
 `/mnt/skills/user/raspberry-pi-ai/references/kernel.md`
+
+**Fernzugriff (SSH und Schlüssel, VNC, Connect, Gerät im Netz finden, scp/rsync, NFS, Samba, Netzwerk-Boot):**
+`/mnt/skills/user/raspberry-pi-ai/references/remote-access.md`
 
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`
