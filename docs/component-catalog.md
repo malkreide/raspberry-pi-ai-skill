@@ -126,6 +126,13 @@ Die offiziellen Raspberry-Pi-Karten sind damit spezifiziert:
 | Pi 4 | DDR50 | 3 200 IOPS | 1 200 IOPS |
 | **Pi 5** | **SDR104** | **5 000 IOPS** | **2 000 IOPS** |
 
+Dazwischen liegt der offizielle **Raspberry Pi Flash Drive** (USB 3.2 Gen 1):
+
+| Grösse | Lesen | Schreiben |
+|--------|-------|-----------|
+| 128 GB | ~16 000 IOPS | ~21 000 IOPS |
+| 256 GB | ~18 000 IOPS | ~22 000 IOPS |
+
 Zum Vergleich die offiziellen NVMe-SSDs (ebenfalls 4 kB zufällig):
 
 | Grösse | Lesen | Schreiben |
@@ -133,6 +140,13 @@ Zum Vergleich die offiziellen NVMe-SSDs (ebenfalls 4 kB zufällig):
 | 256 GB | 40 000 IOPS | 70 000 IOPS |
 | 512 GB | 50 000 IOPS | 90 000 IOPS |
 | 1 TB | **90 000 IOPS** | **90 000 IOPS** |
+
+➜ **Die Leiter ist damit vollständig: SD-Karte → USB-Stick (~3–4×) → NVMe (~18×).** Für
+einen Pi 4, der kein PCIe hat, ist der USB-Stick der einzige verfügbare Sprung nach oben –
+und er ist ein grosser. Für einen Pi 5 ist er der Kompromiss, wenn PCIe schon von einer NPU
+belegt ist (`edge-ai.md`). Der Flash Drive unterstützt zudem **SMART**
+(`sudo smartctl -d sat,12 -x /dev/sda`), was ihn im Gegensatz zu beliebigen Sticks für
+unbeaufsichtigten Dauerbetrieb qualifiziert – Details in `accessories.md`.
 
 ➜ **Das ist der Faktor 8 bis 18 – und der Grund, warum ein Pi 5 mit NVMe sich wie ein
 anderes Gerät anfühlt**, obwohl die sequenzielle Rate durch PCIe 2.0 x1 auf rund 500 MB/s
@@ -276,6 +290,33 @@ servo.max()   # 180°
 | Camera Module 3 Wide | Sony IMX708 | 12 MP, 1080p60 | 120° | ~50 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | HQ Camera | Sony IMX477 | 12.3 MP, C/CS-Mount | var. | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | Camera Module 2 | Sony IMX219 | 8 MP, 1080p30 | 62° | ~30 | [pi-shop.ch](https://www.pi-shop.ch/) |
+
+### 🔴 Die Kennzahlen, die die Auswahl wirklich entscheiden
+
+Megapixel und Preis stehen oben; die folgenden drei Grössen entscheiden, ob eine Kamera für
+eine Aufgabe **überhaupt** taugt.
+
+| Kamera | Sensor | Pixelgrösse | Max. Belichtungszeit | Charakter |
+|--------|--------|-------------|----------------------|-----------|
+| Camera Module 1 | OV5647 | 1,4 µm | **6 s** | veraltet |
+| Camera Module 2 | IMX219 | 1,12 µm | **11,76 s** | kleinste Pixel – schwächstes Schwachlicht |
+| **Camera Module 3** | IMX708 | 1,4 µm | **112 s** | Allrounder, Autofokus, HDR |
+| **HQ Camera** | IMX477 | 1,55 µm | **670,74 s** | Wechselobjektiv, **Langzeitbelichtung** |
+| **Global Shutter** | IMX296 | **3,45 µm** | **15,5 s** | schnelle Bewegung ohne Verzerrung |
+| AI Camera | IMX500 | 1,55 µm | **112 s** | Inferenz im Modul (`edge-ai.md`) |
+
+➜ **Drei Ableitungen, die im Entwurf oft falsch getroffen werden:**
+
+1. **Astrofotografie, Nachtaufnahmen, Lichtspuren → HQ Camera.** 670 s gegen 112 s beim
+   Camera Module 3 ist kein gradueller Unterschied, sondern eine andere Kategorie. Das
+   Camera Module 2 mit 11,76 s scheidet dafür ganz aus.
+2. **Bewegte Objekte → Global Shutter.** Nicht wegen der Auflösung (die ist mit 1,58 MP die
+   niedrigste im Feld), sondern weil ein Rolling Shutter schnelle Bewegung **schräg
+   verzerrt**. Kein Objektiv und keine Software korrigieren das nachträglich.
+3. **Schwachlicht ohne Langzeitbelichtung → grosse Pixel schlagen viele Pixel.** Die
+   3,45 µm der Global Shutter Camera sammeln pro Pixel rund **neunmal** so viel Licht wie
+   die 1,12 µm des Camera Module 2. Mehr Megapixel bei gleichem Sensor bedeuten
+   *schlechteres* Schwachlichtverhalten, nicht besseres.
 
 **Pi 5 Wichtig:**
 - ✅ Camera Module 3: Natives Mini-CSI-Kabel (22-Pin)

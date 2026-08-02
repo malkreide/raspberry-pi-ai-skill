@@ -28,7 +28,19 @@ Modell zu einem Projekt passen; hier steht, **wie** es aufgesetzt wird.
 |----------|-----|--------|-----------------|--------|
 | **AI Kit** (M.2 HAT+ mit vorinstalliertem Modul) | Hailo-8L | ✅ | ❌ | 🔴 **Nicht mehr in Produktion** |
 | **AI HAT+** | Hailo-8L **oder** Hailo-8 | ✅ | ❌ | Empfohlen |
-| **AI HAT+ 2** | **Hailo-10H** | ✅ | ✅ **LLMs und VLMs** | Empfohlen |
+| **AI HAT+ 2** | **Hailo-10H** + **8 GB eigener Speicher** | ✅ | ✅ **LLMs und VLMs** bis ~6 Mrd. Parameter | Empfohlen |
+
+> ➜ **Der Unterschied ist nicht nur der Chip, sondern der Speicher.** Das AI HAT+ 2 trägt
+> **8 GB eigenen Arbeitsspeicher auf dem HAT**. Die Modellgewichte liegen dort, nicht im RAM
+> des Pi. Daraus folgt eine Beschaffungsregel, die dem Reflex widerspricht:
+> **Für GenAI ist das AI HAT+ 2 an einem 4-GB-Pi 5 die bessere Wahl als ein 16-GB-Pi 5
+> ohne HAT** – der grosse Pi kauft CPU-Inferenz, der HAT kauft NPU-Inferenz mit eigenem
+> Speicher.
+
+> ⚠️ **Kühlung: Heatsink *und* Active Cooler.** Dem AI HAT+ 2 liegt ein eigener Kühlkörper
+> für den Hailo-10H bei – er ersetzt **nicht** die Kühlung des Pi. Beide sind nötig; die
+> Temperaturgrenze des Stapels richtet sich weiterhin nach der niedrigsten Angabe aller
+> Komponenten (`mechanical.md`).
 
 > ➜ **Für neue Projekte kein AI Kit mehr einplanen.** Raspberry Pi empfiehlt für neue
 > Entwürfe ausdrücklich AI HAT+ oder AI HAT+ 2. Vorhandene Kits funktionieren weiter.
@@ -259,7 +271,7 @@ Pflege.
 
 | Schicht | Bestandteil |
 |---------|-------------|
-| Hardware | Pi 5 + Hailo-10H (AI HAT+ 2) |
+| Hardware | Pi 5 + Hailo-10H (AI HAT+ 2), **8 GB Speicher auf dem HAT** |
 | Software | Treiber, HailoRT, Tappas – über `hailo-h10-all` |
 | Modelle | **Hailo Gen-AI Model Zoo** |
 | Backend | **`hailo-ollama`** – lädt Modelle, steuert die Inferenz, stellt eine REST-Schnittstelle bereit |
