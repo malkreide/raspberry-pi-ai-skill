@@ -285,6 +285,11 @@ servo.max()   # 180°
 **Wichtig (Pi 5 + HAT Stacking):**
 - M.2 HAT+ blockiert GPIO → USB-Mikrofon bevorzugen bei Hailo-Projekten
 
+> ℹ️ **Am Pi 5 gibt es einen dritten Weg:** Der RP1 hat einen **PDM-Mikrofoneingang** mit
+> eigenem Taktgenerator und Stereo-Bitstrom-Eingang. PDM-Mikrofone lassen sich damit direkt
+> anbinden – **ohne USB-Adapter und ohne I2S-Codec-Platine**. Für Sprachprojekte spart das
+> eine Komponente; siehe `rp1-gpio.md`. Am Pi 4 und älter gibt es diese Möglichkeit nicht.
+
 ### Lautsprecher & Audio-Ausgabe
 
 | Komponente | Typ | Leistung | Preis (CHF) | Bezugsquelle |
