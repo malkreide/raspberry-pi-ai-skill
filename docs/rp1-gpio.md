@@ -203,17 +203,56 @@ earlycon=pl011,0x107d001000,115200n8
 
 ## Elektrische Grenzwerte der Pads
 
-### ⚠️ Korrektur gegenüber dem Pi 4
+### Treiberstrom über alle Generationen
 
-| | Raspberry Pi 4 (BCM2711) | **Raspberry Pi 5 (RP1)** |
-|---|---|---|
-| Treiberstrom pro Pin | 2–**16 mA** | **2 / 4 / 8 / 12 mA** – Maximum **12 mA** |
-| Voreinstellung | – | **4 mA** (Reset-Wert des DRIVE-Feldes) |
+| SoC | Modelle | Voreinstellung | **Maximum** | Pull-Widerstand |
+|-----|---------|----------------|-------------|-----------------|
+| BCM2835 / 2836 / 2837 / RP3A0 | Pi 1, 2, 3, Zero (alle) | 8 mA | **16 mA** | 50–65 kΩ |
+| BCM2711 | Pi 4B, Pi 400, CM4 | 4 mA | **8 mA** | 33–73 kΩ |
+| **RP1** | **Pi 5, Pi 500** | **4 mA** | **12 mA** | – |
 
-➜ **Der oft zitierte Wert «16 mA pro Pin» gilt auf dem Pi 5 nicht.** Wer Vorwiderstände
-oder Lastannahmen aus Pi-4-Anleitungen übernimmt, überschreitet die Spezifikation. Für
-den Pi 5 mit **12 mA** rechnen – und beachten, dass die Voreinstellung bei **4 mA** liegt,
-nicht am Maximum.
+➜ **Die vielzitierten «16 mA pro Pin» stammen vom Pi 3 und älter – nicht vom Pi 4.**
+Beim Pi 4 halbiert der BCM2711 alle Stufen des `DRIVE`-Feldes: Was das Register als 16 mA
+beschriftet, liefert real 8 mA.
+
+Daraus folgt eine Reihenfolge, die viele Anleitungen falsch darstellen:
+
+```
+Pi 1/2/3/Zero  16 mA  ████████████████
+Pi 5 (RP1)     12 mA  ████████████
+Pi 4 (BCM2711)  8 mA  ████████
+```
+
+**Der Pi 5 treibt also mehr Strom als der Pi 4, nicht weniger.** Wer Lastannahmen von
+einem Pi 4 auf einen Pi 5 überträgt, rechnet konservativ und ist auf der sicheren Seite.
+Gefährlich ist die umgekehrte Richtung – und vor allem der Sprung von einem Pi 3 auf
+irgendetwas Neueres: Dort halbiert (Pi 5) beziehungsweise drittelt (Pi 4) sich das Budget.
+
+> ⚠️ Unabhängig vom Pin-Maximum gilt die Auslegung der 3,3-V-Versorgung: **rund 3 mA pro
+> GPIO** im Dauerbetrieb und **50 mA über alle Pins zusammen**. Das Pin-Maximum ist eine
+> Eigenschaft des Pads, kein Budget, das man 28-mal ausschöpfen darf – zieht man aus vielen
+> Pins gleichzeitig viel Strom, bricht die 3,3-V-Schiene ein und stört SD-Karte und SDRAM.
+
+### Spannungspegel
+
+Auch die garantierten Pegel unterscheiden sich zwischen den Familien – wichtig, wenn ein
+Sensor an der Erkennungsschwelle liegt:
+
+| Parameter | BCM2835/36/37, RP3A0 | BCM2711 (Pi 4) |
+|-----------|----------------------|----------------|
+| V<sub>IL</sub> (Eingang «Low» bis) | 0,9 V | **0,8 V** |
+| V<sub>IH</sub> (Eingang «High» ab) | 1,6 V | **2,0 V** |
+| V<sub>OL</sub> (Ausgang «Low» max.) | 0,14 V | 0,4 V |
+| V<sub>OH</sub> (Ausgang «High» min.) | 3,0 V | 2,6 V |
+
+Der Pi 4 verlangt am Eingang **2,0 V statt 1,6 V** für ein sicheres High. Ein Sensor mit
+schwachem Ausgangspegel, der am Pi 3 zuverlässig lief, kann am Pi 4 sporadisch aussetzen –
+ein Fehlerbild, das leicht der Software zugeschrieben wird.
+
+> Die Treiberstärke ist **kein Strombegrenzer**. Sie sagt nur, bis zu welchem Strom der Pad
+> die Pegel V<sub>OL</sub>/V<sub>OH</sub> noch einhält. Ein auf 2 mA gestellter Pin, aus dem
+> 16 mA gezogen werden, geht nicht kaputt – er hält bloss den Pegel nicht mehr und wird
+> vom Gegenüber womöglich nicht mehr als High erkannt.
 
 ### Eigenschaften jedes Pads
 
@@ -369,8 +408,9 @@ kosten würde. Wer eigene Treiber schreibt, sollte das nutzen.
 
 | Situation | Regel auf dem Pi 5 |
 |-----------|--------------------|
-| Vorwiderstand für eine LED dimensionieren | Mit **12 mA** Maximum rechnen, nicht mit 16 mA |
-| «Es hat auf dem Pi 4 funktioniert» | Zuerst Treiberstrom und Bit-Banging-Annahmen prüfen |
+| Vorwiderstand für eine LED dimensionieren | Am Pi 5 mit **12 mA** rechnen, am Pi 4 mit **8 mA**, erst ab Pi 3 mit 16 mA |
+| «Es hat auf dem Pi 4 funktioniert» | Bit-Banging-Annahmen prüfen – beim Treiberstrom ist der Pi 5 der stärkere |
+| «Es hat auf dem Pi 3 funktioniert» | Treiberstrom halbiert (Pi 5) bzw. gedrittelt (Pi 4), und der Pi 4 verlangt 2,0 V für High |
 | Zeitkritisches Protokoll | Hardware-Peripherie oder **PIO**, nicht Software-Takt |
 | Taster entprellen | Hardware-Entprellung des RP1 nutzen statt `sleep()` |
 | Enge GPIO-Polling-Schleife | ASPM deaktivieren, Write-Barrier vor dem Lesen |

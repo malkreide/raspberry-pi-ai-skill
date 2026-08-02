@@ -116,7 +116,8 @@ Für Projekte mit >10 Zeilen Code oder Hardware-Integration: Erstelle `plan.md` 
 
 **Vor jeder GPIO-Arbeit validieren:**
 - [ ] Alle Signale ≤3.3V (sonst Voltage Divider)
-- [ ] Treiberstrom: **Pi 5 max. 12 mA** pro Pin (Voreinstellung 4 mA), Pi 4 max. 16 mA
+- [ ] Treiberstrom: **Pi 1/2/3/Zero 16 mA**, **Pi 5 12 mA** (Voreinstellung 4 mA), **Pi 4 nur 8 mA**;
+      dazu ~50 mA über alle Pins zusammen
 - [ ] Motoren/Relays via Transistor/H-Bridge
 - [ ] 5.1V/5A USB-C PD PSU für Pi 5
 - [ ] Platine im Betrieb nicht berühren (ESD), nur an den Kanten anfassen
@@ -214,7 +215,8 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - FFC zu lang, falscher Typ oder nicht ganz eingerastet → PCIe-Gerät fehlt oder ist instabil
 - M.2 HAT+ im Stapel → Systemgrenze sinkt auf 0–50 °C
 - Bit-Banging aus Pi-4-Code → GPIO hängt hinter PCIe (~1 µs pro Zugriff), Hardware oder PIO nutzen
-- Treiberstrom aus einer Pi-4-Anleitung übernommen → Pi 5 kann nur 12 mA
+- Treiberstrom aus einer Pi-3-Anleitung übernommen → 16 mA gelten nur bis Pi 3; Pi 5 kann 12 mA, Pi 4 nur 8 mA
+- Sensor läuft am Pi 3, setzt am Pi 4 sporadisch aus → Pi 4 verlangt am Eingang 2,0 V statt 1,6 V für High
 - Peripherie fällt aus ohne Unterspannungswarnung → Pi 5 an 3-A-Netzteil begrenzt sie auf 600 mA
 - Headless-Pi nicht erreichbar → SSH/Connect nicht im Imager aktiviert, oder `wpa_supplicant.conf` benutzt (ab Bookworm wirkungslos)
 - Monitor bleibt schwarz → nicht an HDMI0, oder Video über USB-C erwartet (gibt es auf keinem Pi)
@@ -283,7 +285,8 @@ Im Notion-Projekt-Eintrag festhalten:
 Diese Regeln **immer** proaktiv kommunizieren:
 
 1. **3.3V-Toleranz:** GPIO sind nicht 5V-tolerant. 5V-Signale zerstören den SoC.
-   Treiberstrom pro Pin: **Pi 5 (RP1) max. 12 mA**, nicht die 16 mA aus Pi-4-Anleitungen.
+   Treiberstrom pro Pin: **Pi 5 (RP1) 12 mA**, **Pi 4 (BCM2711) nur 8 mA**, 16 mA erst
+   ab Pi 3 abwärts – der Pi 5 ist hier also stärker als der Pi 4.
 2. **Under-voltage:** Lightning Bolt = PSU ungenügend. Führt zu Korruption und Instabilität.
 3. **Thermisches Throttling:** Pi 5 bei >80°C SoC-Temperatur. Aktive Kühlung obligatorisch für sustained loads.
 4. **Induktive Lasten:** Freilaufdioden bei Relays/Motoren zwingend.

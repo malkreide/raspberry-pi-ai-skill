@@ -80,15 +80,39 @@ nicht genutzt wird. Details in `configuration.md`.
 
 ## Netzteil
 
-| Modell | Empfohlen | Offizielles Netzteil |
-|--------|-----------|----------------------|
-| Raspberry Pi 500+ | 5 V / 5 A | 27 W USB-C |
-| **Raspberry Pi 5**, Pi 500 | **5 V / 5 A** | 27 W USB-C |
-| Raspberry Pi 4B, Pi 400 | 5 V / 3 A | 15 W USB-C |
-| Raspberry Pi 3 (alle) | 5 V / 2,5 A | 12,5 W Micro-USB |
-| Raspberry Pi 2B | 5 V / 2,5 A | 12,5 W Micro-USB |
-| Raspberry Pi 1 (alle) | 5 V / 2,5 A | 12,5 W Micro-USB |
-| Raspberry Pi Zero (alle) | 5 V / 2,5 A | 12,5 W Micro-USB |
+Die dritte Spalte ist die entscheidende für die Auslegung: Sie sagt, **wie viel vom
+Netzteil für Peripherie übrig bleibt**, nachdem das Board selbst versorgt ist.
+
+| Modell | Empfohlenes Netzteil | Max. USB-Peripherie | Board allein (typisch) |
+|--------|----------------------|---------------------|------------------------|
+| Raspberry Pi 500+ | 5 V / 5 A (27 W USB-C) | 1,6 A | 800 mA¹ |
+| **Raspberry Pi 5**, Pi 500 | **5 V / 5 A** (27 W USB-C) | **1,6 A** (600 mA am 3-A-Netzteil) | **800 mA** |
+| Raspberry Pi 4B | 5 V / 3 A (15 W USB-C) | 1,2 A | 600 mA |
+| Raspberry Pi 400 | 5 V / 3 A (15 W USB-C) | 1,2 A | 800 mA |
+| Raspberry Pi 3B+ | 5 V / 2,5 A (12,5 W Micro-USB) | 1,2 A | 500 mA |
+| Raspberry Pi 3B | 5 V / 2,5 A | 1,2 A | 400 mA |
+| Raspberry Pi 3A+ | 5 V / 2,5 A | nur durch Netzteil begrenzt | 350 mA |
+| Raspberry Pi 2B | 5 V / 1,8 A | 1,2 A | 350 mA |
+| Raspberry Pi 1 B+ | 5 V / 1,8 A | 1,2 A | 330 mA |
+| Raspberry Pi 1 B | 5 V / 1,2 A | 500 mA | 500 mA |
+| Raspberry Pi 1 A / A+ | 5 V / 700 mA | 500 mA | 200 / 180 mA |
+| Raspberry Pi Zero 2 W | 5 V / 2 A | nur durch Netzteil begrenzt | 350 mA |
+| Raspberry Pi Zero / W | 5 V / 1,2 A | nur durch Netzteil begrenzt | 100 / 150 mA |
+
+¹ bei ausgeschalteten LEDs und inaktiver SSD
+
+**Was einzelne Verbraucher ziehen** – damit lässt sich das Budget nachrechnen, statt zu raten:
+
+| Verbraucher | Strom |
+|-------------|-------|
+| Kameramodul | **250 mA** |
+| HDMI-Ausgang | 50 mA |
+| Alle GPIO-Pins zusammen | 50 mA (sicher) |
+| USB-Tastatur / -Maus | 100–1000 mA, je nach Modell |
+
+➜ Rechenbeispiel Pi 5 am 5-A-Netzteil: 800 mA Board + 250 mA Kamera + 50 mA HDMI lassen
+von den 1,6 A Peripheriebudget noch reichlich Reserve. Dasselbe Setup am 3-A-Netzteil hat
+nur 600 mA für Peripherie – Kamera und eine USB-SSD zusammen sprengen das bereits.
 
 ### Zwei Angaben, die oft fehlen
 

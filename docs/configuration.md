@@ -371,6 +371,25 @@ sudo reboot
 Release-Track wechseln: `raspi-config` → `6 Advanced Options` → `A5 Bootloader Version`
 (`E1 Latest` = neueste Funktionen, `E2 Default` = stabil, getestet).
 
+### Verbrauch im ausgeschalteten Zustand senken
+
+Ein heruntergefahrener Pi 5 zieht weiterhin **1 bis 1,4 W** – über ein Jahr gerechnet
+mehr als 10 kWh, nur um abgeschaltet dazuliegen. Eine Zeile in der EEPROM-Konfiguration
+bringt das auf **etwa 0,01 W**:
+
+```bash
+sudo rpi-eeprom-config -e
+# POWER_OFF_ON_HALT=1
+```
+
+Das ist der Unterschied zwischen «Faktor 100» und «Netzstecker ziehen». Relevant für
+Batterie- und Solarbetrieb ebenso wie für Klassensätze, die über die Ferien am Netz bleiben.
+
+⚠️ **Nebenwirkung:** Im PMIC-Standby sind alle Ausgänge abgeschaltet, die 5 V liegen aber
+weiterhin an – **manche HATs kommen damit nicht zurecht**. Am Pi 5 weckt die Power-Taste
+das Gerät wieder; auf älteren Modellen muss zusätzlich `WAKE_ON_GPIO=0` gesetzt sein, und
+das Aufwecken erfolgt über GPIO3 oder GLOBAL_EN gegen Masse.
+
 > ⚠️ **CM4 und CM4S können den Bootloader nicht automatisch aktualisieren** – ihr Boot-ROM
 > lädt keine `recovery.bin` aus dem eMMC. Dort sind `rpiboot` bzw. `flashrom` nötig.
 

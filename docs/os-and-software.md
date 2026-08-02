@@ -356,6 +356,30 @@ vcgencmd get_throttled     # 0x0 = alles in Ordnung
 wie `0x50000` bedeutet: gerade ist alles in Ordnung, aber es gab Unterspannung und
 Drosselung – der Fehler ist real, nur nicht im Moment der Messung sichtbar.
 
+**Wann genau meldet das Board Unterspannung?** Die Erkennung schlägt an, sobald die
+Versorgung unter **4,63 V (±5 %)** fällt, und schreibt einen Eintrag ins Kernel-Log. Die
+Schaltung steckt in allen Modellen **ab dem Pi 1 B+ (2014) – ausser der Zero-Reihe**.
+
+> ➜ Auf einem **Pi Zero gibt es diese Warnung nicht.** Ein Zero mit zu schwachem Netzteil
+> zeigt kein Blitzsymbol und keinen Log-Eintrag, sondern nur Folgefehler: Abstürze, defekte
+> Schreibvorgänge, korrupte SD-Karten. Beim Zero also nicht auf die Warnung warten, sondern
+> Netzteil und Kabel von vornherein prüfen.
+
+Häufigste Ursachen in dieser Reihenfolge: zu dünnes oder zu langes USB-Kabel,
+unterdimensioniertes Netzteil, zu viele stromhungrige USB-Geräte.
+
+```bash
+vcgencmd pmic_read_adc      # Spannungen und Ströme am PMIC (Pi 4 / Pi 5)
+```
+
+> ℹ️ `pmic_read_adc` sieht den USB-Strom **nicht**: Was direkt an 5 V hängt, umgeht den
+> PMIC. Die Summe ergibt deshalb nie die Leistung des Netzteils – brauchbar ist der Befehl
+> vor allem für die Kernspannung.
+
+➜ Was das Netzteil ausgehandelt hat und welche Grenze aktiv ist, steht unter
+`/proc/device-tree/chosen/power/` – ausführlich in
+[`configuration.md`](configuration.md#stromversorgung--chosenpower-pi-5).
+
 ### Takt, Spannung, Temperatur
 
 ```bash

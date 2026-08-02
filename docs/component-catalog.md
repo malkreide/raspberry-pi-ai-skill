@@ -26,6 +26,7 @@ Empfohlene Komponenten für Raspberry Pi Projekte mit Bezugsquellen (Schweiz/Eur
 | **Raspberry Pi 5 (8 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $80 | ~90 | [pi-shop.ch](https://www.pi-shop.ch/), [pi3g.com](https://pi3g.com/) |
 | **Raspberry Pi 5 (4 GB)** | BCM2712, 4× A76 @ 2.4 GHz | $60 | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | Raspberry Pi 5 (2 GB) | BCM2712, 4× A76 @ 2.4 GHz | $50 | ~60 | [pi-shop.ch](https://www.pi-shop.ch/) |
+| Raspberry Pi 5 (1 GB) | BCM2712, 4× A76 @ 2.4 GHz | k. A. | – | selten im Handel |
 | Raspberry Pi 4 (8 GB) | BCM2711, 4× A72 @ 1.8 GHz | $75 | ~100 | [pi-shop.ch](https://www.pi-shop.ch/) |
 | Raspberry Pi 4 (4 GB) | BCM2711, 4× A72 @ 1.8 GHz | $55 | ~70 | [pi-shop.ch](https://www.pi-shop.ch/) |
 
@@ -34,9 +35,10 @@ Speicherkarte und Versand). **CHF = Richtwerte für den Schweizer Endkundenhande
 liegen wegen Mehrwertsteuer, Zoll und Händlermarge über dem Dollar-Listenpreis und
 schwanken je nach Anbieter und Verfügbarkeit.
 
-> ℹ️ **Eine 1-GB-Variante des Pi 5 gibt es nicht.** Das kleinste Modell hat 2 GB. Für
-> Vorhaben unterhalb dieser Klasse ist der **Pi Zero 2 W ($15)** die richtige Wahl, nicht
-> ein kleinerer Pi 5.
+> ℹ️ **Die 1-GB-Variante des Pi 5 existiert** (Revision 1.1, Revisionscode `a04171`), ist im
+> Endkundenhandel aber praktisch nicht zu bekommen – sie richtet sich an Industriekunden.
+> Für Vorhaben in dieser Klasse ist der **Pi Zero 2 W ($15)** meist die bessere Wahl:
+> verfügbar, günstiger und sparsamer.
 >
 > Preise vor der Beschaffung gegen die tagesaktuelle Händlerliste prüfen – die
 > USD-Listenpreise sind stabil, die CHF-Strassenpreise nicht.

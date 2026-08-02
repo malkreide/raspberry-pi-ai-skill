@@ -105,7 +105,7 @@ Details, Steckerpositionen und Gehäuse-Checkliste: [`mechanical.md`](mechanical
 ```
 RP1-Pad-Grenzwerte (Quelle: RP1 Peripherals, RP-008370-DS-1):
 - Treiberstrom: 2 / 4 / 8 / 12 mA wählbar -> Maximum 12 mA
-  (NICHT 16 mA wie auf Pi 4 - Pi-4-Anleitungen sind hier nicht uebertragbar)
+  (der Pi 4 schafft nur 8 mA, Pi 1/2/3/Zero dagegen 16 mA)
 - Voreinstellung: 4 mA
 - Schmitt-Trigger am Eingang: per Reset aktiv
 - Slew-Rate-Begrenzung: per Reset langsam
@@ -115,8 +115,10 @@ RP1-Pad-Grenzwerte (Quelle: RP1 Peripherals, RP-008370-DS-1):
 - Ein Summenstrom pro Bank ist im Datenblatt NICHT angegeben
 ```
 
-⚠️ **Der oft zitierte Wert «16 mA pro Pin» stammt vom Pi 4 und gilt auf dem Pi 5 nicht.**
-Details, Latenz-Verhalten und die vollständige Peripherie-Übersicht: [`rp1-gpio.md`](rp1-gpio.md).
+⚠️ **Der oft zitierte Wert «16 mA pro Pin» stammt vom Pi 3 und älter – nicht vom Pi 4.**
+Der Pi 4 liefert maximal 8 mA, der Pi 5 also **mehr** als der Pi 4, nicht weniger.
+Vollständige Tabelle über alle Generationen, Spannungspegel, Latenz-Verhalten und
+Peripherie-Übersicht: [`rp1-gpio.md`](rp1-gpio.md).
 
 ---
 
@@ -138,9 +140,12 @@ Details, Latenz-Verhalten und die vollständige Peripherie-Übersicht: [`rp1-gpi
 
 ```
 BCM2711 SoC Limitationen:
-- Max. 16 mA pro Pin
-- Pull-Up/Pull-Down: 50-65 kΩ
-- Gesamt-Budget: ~50 mA pro Bank (GPIOs 0-27, 28-45)
+- Max. 8 mA pro Pin (Voreinstellung 4 mA)
+  Der BCM2711 halbiert alle Stufen des DRIVE-Feldes: was das Register
+  als 16 mA beschriftet, liefert real 8 mA.
+- Pull-Up/Pull-Down: 33-73 kOhm (nicht 50-65 wie beim Pi 3)
+- Eingangspegel: High erst ab 2,0 V (Pi 3: ab 1,6 V)
+- Gesamt-Budget: ~50 mA ueber alle Pins zusammen
 ```
 
 ---
@@ -328,6 +333,39 @@ das Erreichen dieser Grenze **schadet dem SoC nicht**, es kostet Leistung.
 | **Edge AI / NPU** | **Active Cooler (obligatorisch!)** |
 | Overclocking | Active Cooler + Case-Lüfter |
 
+**Lüfterkurve des Pi 5** (Firmware-gesteuert, gilt für alle offiziellen Lüfter):
+
+| Temperatur | Drehzahl |
+|------------|----------|
+| < 50 °C | **0 %** – der Lüfter steht still |
+| ab 50 °C | 30 % |
+| ab 60 °C | 50 % |
+| ab 67,5 °C | 70 % |
+| ab 75 °C | **100 %** |
+
+Beim Abkühlen gelten dieselben Schwellen mit **5 °C Hysterese** – der Lüfter fällt erst
+5 °C unterhalb der jeweiligen Schwelle wieder zurück. Das verhindert Pumpen um einen
+Schwellwert herum.
+
+➜ **Ein stillstehender Lüfter unter 50 °C ist kein Defekt**, sondern die Voreinstellung.
+Wer prüfen will, ob der Lüfter überhaupt läuft, muss das Board erst über 50 °C bringen.
+Die Schwellen sind über `dtparam=fan_temp0=55000` (Wert in Milligrad) und die
+Parameter `fan_tempN_hyst` / `fan_tempN_speed` verschiebbar.
+
+**Lüfteranschluss (JST-SH, 1 mm Raster, 4-polig)** – zwischen GPIO-Leiste und USB-2.0-Ports:
+
+| Pin | Funktion | Aderfarbe |
+|-----|----------|-----------|
+| 1 | +5 V | rot |
+| 2 | PWM | blau |
+| 3 | GND | schwarz |
+| 4 | Tacho | gelb |
+
+⚠️ **Der Lüfteranschluss zieht aus demselben Budget wie die USB-Peripherie.** An einem
+3-A-Netzteil teilt sich der Lüfter also die 600 mA mit allem, was an USB hängt. Beim Booten
+prüft die Firmware über den Tacho-Eingang, ob sich der Lüfter dreht, und aktiviert nur dann
+das `cooling_fan`-Overlay – ein Lüfter ohne Tacho-Leitung wird deshalb nicht geregelt.
+
 **Thermal Monitoring:**
 ```bash
 # Temperatur überwachen
@@ -429,20 +467,93 @@ Zeile auskommentieren oder entfernen, neu starten – das Gerät läuft dann mit
 
 ---
 
+## Modell zuverlässig erkennen
+
+Für Skripte, die sich je nach Board anders verhalten müssen, gibt es zwei Wege – einen
+robusten und einen, der regelmässig bricht.
+
+### Der robuste Weg: Device Tree
+
+```bash
+cat /proc/device-tree/compatible | tr '\0' '\n'
+# raspberrypi,5-model-b
+# brcm,bcm2712
+```
+
+Funktioniert auf **jeder** Linux-Distribution, nicht nur unter Raspberry Pi OS, und liefert
+Hersteller und Modell getrennt. Auswahl der Werte:
+
+| Gerät | Modell-String | SoC |
+|-------|---------------|-----|
+| Raspberry Pi 5 | `5-model-b` | `bcm2712` |
+| Raspberry Pi 500 / 500+ | `500` | `bcm2712` |
+| Compute Module 5 | `5-compute-module` | `bcm2712` |
+| Raspberry Pi 4B | `4-model-b` | `bcm2711` |
+| Raspberry Pi 400 | `400` | `bcm2711` |
+| Raspberry Pi Zero 2 W | `model-zero-2-w` | `bcm2837` |
+| Raspberry Pi 3B+ | `3-model-b-plus` | `bcm2837` |
+
+### Der Revisionscode
+
+```bash
+cat /proc/cpuinfo | grep Revision
+# Revision : c03111
+```
+
+🔴 **`/proc/cpuinfo` meldet bei *jedem* Pi `Hardware: BCM2835`** – auch auf BCM2711 und
+BCM2712. Dieses Feld ist zur SoC-Erkennung unbrauchbar.
+
+Der Code ist ein Bitfeld, kein fortlaufender Zähler. Die drei praktisch wichtigen Felder:
+
+| Bits | Feld | Bedeutung |
+|------|------|-----------|
+| 0–3 | Revision | 0, 1, 2 … |
+| 4–11 | **Modelltyp** | `0x11` = 4B, `0x17` = 5, `0x13` = 400, `0x19` = 500/500+, `0x12` = Zero 2 W |
+| 12–15 | Prozessor | 0 = BCM2835, 1 = 2836, 2 = 2837, 3 = **2711**, 4 = **2712** |
+| 20–22 | **RAM** | 0 = 256 MB, 1 = 512 MB, 2 = 1 GB, 3 = 2 GB, 4 = 4 GB, 5 = 8 GB, 6 = 16 GB |
+| 23 | Neues Format | muss **1** sein, bevor die anderen Felder gelten |
+| 25 | Garantie-Bit | durch Übertakten gesetzt (am Pi 4 nie gesetzt) |
+
+```python
+import subprocess
+code = int(subprocess.check_output(
+    "awk '/Revision/ {print $3}' /proc/cpuinfo", shell=True), 16)
+
+neu   = (code >> 23) & 0x1      # zuerst prüfen!
+modell= (code >> 4)  & 0xff
+ram   = (code >> 20) & 0x7
+
+if neu and modell == 0x17 and ram >= 4:
+    print("Pi 5 mit mindestens 4 GB")
+```
+
+> 🔴 **Nie gegen eine Liste bekannter Revisionscodes prüfen.** Genau das ist der häufigste
+> Fehler: Sobald eine neue Board-Revision erscheint oder die Fertigung den Standort
+> wechselt, entsteht ein neuer Code – und das Skript lehnt ein Board ab, das voll
+> kompatibel ist. Jede neue Revision erzwingt dann ein Update der Liste.
+>
+> Stattdessen **nach Modelltyp oder RAM-Grösse filtern** («Pi 5 mit ≥ 4 GB»), wie im
+> Beispiel oben. Und immer zuerst Bit 23 prüfen: Bei einem alten Code (Pi 1, Codes `0002`
+> bis `0015`) haben die übrigen Felder eine völlig andere Bedeutung.
+
+---
+
 ## Modellwahl & Beschaffung
 
 ### RAM-Varianten Pi 5 (offizielle Listenpreise, USD)
 
 | Variante | Listenpreis | Sinnvoll für |
 |----------|-------------|--------------|
+| 1 GB | k. A. | existiert (Rev. 1.1, Code `a04171`), im Handel praktisch nicht erhältlich |
 | 2 GB | $50 | Headless-Sensorik, einzelne Dienste, klassische GPIO-Projekte |
 | 4 GB | $60 | Desktop, Computer Vision mit Hailo-8L |
 | 8 GB | $80 | Ollama bis ~4B, mehrere AI-Prozesse parallel |
 | **16 GB** | $120 | Ollama mit 7B/8B-Modellen, Vision + LLM gleichzeitig |
 
-Eine 1-GB-Variante des Pi 5 gibt es nicht – unterhalb von 2 GB ist der Pi Zero 2 W ($15)
-die richtige Klasse. Schweizer Endkundenpreise liegen über den USD-Listenpreisen (MwSt.,
-Zoll, Marge) – siehe [`component-catalog.md`](component-catalog.md).
+Die 1-GB-Variante ist eine Industrie-Variante und im Handel kaum zu bekommen; praktisch
+beginnt die Auswahl bei 2 GB, darunter ist der Pi Zero 2 W ($15) die realistische Klasse.
+Schweizer Endkundenpreise liegen über den USD-Listenpreisen (MwSt., Zoll, Marge) – siehe
+[`component-catalog.md`](component-catalog.md).
 
 **Faustregeln:**
 - **Hailo-8L / Computer Vision:** 4 GB genügen, das Modell liegt auf der NPU.
@@ -469,8 +580,10 @@ und für Projekte, die den Pi in ein eigenes Produkt integrieren.
 
 ⚠️ **Kritisch:**
 - GPIO sind **nicht 5V-tolerant**
-- Max. Treiberstrom pro Pin: **Pi 5 (RP1) 12 mA**, Pi 4 (BCM2711) 16 mA
-- Bank-Summenstrom: Pi 4 ~50 mA; für Pi 5 **im Datenblatt nicht angegeben** → konservativ
+- Max. Treiberstrom pro Pin: **Pi 1/2/3/Zero 16 mA**, **Pi 5 (RP1) 12 mA**,
+  **Pi 4 (BCM2711) nur 8 mA** – der Pi 5 ist hier stärker als der Pi 4
+- Summenstrom: **~50 mA über alle Pins**, Auslegung der 3,3-V-Schiene ~3 mA pro Pin
+  im Dauerbetrieb; für den Pi 5 nennt das Datenblatt keinen Bankwert → konservativ
   rechnen und Lasten nicht aus GPIO speisen
 - Induktive Lasten **immer** via Transistor/Relais
 
