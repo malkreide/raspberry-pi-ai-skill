@@ -111,10 +111,25 @@ Hauptversion. Ein Wechsel der Hauptversion passiert damit **nicht**.
 3. Eigene Dateien und Konfigurationen übertragen.
 4. Neues Medium einsetzen und starten.
 
+**Womit man Schritt 1 macht:** Raspberry Pi OS bringt dafür den **SD Card Copier**
+(`piclone`) mit – er klont Karten **und Laufwerke**, also auch auf eine USB-SSD oder ein
+NVMe-Ziel. Zu finden im Desktop unter *Accessories*. Ebenfalls an Bord ist **Raspberry Pi
+Diagnostics** (`agnostics`) zum Prüfen von SD-Karten – nützlich, wenn ein Gerät sich
+merkwürdig verhält und die Karte als Ursache in Frage kommt.
+
+> ⚠️ **Beides sind Desktop-Anwendungen.** Auf **OS Lite** – dem Normalfall in diesem Skill –
+> gibt es sie nicht. Dort das Medium an einem anderen Rechner sichern, etwa mit `dd` oder
+> über den Imager. Eine Karte im laufenden Betrieb zu kopieren, ist ohnehin die schlechtere
+> Variante als eine im ausgeschalteten Zustand gezogene Kopie.
+
 ➜ **Konsequenz für Projekte:** Die Konfiguration eines Pi muss reproduzierbar sein –
 sonst ist jedes Major-Upgrade ein manueller Wiederaufbau. Setup-Schritte gehören ins
 `plan.md`, Abhängigkeiten in eine `requirements.txt`, Systemdienste als versionierte
 Unit-Files ins Repository. Das alte Medium **nicht überschreiben**, bis das neue läuft.
+
+➜ **Und genau deshalb ist ein Klon nur die halbe Sicherung:** Er rettet den Zustand, nicht
+den Weg dorthin. Wer das System aus `plan.md` und `requirements.txt` neu aufbauen kann,
+braucht den Klon nur als Rückfallebene – wer nicht, hängt an einem Datenträger.
 
 ---
 
