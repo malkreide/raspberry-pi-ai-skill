@@ -30,8 +30,10 @@ This Claude AI Skill supports the systematic development of robust, secure, and 
   product brief and mechanical drawings
 - **PCIe & M.2**: Connector pinout, FFC requirements, sideband signals for custom boards,
   M.2 HAT+ variants and the stacked ambient-temperature limit
-- **RP1 & GPIO**: Pad limits (12 mA, not 16 mA), PCIe latency on every GPIO access,
-  four I2C and six SPI instances, PIO, hardware debouncing
+- **RP1 & GPIO**: Pad limits per generation (Pi 5 12 mA, Pi 4 only 8 mA, 16 mA up to Pi 3),
+  PCIe latency on every GPIO access, four I2C and six SPI instances, PIO, hardware debouncing
+- **Compute Modules**: CM1–CM5, IO board compatibility, eMMC flashing via rpiboot,
+  selectable 1.8 V/3.3 V GPIO, carrier board design
 
 ## 🚀 Quick Start
 
@@ -86,6 +88,7 @@ The skill is automatically activated when you say things like:
 - **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1 pad limits, GPIO latency, alternate functions, PIO, hardware debouncing
 - **[interfaces.md](docs/interfaces.md)** – SPI buses and the 3-wire trap, USB power budget and hub quirks, DPI parallel display
+- **[compute-module.md](docs/compute-module.md)** – Compute Modules CM1-CM5, IO Boards, eMMC flashing, carrier board design, cameras on CM
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite setup and best practices
 - **[component-catalog.md](docs/component-catalog.md)** – Recommended components with suppliers
 
