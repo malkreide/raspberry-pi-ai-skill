@@ -85,6 +85,7 @@ The skill is automatically activated when you say things like:
 - **[mechanical.md](docs/mechanical.md)** – Board dimensions, mounting pattern, connector positions, official bumper, enclosure and 3D-print checklist
 - **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1 pad limits, GPIO latency, alternate functions, PIO, hardware debouncing
+- **[interfaces.md](docs/interfaces.md)** – SPI buses and the 3-wire trap, USB power budget and hub quirks, DPI parallel display
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite setup and best practices
 - **[component-catalog.md](docs/component-catalog.md)** – Recommended components with suppliers
 

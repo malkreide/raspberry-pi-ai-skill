@@ -18,11 +18,13 @@ Watchdog, GPIO-Startzustände und Übertaktung.
 4. [Einstellungen mit Projektrelevanz](#einstellungen-mit-projektrelevanz)
 5. [Device Tree, Overlays und Parameter](#device-tree-overlays-und-parameter)
 6. [Bootloader und EEPROM](#bootloader-und-eeprom)
-7. [Was die Firmware über das System verrät](#was-die-firmware-über-das-system-verrät)
-8. [Externe Datenträger dauerhaft einbinden](#externe-datenträger-dauerhaft-einbinden)
-9. [Betriebssicherheit](#betriebssicherheit)
-10. [Display und Bildschirmabschaltung](#display-und-bildschirmabschaltung)
-11. [Boot-Dateien im Überblick](#boot-dateien-im-überblick)
+7. [Echtzeituhr (RTC) am Pi 5](#echtzeituhr-rtc-am-pi-5)
+8. [OTP-Speicher – einmal beschreibbar](#otp-speicher--einmal-beschreibbar)
+9. [Was die Firmware über das System verrät](#was-die-firmware-über-das-system-verrät)
+10. [Externe Datenträger dauerhaft einbinden](#externe-datenträger-dauerhaft-einbinden)
+11. [Betriebssicherheit](#betriebssicherheit)
+12. [Display und Bildschirmabschaltung](#display-und-bildschirmabschaltung)
+13. [Boot-Dateien im Überblick](#boot-dateien-im-überblick)
 
 ---
 
@@ -392,6 +394,232 @@ das Aufwecken erfolgt über GPIO3 oder GLOBAL_EN gegen Masse.
 
 > ⚠️ **CM4 und CM4S können den Bootloader nicht automatisch aktualisieren** – ihr Boot-ROM
 > lädt keine `recovery.bin` aus dem eMMC. Dort sind `rpiboot` bzw. `flashrom` nötig.
+
+### `BOOT_ORDER` – die Bootreihenfolge lesen und schreiben
+
+`BOOT_ORDER` ist eine 32-Bit-Zahl, in der **jede Hex-Ziffer für eine Bootquelle steht**.
+Gelesen wird **von rechts nach links**, bis zu acht Ziffern.
+
+| Ziffer | Quelle |
+|--------|--------|
+| `0x1` | SD-Karte (bzw. eMMC beim CM4) |
+| `0x2` | Netzwerk (PXE/TFTP) |
+| `0x3` | RPIBOOT (USB-Device-Modus, für Provisionierung) |
+| `0x4` | USB-Massenspeicher |
+| `0x5` | USB 2.0 an der Typ-C-Buchse (nicht am Pi 5) |
+| **`0x6`** | **NVMe** – Pi 5, 500+, CM4, CM5 |
+| `0x7` | HTTP-Boot über Ethernet |
+| `0xe` | Anhalten und Fehlermuster zeigen |
+| **`0xf`** | **Von vorn beginnen** (Endlosschleife) |
+
+```
+BOOT_ORDER=0xf416
+              ││││
+              │││└─ 6 = zuerst NVMe
+              ││└── 1 = dann SD-Karte
+              │└─── 4 = dann USB
+              └──── f = von vorn
+```
+
+| Wert | Bedeutung |
+|------|-----------|
+| `0xf41` | SD, dann USB, dann wiederholen (**Voreinstellung**) |
+| `0xf14` | USB zuerst, dann SD |
+| `0xf21` | SD, dann Netzwerk – siehe `remote-access.md` |
+| `0xf416` | **NVMe zuerst**, dann SD, dann USB |
+
+🔴 **Die abschliessende `f` nicht vergessen.** Ohne sie hört der Bootloader nach dem
+letzten Eintrag auf, statt es erneut zu versuchen – ein Gerät, dessen Datenträger beim
+Kaltstart ein paar Sekunden zu langsam ist, bootet dann gar nicht mehr.
+
+```bash
+vcgencmd bootloader_config                 # laufende Konfiguration
+sudo rpi-eeprom-config --edit              # ändern
+```
+
+Bequemer geht es über `raspi-config` → `6 Advanced Options` → `Boot Order`.
+
+**Für ein NVMe-Gerät ohne HAT+-Kennung** zusätzlich:
+
+```ini
+PCIE_PROBE=1
+```
+
+HAT+-konforme Geräte werden automatisch erkannt und brauchen das nicht.
+
+### Wenn die gewünschte Partition nicht bootet
+
+| Eigenschaft | Wirkung |
+|-------------|---------|
+| `PARTITION=2` | Bootpartition festlegen, wenn nicht per `reboot 2` oder `autoboot.txt` gesetzt |
+| `PARTITION_WALK=1` | Ist die verlangte Partition nicht bootfähig, **alle anderen der Reihe nach probieren** (Voreinstellung) |
+| `SD_BOOT_MAX_RETRIES` | Wie oft SD-Boot wiederholt wird, bevor die nächste Quelle drankommt (`-1` = endlos) |
+| `NET_BOOT_MAX_RETRIES` | dasselbe für den Netzwerk-Boot |
+| `REBOOT_ON_FATAL_ERROR` | Nach einem schweren Fehler dreimal blinken und neu starten (Voreinstellung `1`) |
+
+`PARTITION_WALK` ist die Rettungsleine für A/B-Boot-Aufbauten: Schlägt die aktive Partition
+fehl, sucht der Bootloader selbstständig eine bootfähige. Bedingte Filter greifen auch
+hier – so lässt sich ein durch den Watchdog ausgelöster Neustart auf eine Rettungspartition
+umlenken:
+
+```ini
+[partition=62]
+PARTITION=2
+SD_QUIRKS=1
+HDMI_DELAY=0
+```
+
+### Sich selbst aktualisierender Bootloader
+
+`ENABLE_SELF_UPDATE=1` (Voreinstellung) lässt den Bootloader ein Update aus dem
+Boot-Dateisystem einspielen – auch beim Netzwerk-Boot.
+
+> ⚠️ **`FREEZE_VERSION=1` friert den Bootloader ein** und übersteuert dabei
+> `ENABLE_SELF_UPDATE`. Praktisch für Geräteflotten mit geprüftem Stand oder wenn mehrere
+> Betriebssysteme im Wechsel laufen. **Rückgängig geht das nur per SD-Karten-Boot mit
+> `recovery.bin`** – nicht mehr über `rpi-eeprom-config`. Vor dem Setzen wissen, wie man
+> es wieder loswird.
+
+### Diagnose ohne Betriebssystem
+
+Bootet ein Pi 4 oder neuer nicht, zeigt der Bootloader **ohne Boot-Medium** eine
+Diagnoseseite über HDMI: Bootloader-Version, Boot-Reihenfolge, erkannte Partitionen,
+Netzwerkstatus und Fehlercodes. Dafür Gerät ausschalten, **Boot-Medium entfernen**, wieder
+einschalten.
+
+| Zeile | Inhalt |
+|-------|--------|
+| `bootloader` | Version, `RO` bei schreibgeschütztem EEPROM, Build-Datum |
+| `board` | Board-Revision, Seriennummer, MAC-Adresse |
+| `boot` | Aktueller Modus, `BOOT_ORDER`, Wiederholungszähler |
+| `SD` | Karte erkannt oder nicht |
+| `net` / `tftp` | Verbindungsstatus, IP, Gateway, TFTP-Server |
+| `display` | Ob HDMI-Hotplug und EDID erkannt wurden |
+
+Abschaltbar über `DISABLE_HDMI=1`; `HDMI_DELAY` steuert, wie lange bis zur Anzeige
+gewartet wird (Voreinstellung 5 s, damit die Seite bei normalem Boot nicht aufblitzt).
+
+---
+
+## Echtzeituhr (RTC) am Pi 5
+
+Der Pi 5 hat eine eingebaute RTC. Ohne Netzwerk kennt ein Pi sonst beim Booten die Zeit
+nicht – für Datenlogger und Feldgeräte ist das der Unterschied zwischen brauchbaren und
+wertlosen Zeitstempeln.
+
+```
+[    1.295799] rpi-rtc soc:rpi_rtc: setting system clock to 2023-08-16T15:58:50 UTC
+```
+
+> ℹ️ **Die RTC funktioniert auch ohne Batterie** – dann allerdings nur, solange das Board
+> am Strom hängt.
+
+### Weckalarm – periodisch aufwachen bei ~3 mA
+
+Das Board kann sich schlafen legen und zu einem gesetzten Zeitpunkt selbst wieder
+einschalten. Im Schlafzustand zieht es rund **3 mA**. Für Zeitrafferaufnahmen,
+Messreihen und alles, was stündlich kurz etwas tut, ist das der Unterschied zwischen
+Batteriebetrieb und Netzanschluss.
+
+```bash
+sudo -E rpi-eeprom-config --edit
+#   POWER_OFF_ON_HALT=1
+#   WAKE_ON_GPIO=0
+```
+
+```bash
+echo +600 | sudo tee /sys/class/rtc/rtc0/wakealarm   # in 600 s aufwachen
+sudo halt
+```
+
+### Batterie – die Wahl ist nicht frei
+
+Die offizielle Zelle ist ein **wiederaufladbarer Lithium-Mangan-Knopfakku** mit
+JST-SH-Stecker für den **J5**-Anschluss (zwischen RTC-Batterieanschluss und Platinenkante,
+rechts neben der USB-C-Buchse).
+
+| Zelle | Eignung |
+|-------|---------|
+| **Lithium-Mangan, wiederaufladbar** | ✅ die offizielle Wahl |
+| Nicht wiederaufladbare Lithium-Zelle | ❌ **nicht empfohlen** – der Pi zieht mehr als dedizierte RTC-Module, die Zelle ist schnell leer |
+| **Lithium-Ionen-Zelle** | 🔴 **nicht verwenden** |
+
+Bei einigen µA Ruhestrom hält die offizielle Zelle **mehrere Monate**.
+
+### Laden aktivieren
+
+Das Laden ist **ab Werk abgeschaltet**. Eine eingesteckte Batterie wird also nicht
+geladen, bis man es einschaltet:
+
+```ini
+# In /boot/firmware/config.txt – Spannung in µV
+dtparam=rtc_bbat_vchg=3000000
+```
+
+```bash
+grep . /sys/class/rtc/rtc0/charging_voltage*
+# charging_voltage:0            ← 0 bedeutet: Laden ist aus
+# charging_voltage_max:4400000
+# charging_voltage_min:1300000
+```
+
+Geladen wird mit konstant 3 mA. Zum Abschalten die `rtc_bbat_vchg`-Zeile wieder entfernen.
+
+---
+
+## OTP-Speicher – einmal beschreibbar
+
+Jeder Pi hat einen **One-Time-Programmable**-Bereich im SoC. Jedes Bit lässt sich genau
+einmal von 0 auf 1 setzen – wie eine Sicherung, die man durchbrennt.
+
+```bash
+vcgencmd otp_dump
+```
+
+🔴 **Jede Änderung ist unumkehrbar.** Es gibt keinen Weg zurück, auch nicht über
+Neuinstallation oder Firmware-Reset.
+
+### Interessante Zeilen
+
+Die Nummerierung unterscheidet sich zwischen den SoC-Generationen – eine Anleitung für den
+Pi 4 liest auf dem Pi 5 die falschen Zeilen:
+
+| Inhalt | bis BCM2711 | **BCM2712 (Pi 5)** |
+|--------|-------------|--------------------|
+| Seriennummer | Zeile 28 | **Zeile 31** |
+| Board-Revision | Zeile 30 | **Zeile 32** |
+| Kunden-Zeilen | 36–43 | **77–84** |
+| Ethernet-MAC | 64–65 | 50–51 (Kunde: 87–88) |
+| WLAN-MAC | – | 52–53 (Kunde: 89–90) |
+
+### Eigene Werte ablegen
+
+Acht 32-Bit-Zeilen stehen zur freien Verfügung – für Gerätenummern, Chargenkennungen oder
+Standortcodes, die eine Neuinstallation überleben sollen:
+
+```bash
+# Zeilen 4, 5, 6 beschreiben
+sudo vcmailbox 0x00038021 20 20 4 3 0x11111111 0x22222222 0x33333333
+
+# Zurücklesen
+sudo vcmailbox 0x00030021 20 20 4 3 0 0 0
+```
+
+Ergänzend zu `config-txt.md`, wo diese Zeilen als bedingte Filter (`cust_otpN`) verwendet
+werden – so kann sich **dieselbe SD-Karte je nach Gerät anders verhalten**.
+
+### Seriennummer einfacher lesen
+
+Für den Normalfall braucht es kein `vcmailbox`:
+
+```bash
+cat /proc/device-tree/serial-number      # vollständige 64-Bit-Seriennummer
+vcgencmd otp_dump | grep '^28:'          # bzw. 31: auf dem Pi 5
+```
+
+> ⚠️ **Zugriff auf die OTP-Zeilen läuft über `/dev/vcio`**, das der Gruppe `video`
+> vorbehalten ist. Der Pi hat **keinen hardwaregeschützten Schlüsselspeicher** – wer
+> geheimes Material dort ablegt, sollte das nur zusammen mit Secure Boot tun.
 
 ### Beta Access ist nicht `rpi-update`
 

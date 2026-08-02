@@ -201,7 +201,9 @@ die Alternativfunktionen statt der Griff zum Multiplexer. Tabelle und Regeln:
 
 **SPI:**
 - SPI0: GPIO 9 (MISO), GPIO 10 (MOSI), GPIO 11 (SCLK), GPIO 8 (CE0), GPIO 7 (CE1)
-- SPI1: GPIO 19 (MISO), GPIO 20 (MOSI), GPIO 21 (SCLK)
+- SPI1: GPIO 19 (MISO), GPIO 20 (MOSI), GPIO 21 (SCLK), GPIO 18/17/16 (CE0–CE2)
+- Pi 4 zusätzlich **SPI3–SPI6** über Alternativfunktionen – Pinbelegung und
+  Überschneidungen in [`interfaces.md`](interfaces.md#spi)
 
 **UART:**
 - UART0: GPIO 14 (TX), GPIO 15 (RX) – Standard Serial Console

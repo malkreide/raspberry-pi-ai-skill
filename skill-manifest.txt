@@ -24,6 +24,7 @@ references/hailo.md=docs/hailo.md
 references/mechanical.md=docs/mechanical.md
 references/pcie.md=docs/pcie.md
 references/rp1-gpio.md=docs/rp1-gpio.md
+references/interfaces.md=docs/interfaces.md
 references/edge-ai.md=docs/edge-ai.md
 references/component-catalog.md=docs/component-catalog.md
 
