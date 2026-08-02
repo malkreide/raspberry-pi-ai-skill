@@ -139,6 +139,12 @@ Unit-Files ins Repository. Das alte Medium **nicht überschreiben**, bis das neu
 > Nur verwenden, wenn ein Raspberry-Pi-Engineer es ausdrücklich empfiehlt. Vorher
 > Backup.
 
+> 🔴 **Die Dokumentation von `rpi-update` selbst formuliert es unmissverständlich:**
+> *«Only use rpi-update if you are happy to lose the data on your filesystem.»*
+> Totalausfälle seien äusserst selten, aber möglich. Wer das Werkzeug auf einem System
+> einsetzt, dessen Daten zählen, hat vorher ein Backup – nicht als Empfehlung, sondern als
+> Bedingung.
+
 ### Rückweg auf die letzte stabile Firmware
 
 ```bash
@@ -147,7 +153,41 @@ sudo apt install --reinstall raspi-firmware
 sudo reboot
 ```
 
-➜ Das ist der Rettungsanker, wenn nach einem `rpi-update` etwas nicht mehr geht.
+> 🔴 **Das reicht auf Pi 4 und Pi 5 nicht.** `rpi-update` schreibt dort **auch den
+> EEPROM-Bootloader** – und der bleibt vom `raspi-firmware`-Paket unberührt. Das erklärt
+> Fälle, in denen nach dem vermeintlichen Rückbau weiterhin etwas nicht stimmt.
+
+**Den Bootloader zusätzlich zurücksetzen:**
+
+```bash
+# 2711 für Pi 4, 2712 für Pi 5
+sudo rm -rf /lib/firmware/raspberrypi/bootloader-2711
+sudo apt reinstall rpi-eeprom
+sudo reboot
+```
+
+**Auf eine bestimmte Firmware-Fassung zurückgehen** – über den Git-Hash aus dem
+Repository [`rpi-firmware`](https://github.com/raspberrypi/rpi-firmware):
+
+```bash
+sudo rpi-update fab7796df0cf29f9563b507a59ce5b17d93e0390
+```
+
+➜ Das ist präziser als das Neuinstallieren des Pakets: Wenn eine bestimmte Fassung
+nachweislich lief und die nächste nicht, führt der Hash gezielt dorthin zurück, statt
+irgendeinen «stabilen» Stand herzustellen.
+
+**Schalter, die den Schaden begrenzen:**
+
+| Variable | Wirkung |
+|----------|---------|
+| **`SKIP_BOOTLOADER=1`** | **Lässt den EEPROM-Bootloader unangetastet** – der wichtigste Schalter, weil genau dieser Teil sich am schwersten zurückbauen lässt |
+| `SKIP_KERNEL=1` | Alles ausser den Kerneldateien aktualisieren |
+| `SKIP_BACKUP=1` | Überspringt die Sicherung von `/boot` und `/lib/modules` – **nicht verwenden** |
+
+```bash
+sudo SKIP_BOOTLOADER=1 rpi-update
+```
 
 ---
 

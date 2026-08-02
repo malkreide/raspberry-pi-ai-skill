@@ -20,7 +20,8 @@ die Modul-Varianten und deren Eigenheiten.
 6. [Bootloader-EEPROM](#bootloader-eeprom)
 7. [Kameras anschliessen](#kameras-anschliessen)
 8. [Zubehör für CM5](#zubehör-für-cm5)
-9. [Bekannte Probleme](#bekannte-probleme)
+9. [Serienprovisionierung mit Verschlüsselung](#serienprovisionierung-mit-verschlüsselung)
+10. [Bekannte Probleme](#bekannte-probleme)
 
 ---
 
@@ -375,6 +376,43 @@ erklärt Fälle, in denen die Reichweite nach dem Anbau unverändert schlecht bl
 > ℹ️ Beim Zusammenbau den **U.FL-Stecker vor dem Kühler** anschliessen – danach ist er nur
 > noch schwer zugänglich. Der Kühler wird so aufgesetzt, dass seine Aussparung über der
 > internen Antenne liegt.
+
+---
+
+## Serienprovisionierung mit Verschlüsselung
+
+Für einzelne Geräte genügt `rpiboot` (oben). Für eine Serie – und besonders dann, wenn das
+Gerät ausser Haus geht – gibt es zwei aufeinander aufbauende Werkzeuge:
+
+| Werkzeug | Wofür |
+|----------|-------|
+| [`rpi-sb-provisioner`](https://github.com/raspberrypi/rpi-sb-provisioner) | Serienprovisionierung mit **Secure Boot** und verschlüsseltem Dateisystem |
+| [`rpi-fastbootd`](https://github.com/raspberrypi/rpi-fastbootd) | Der Dienst **auf dem Gerät**, über den das läuft |
+
+`rpi-fastbootd` ist ein stark angepasster **fastboot-Dienst aus dem Android-Projekt**. Er
+läuft auf dem Zielgerät in einem Provisionierungsmodus und nimmt Befehle über **USB oder
+TCP/IP** entgegen. Unterstützt sind **Pi 4, Pi 5, CM4 und CM5** (ARM64).
+
+Was er beherrscht:
+
+| Funktion | Bedeutung |
+|----------|-----------|
+| **IDP** (Image Description Provisioning) | Partitionslayout und Provisionierung **über JSON beschrieben** – nicht als Skriptfolge |
+| **LUKS2** | Vollverschlüsselung des Dateisystems |
+| **dm-verity** | Integritätsprüfung schreibgeschützter Partitionen |
+| GPT | Partitionstabellen anlegen und ändern |
+| libgpiod | GPIO während der Provisionierung schalten |
+| Datei-Transfer | Hoch- und Herunterladen direkt |
+
+➜ **Der Unterschied zum Beschreiben einer Karte ist die Nachprüfbarkeit.** Statt ein
+Abbild zu schreiben und zu hoffen, beschreibt IDP das Sollergebnis, und dm-verity macht
+später erkennbar, ob das Dateisystem unverändert ist. Für ein Gerät, das beim Kunden steht
+und nicht aufgeschraubt werden soll, ist das der Unterschied zwischen «läuft vermutlich»
+und «nachweislich unverändert».
+
+> ℹ️ Das ergänzt `pi-gen` (siehe `setup-provisioning.md`), löst es aber nicht ab: `pi-gen`
+> baut das **Abbild**, `rpi-sb-provisioner` bringt es **signiert und verschlüsselt** auf
+> das Gerät. Für Schul- und Bastelprojekte ist beides Überbau – für ein Produkt nicht.
 
 ---
 
