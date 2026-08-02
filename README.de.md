@@ -80,6 +80,7 @@ Das Skill wird automatisch aktiviert bei:
 - **[kernel.md](docs/kernel.md)** – Kernel-Header für Kernelmodule, DKMS-Fallstricke, native und cross-kompilierte Kernel-Builds, menuconfig, Patches, PREEMPT_RT, Beitragswege
 - **[remote-access.md](docs/remote-access.md)** – SSH und Schlüsselverwaltung, VNC, Raspberry Pi Connect, Gerät im Netz finden, mDNS-Fallstricke, scp/rsync, NFS, Samba, Netzwerk-Boot
 - **[camera.md](docs/camera.md)** – rpicam-apps und libcamera, der tote Legacy-Stack, Tuning-Dateien und NoIR, Mehrkamera-Synchronisation, Post-Processing-Stages für Edge AI, Streaming, Picamera2
+- **[hailo.md](docs/hailo.md)** – Hailo-NPU: AI Kit vs. AI HAT+ vs. AI HAT+ 2, Installation über apt, Versionspinning, fertige YOLO-Demos, lokale LLMs auf der NPU, Open WebUI
 - **[mechanical.md](docs/mechanical.md)** – Platinenmasse, Bohrbild, Steckerpositionen, offizieller Bumper, Gehäuse- und 3D-Druck-Checkliste
 - **[pcie.md](docs/pcie.md)** – PCIe-Pinout, FFC-Anforderungen, Sideband-Signale, Power States, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1-Pad-Grenzwerte, GPIO-Latenz, Alternativfunktionen, PIO, Hardware-Entprellung

@@ -429,6 +429,11 @@ rpicam-hello --post-process-file stages.json
 > TensorFlow Lite.** Alle Stages mit `_cv`- oder `_tf`-Bezug sind deshalb **deaktiviert**.
 > Wer sie braucht, muss `rpicam-apps` neu übersetzen (siehe unten).
 
+> ℹ️ **Die Hailo-Stages sind ausgenommen.** Ihr Build-Flag steht auf `auto` und greift,
+> sobald HailoRT installiert ist – fertige Konfigurationen für Objekterkennung,
+> Segmentierung und Posenschätzung liegen dann unter `/usr/share/rpi-camera-assets/`, ohne
+> Neuübersetzung. Siehe `hailo.md`.
+
 Ohne Neuübersetzung nutzbar:
 
 | Stage | Zweck |

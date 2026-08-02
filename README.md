@@ -81,6 +81,7 @@ The skill is automatically activated when you say things like:
 - **[kernel.md](docs/kernel.md)** – kernel headers for building modules, DKMS pitfalls, native and cross-compiled kernel builds, menuconfig, patches, PREEMPT_RT, contributing
 - **[remote-access.md](docs/remote-access.md)** – SSH and key setup, VNC, Raspberry Pi Connect, finding the device on the network, mDNS pitfalls, scp/rsync, NFS, Samba, network boot
 - **[camera.md](docs/camera.md)** – rpicam-apps and libcamera, the dead legacy stack, tuning files and NoIR, multi-camera sync, post-processing stages for Edge AI, streaming, Picamera2
+- **[hailo.md](docs/hailo.md)** – Hailo NPU: AI Kit vs AI HAT+ vs AI HAT+ 2, apt-based install, version pinning, ready-made YOLO demos, local LLMs on the NPU, Open WebUI
 - **[mechanical.md](docs/mechanical.md)** – Board dimensions, mounting pattern, connector positions, official bumper, enclosure and 3D-print checklist
 - **[pcie.md](docs/pcie.md)** – PCIe connector pinout, FFC requirements, sideband signals, power states, M.2 HAT+
 - **[rp1-gpio.md](docs/rp1-gpio.md)** – RP1 pad limits, GPIO latency, alternate functions, PIO, hardware debouncing

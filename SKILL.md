@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit), oder (15) mit dem Linux-Kernel arbeitet (Kernel-Header, Kernelmodule, DKMS, Treiber nach Update verschwunden, eigenen Kernel bauen oder cross-kompilieren, menuconfig, Patches, PREEMPT_RT/Echtzeit, Beiträge an raspberrypi/linux), oder (16) auf ein Gerät aus der Ferne zugreift oder Daten austauscht (SSH, SSH-Schlüssel, VNC, Raspberry Pi Connect, IP-Adresse finden, mDNS/.local, scp, rsync, NFS, Samba/SMB, Apache, Netzwerk-Boot/PXE), oder (17) mit Kamera-Software arbeitet (rpicam-apps, rpicam-still/vid/hello, libcamera, Picamera2, Kamera-Overlays, Tuning-Dateien, NoIR, Post-Processing-Stages, Bewegungserkennung, mehrere Kameras, Kamera-Streaming, USB-Webcam, raspistill/raspivid-Migration).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit), oder (15) mit dem Linux-Kernel arbeitet (Kernel-Header, Kernelmodule, DKMS, Treiber nach Update verschwunden, eigenen Kernel bauen oder cross-kompilieren, menuconfig, Patches, PREEMPT_RT/Echtzeit, Beiträge an raspberrypi/linux), oder (16) auf ein Gerät aus der Ferne zugreift oder Daten austauscht (SSH, SSH-Schlüssel, VNC, Raspberry Pi Connect, IP-Adresse finden, mDNS/.local, scp, rsync, NFS, Samba/SMB, Apache, Netzwerk-Boot/PXE), oder (17) mit Kamera-Software arbeitet (rpicam-apps, rpicam-still/vid/hello, libcamera, Picamera2, Kamera-Overlays, Tuning-Dateien, NoIR, Post-Processing-Stages, Bewegungserkennung, mehrere Kameras, Kamera-Streaming, USB-Webcam, raspistill/raspivid-Migration), oder (18) eine Hailo-NPU aufsetzt oder betreibt (AI Kit, AI HAT+, AI HAT+ 2, Hailo-8L/8/10H, hailo-all, hailortcli, HailoRT-Versionen, fertige YOLO-Demos, lokale LLMs auf der NPU, hailo-ollama, Open WebUI).
 ---
 
 # Raspberry Pi AI Skill
@@ -36,6 +36,9 @@ Vor jeder Implementierung klären:
 - Netzwerk-Konnektivität
 - **Einsatzumgebung**: Umgebungstemperatur, Gehäuse, Montage, Feuchtigkeit
 - **PCIe-Bedarf**: NVMe, NPU oder beides? Beide belegen denselben Anschluss – nur eines geht.
+- **NPU-Variante**, falls Edge AI: AI Kit (**nicht mehr in Produktion**), AI HAT+ oder
+  AI HAT+ 2. Nur das **AI HAT+ 2 (Hailo-10H)** führt Sprachmodelle auf der NPU aus –
+  Hailo-8 und 8L sind reine Vision-Beschleuniger. Das ist per Software nicht nachrüstbar.
 
 **RAM-Wahl (Pi 5):**
 
@@ -191,8 +194,10 @@ sudo vclog --msg              # Firmware-Meldungen (Overlays/config.txt landen N
 od -v -An -t x1 /proc/device-tree/chosen/power/max_current | tr -d ' '
 
 # Edge AI
-hailortcli fw-control identify  # Hailo NPU
-curl -s http://localhost:11434/api/tags  # Ollama
+hailortcli fw-control identify  # Hailo NPU (<N/A> bei AI HAT+ ist normal)
+dkms status                     # baut der Hailo-Treiber gegen den laufenden Kernel?
+curl -s http://localhost:11434/api/tags        # Ollama auf der CPU
+curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HAT+ 2)
 ```
 
 **Pi-5-spezifische Stolpersteine** (häufigste Ursachen für unerklärliches Verhalten):
@@ -234,7 +239,12 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - `dtoverlay=imx477` bleibt wirkungslos → `camera_auto_detect=0` fehlt
 - Video kostet auf dem Pi 5 unerwartet CPU → dort kodiert **Software**, nicht Hardware; `--low-latency` prüfen
 - `.h264`-Datei spielt in VLC nicht → in einen Container schreiben oder `ffplay` nehmen
-- Objekterkennungs-Stage lässt sich nicht laden → OpenCV- und TFLite-Stages fehlen in den ausgelieferten `rpicam-apps`; Neuübersetzung nötig
+- Objekterkennungs-Stage lässt sich nicht laden → OpenCV- und TFLite-Stages fehlen in den ausgelieferten `rpicam-apps`; Neuübersetzung nötig (**Hailo-Stages sind enthalten**)
+- Hailo aus einer `.deb` von der Herstellerseite oder per `pip install hailort` installiert → richtig ist `sudo apt install hailo-all`; sonst passen Treiber, Laufzeit und Post-Processing nicht zusammen
+- LLM soll auf der NPU laufen, tut es aber nicht → nur der **Hailo-10H** (AI HAT+ 2) kann GenAI; Hailo-8 und 8L sind reine Vision-Beschleuniger
+- `hailo-all` und `hailo-h10-all` gleichzeitig installiert → schliessen einander aus
+- Selbst kompiliertes Hailo-Modell läuft nach einem Update nicht mehr → Werkzeugketten- und Laufzeitversion müssen zusammenpassen; die vier Pakete mit `apt-mark hold` festhalten
+- `<N/A>` bei Serial/Part/Product in `hailortcli` → **kein Fehler** bei AI HAT+ und AI HAT+ 2
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`
 - Modulbau scheitert direkt nach dem Kernel-Update → das `apt`-Header-Paket zieht erst Wochen später nach
 - 32-Bit-Kernel gebaut, Pi bootet den alten → auf 4er-Modellen braucht es `ARCH=arm` **und** `arm_64bit=0`
@@ -311,6 +321,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 
 **Kamera-Software (rpicam-apps, libcamera, Tuning-Dateien, Post-Processing, Streaming, Picamera2):**
 `/mnt/skills/user/raspberry-pi-ai/references/camera.md`
+
+**Hailo-NPU (AI Kit / AI HAT+ / AI HAT+ 2, Installation, Versionspinning, Vision-Demos, lokale LLMs):**
+`/mnt/skills/user/raspberry-pi-ai/references/hailo.md`
 
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`
