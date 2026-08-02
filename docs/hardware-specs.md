@@ -27,7 +27,7 @@ Boot-Medium, Netzteilwahl, Headless-Setup und erster Start: [`setup-provisioning
 | **SoC** | Broadcom BCM2712 (16nm) |
 | **CPU** | 4× Arm Cortex-A76 @ 2.4 GHz, 64-bit, mit Cryptographic Extension |
 | **Cache** | 512 KB L2 pro Kern, 2 MB gemeinsamer L3 |
-| **GPU** | VideoCore VII @ 800 MHz, OpenGL ES 3.1, Vulkan 1.2 |
+| **GPU** | VideoCore VII @ **910 MHz** (`v3d_freq` 960 MHz), OpenGL ES 3.1, Vulkan 1.2 |
 | **Video** | Dual 4Kp60 HDMI mit HDR, 4Kp60 HEVC-Decoder |
 | **RAM** | 1, 2, 4, 8 **oder 16 GB** LPDDR4X-4267 |
 | **I/O-Controller** | RP1 (separater Chip, via chipinternem PCIe 2.0 **x4**) |
@@ -37,7 +37,12 @@ Boot-Medium, Netzteilwahl, Headless-Setup und erster Start: [`setup-provisioning
 | **Speicherkarte** | microSD mit SDR104-Highspeed-Modus |
 | **Netzwerk** | Gigabit Ethernet mit PoE+ (separater PoE+ HAT nötig), Dual-Band 802.11ac WLAN, Bluetooth 5.0/BLE |
 | **Sonstiges** | Echtzeituhr (RTC, externe Batterie), Power-Button, 40-Pin-Header |
-| **Cache** | 512 KB L2 je Kern, **2 MB gemeinsamer L3** |
+
+> ℹ️ **Zum GPU-Takt kursieren 800 MHz.** Die dokumentierten Voreinstellungen kennen diesen
+> Wert nicht: `core_freq`, `isp_freq` und `hevc_freq` stehen auf **910 MHz**, `v3d_freq` auf
+> **960 MHz** (siehe `config-txt.md`). Die Keyboard-Modelle 500 und 500+ sind offiziell
+> ebenfalls mit **VideoCore VII @ 910 MHz** angegeben. Für Taktrechnungen die Werte aus
+> `config-txt.md` verwenden, nicht die 800 MHz.
 
 > ℹ️ **Verfügbarkeit als Planungsgrösse:** Raspberry Pi hat die Produktion des Pi 5 und der
 > KI-Erweiterungen **bis mindestens Januar 2030** zugesagt. Für Projekte mit langer
@@ -466,6 +471,69 @@ dtparam=pciex1_gen=3
 
 **Rollback bei Instabilität** (Link-Fehler, Gerät verschwindet, `dmesg`-AER-Meldungen):
 Zeile auskommentieren oder entfernen, neu starten – das Gerät läuft dann mit Gen 2.
+
+---
+
+## Keyboard-Computer: Pi 400, 500 und 500+
+
+Vollständige Rechner im Tastaturgehäuse, mit demselben SoC wie die entsprechenden
+Einplatinenrechner. Für Klassensätze und Arbeitsplätze relevant, weil Gehäuse, Kühlung und
+Tastatur wegfallen.
+
+| | **Pi 400** | **Pi 500** | **Pi 500+** |
+|---|---|---|---|
+| Basis | Pi 4 (4 GB) | Pi 5 (8 GB) | Pi 5 (16 GB) |
+| Erschienen | 2020 | 2024 | 2025 |
+| SoC | BCM2711 | BCM2712 + RP1 | BCM2712 + RP1 |
+| CPU | A72 @ 1,8 GHz | A76 @ 2,4 GHz | A76 @ 2,4 GHz |
+| GPU | VideoCore VI @ 500 MHz | VideoCore VII @ 910 MHz | VideoCore VII @ 910 MHz |
+| RAM | 4 GB | 8 GB | **16 GB** |
+| HDR über HDMI | ❌ | ✅ | ✅ |
+| Speicher | microSD | microSD | microSD **+ 256 GB M.2 SSD** |
+| Tasten | 78/79/83 Folientasten | 78/79/83 Folientasten | **84/85/88 mechanische Tasten** |
+| Beleuchtung | – | – | **RGB je Taste** |
+| Ein/Aus | **Fn + F10** | eigene Taste | eigene Taste |
+| Netzteil | 5 V / 3 A (15 W) | 5 V / 5 A (25 W) | 5 V / 5 A (25 W) |
+| Masse | 286 × 122 × 23 mm | 286 × 122 × 23 mm | **312 × 123 × 35 mm** |
+
+**Was für alle drei gilt:**
+
+- **Nur drei USB-Ports** – 2× USB 3.0 und 1× USB 2.0. Ein Einplatinenrechner hat vier.
+  Die Maus gehört an den weissen USB-2.0-Port, damit die schnellen Ports frei bleiben.
+- **Waagerechte 40-Pin-Leiste**, Gigabit-Ethernet, Dual-Band-WLAN und BLE
+- **Passiver Alu-Kühlkörper**, kein Lüfter
+- **Kein Composite-Ausgang** (siehe `config-txt.md`)
+
+> 🔴 **Der Pi 400 hat keine Ein-/Aus-Taste.** Er wird über **Fn + F10** ein- und
+> ausgeschaltet. Wer danach am Gehäuse sucht, sucht vergeblich.
+
+### Der M.2-Steckplatz des Pi 500+ ist grosszügiger als der M.2 HAT+
+
+| | M.2 HAT+ am Pi 5 | **Pi 500+ intern** |
+|---|---|---|
+| Formfaktoren | 2230, 2242 | **2230, 2242, 2260, 2280** |
+
+➜ **Im Pi 500+ passen auch die langen 2280-Module** – also die gängigste und preislich
+günstigste Bauform. Am Pi 5 mit M.2 HAT+ ist bei 2242 Schluss. Der Steckplatz nimmt zudem
+andere PCIe-Peripherie auf, nicht nur SSDs.
+
+Der Tausch ist vorgesehen: Fünf Kreuzschrauben am Boden, Gehäuse mit dem beiliegenden
+Spudger an der Vorderkante auftrennen, Oberteil **umklappen statt abheben** (Flachbandkabel!),
+Schraube rechts neben dem Modul lösen – die SSD springt hoch. Das neue Modul passt nur in
+einer Ausrichtung.
+
+### Kompatibilität der Tastenkappen (Pi 500+)
+
+Gateron KS-33 mit **Cherry-MX-kompatiblem Kreuzstamm** – die meisten Fremdhersteller-Sets
+passen also mechanisch. Vier Einschränkungen:
+
+- **DSA oder Cherry** wählen. **XDA, OEM und SA sind zu hoch**, machen mehr Lärm und können
+  am Rahmen anstossen.
+- Die LEDs beleuchten die **obere Hälfte** der Kappe – **vollständig opake Kappen
+  schlucken das Licht**.
+- Das Layout ist ein **modifiziertes 75 %**: Power-Taste, SysRq, Ins sowie die Beschriftungen
+  auf F4/F5/F6 und F10/F11/F12 sind nicht standardisiert und fehlen in üblichen Sets.
+- Die **Cmd-Taste** heisst in Fremdsets `Win`, das Raspberry-Pi-Logo gibt es dort nicht.
 
 ---
 

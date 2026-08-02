@@ -19,12 +19,13 @@ Watchdog, GPIO-Startzustände und Übertaktung.
 5. [Device Tree, Overlays und Parameter](#device-tree-overlays-und-parameter)
 6. [Bootloader und EEPROM](#bootloader-und-eeprom)
 7. [Echtzeituhr (RTC) am Pi 5](#echtzeituhr-rtc-am-pi-5)
-8. [OTP-Speicher – einmal beschreibbar](#otp-speicher--einmal-beschreibbar)
-9. [Was die Firmware über das System verrät](#was-die-firmware-über-das-system-verrät)
-10. [Externe Datenträger dauerhaft einbinden](#externe-datenträger-dauerhaft-einbinden)
-11. [Betriebssicherheit](#betriebssicherheit)
-12. [Display und Bildschirmabschaltung](#display-und-bildschirmabschaltung)
-13. [Boot-Dateien im Überblick](#boot-dateien-im-überblick)
+8. [Tastatur der Keyboard-Computer konfigurieren](#tastatur-der-keyboard-computer-konfigurieren)
+9. [OTP-Speicher – einmal beschreibbar](#otp-speicher--einmal-beschreibbar)
+10. [Was die Firmware über das System verrät](#was-die-firmware-über-das-system-verrät)
+11. [Externe Datenträger dauerhaft einbinden](#externe-datenträger-dauerhaft-einbinden)
+12. [Betriebssicherheit](#betriebssicherheit)
+13. [Display und Bildschirmabschaltung](#display-und-bildschirmabschaltung)
+14. [Boot-Dateien im Überblick](#boot-dateien-im-überblick)
 
 ---
 
@@ -564,6 +565,108 @@ grep . /sys/class/rtc/rtc0/charging_voltage*
 ```
 
 Geladen wird mit konstant 3 mA. Zum Abschalten die `rtc_bbat_vchg`-Zeile wieder entfernen.
+
+---
+
+## Tastatur der Keyboard-Computer konfigurieren
+
+Betrifft **Pi 500 und 500+**. Tastenbelegung lässt sich auf **beiden** ändern, die
+Beleuchtung nur auf dem **500+** – nur dieser hat beleuchtete Tasten. Die Firmware basiert
+auf **Vial QMK**.
+
+```bash
+sudo apt install rpi-keyboard-fw-update
+sudo rpi-keyboard-fw-update          # Firmware aktualisieren – zwingend zuerst
+sudo apt install rpi-keyboard-config
+```
+
+⚠️ **Ohne das Firmware-Update greifen die Konfigurationsbefehle nicht.** Das ist der
+Schritt, den man beim Nachlesen überspringt.
+
+```bash
+rpi-keyboard-config info --ascii     # Modell, Sperrstatus und Tastaturdiagramm
+rpi-keyboard-config help
+```
+
+Das Diagramm aus `info --ascii` liefert die **Zeilen-/Spaltenkoordinaten**, die alle
+weiteren Befehle erwarten.
+
+### Tasten umbelegen
+
+```bash
+rpi-keyboard-config list-keycodes              # alle Keycodes
+rpi-keyboard-config list-keycodes --category basic
+rpi-keyboard-config key get-all                # aktuelle Belegung
+rpi-keyboard-config key set 2 2 KC_R           # Zeile 2, Spalte 2 → R
+```
+
+Es gibt **vier Ebenen** (0–3); `Fn` schaltet standardmässig von 0 auf 1. Mit `--layer`
+lässt sich jeder der Befehle auf eine andere Ebene anwenden.
+
+Tastendrücke mitlesen (etwa um eine defekte Taste zu prüfen) verlangt vorher ein
+Entsperren:
+
+```bash
+rpi-keyboard-config unlock       # führt durch eine Tastenkombination (Enter + Esc)
+rpi-keyboard-config key watch    # --no-leds unterdrückt die rote Rückmeldung
+rpi-keyboard-config lock
+```
+
+> ℹ️ Wurden Enter oder Esc selbst umbelegt, gilt für das Entsperren die **physische
+> Position**, nicht die neue Beschriftung – der Befehl nennt die richtigen Tasten.
+
+### Beleuchtung (nur Pi 500+)
+
+Ab Werk ist fast alles aus: nur die Power-LED, die Startanimation und die
+Feststelltasten-Anzeige leuchten. Sieben Presets, umschaltbar über **Fn + F4** (rückwärts
+mit **Fn + Shift + F4**):
+
+| | Preset | |
+|---|---|---|
+| 0 | Off | Voreinstellung |
+| 1 | Solid Colour White | |
+| 2 | Solid Colour | Farbe über Fn + F3 |
+| 3 | Gradient Left Right | fester Regenbogen |
+| 4 | Cycle Pinwheel | animierter Regenbogen |
+| 5 | Typing Heatmap | häufig getippte Tasten werden röter |
+| 6 | Solid Reactive Simple | leuchtet auf Tastendruck |
+
+**Ohne Konfigurationssoftware:** Farbe **Fn + F3**, Helligkeit **Fn + F5** (dunkler) und
+**Fn + F6** (heller). `Shift` kehrt die Richtung jeweils um.
+
+```bash
+rpi-keyboard-config list-effects
+rpi-keyboard-config effect "Cycle Spiral" --speed 42     # nur bis zum Neustart
+rpi-keyboard-config preset set 3 "Rainbow Beacon" --speed 140
+rpi-keyboard-config brightness 128                       # 0–255
+```
+
+Parameter `--speed`, `--sat` und `--hue` nehmen Werte **0–255** (Standard: Speed 128,
+Sättigung 255, Farbton = globaler Wert). Statische Effekte ignorieren `--speed`.
+
+Einzelne LEDs setzt der Effekt `direct`:
+
+```bash
+rpi-keyboard-config led set "2,6" --colour "85,255,255"   # HSV
+rpi-keyboard-config leds set --colour red                  # auch rgb(255,0,0)
+rpi-keyboard-config leds save
+```
+
+Die Power-LED lässt sich von keinem Effekt beeinflussen: **rot** = Strom liegt an, Gerät
+aus; **grün** = eingeschaltet; **blinkend** = SD-Karten-Zugriff.
+
+### Zurücksetzen
+
+```bash
+rpi-keyboard-config reset-presets     # nur Beleuchtung
+rpi-keyboard-config reset-keymap      # nur Tastenbelegung, alle Ebenen
+sudo rpi-keyboard-fw-update -w -i     # beides – löscht den Flash-Bereich
+```
+
+> 🔴 **Wenn die Tastatur so verstellt ist, dass keine Eingabe mehr möglich ist:** Eine
+> **USB-Tastatur** an einen freien Port stecken und den Reset von dort ausführen. Die
+> Einstellungen liegen im Flash und überleben Neustart **und Firmware-Update** – sie
+> verschwinden also nicht von selbst.
 
 ---
 
