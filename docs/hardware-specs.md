@@ -431,17 +431,18 @@ Zeile auskommentieren oder entfernen, neu starten – das Gerät läuft dann mit
 
 ## Modellwahl & Beschaffung
 
-### RAM-Varianten Pi 5 (Listenpreise Product Brief, USD)
+### RAM-Varianten Pi 5 (offizielle Listenpreise, USD)
 
 | Variante | Listenpreis | Sinnvoll für |
 |----------|-------------|--------------|
-| 1 GB | $45 | Headless-Sensorik, einzelne Dienste |
-| 2 GB | $65 | Headless mit Kamera, klassische GPIO-Projekte |
-| 4 GB | $110 | Desktop, Computer Vision mit Hailo-8L |
-| 8 GB | $175 | Ollama bis ~4B, mehrere AI-Prozesse parallel |
-| **16 GB** | $305 | Ollama mit 7B/8B-Modellen, Vision + LLM gleichzeitig |
+| 2 GB | $50 | Headless-Sensorik, einzelne Dienste, klassische GPIO-Projekte |
+| 4 GB | $60 | Desktop, Computer Vision mit Hailo-8L |
+| 8 GB | $80 | Ollama bis ~4B, mehrere AI-Prozesse parallel |
+| **16 GB** | $120 | Ollama mit 7B/8B-Modellen, Vision + LLM gleichzeitig |
 
-Schweizer Endkundenpreise liegen darüber – siehe [`component-catalog.md`](component-catalog.md).
+Eine 1-GB-Variante des Pi 5 gibt es nicht – unterhalb von 2 GB ist der Pi Zero 2 W ($15)
+die richtige Klasse. Schweizer Endkundenpreise liegen über den USD-Listenpreisen (MwSt.,
+Zoll, Marge) – siehe [`component-catalog.md`](component-catalog.md).
 
 **Faustregeln:**
 - **Hailo-8L / Computer Vision:** 4 GB genügen, das Modell liegt auf der NPU.
