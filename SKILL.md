@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), oder (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit).
 ---
 
 # Raspberry Pi AI Skill
@@ -69,6 +69,12 @@ Vor Projektstart die Checkliste durchlaufen (Difficulty-Level bestimmt Umfang). 
 - [ ] Read-only-Overlay-Dateisystem geprüft, wenn Stromausfälle zu erwarten sind
 - [ ] Abschaltverhalten geprüft (Pi 5 ist nach `sudo halt` standardmässig **nicht** stromlos)
 - [ ] Bei Netzzugang: SSH schlüsselbasiert, UFW eingerichtet – **`allow ssh` vor `enable`**
+- [ ] **Watchdog entschieden:** `kernel_watchdog_timeout` in `config.txt` **und**
+      `RuntimeWatchdogSec` in `/etc/systemd/system.conf` – eines allein wirkt nicht
+- [ ] Bei Updates aus der Ferne: **A/B-Boot über `autoboot.txt` + `tryboot`** statt
+      `full-upgrade` per SSH – ein misslungenes Update fällt von selbst zurück
+- [ ] Aktoren, die beim Einschalten nicht anziehen dürfen, haben einen **externen
+      Pull-Widerstand**; `gpio=` in `config.txt` ist nur die zweite Verteidigungslinie
 
 **Bei Pi 5 zusätzlich:**
 - [ ] Mini-CSI-Kabel (22-Pin ≠ Pi 4 Standard 15-Pin)
@@ -144,7 +150,13 @@ Inkrementeller Aufbau (nie Big Bang):
 vcgencmd get_throttled        # 0x0 = OK; untere 4 Bits = jetzt, obere 4 = seit Boot
 vcgencmd get_config total_mem # echter Gesamt-RAM (get_mem arm luegt bei >1 GB!)
 vcgencmd measure_temp         # <80°C = OK (SoC, nicht Umgebung!)
+vcgencmd measure_clock arm    # TATSAECHLICHER Takt; scaling_cur_freq ist nur der angeforderte
+vcgencmd pmic_read_adc EXT5V_V  # Pi 5: Versorgungsspannung (<4.63 V = Drosselung)
 free -h                       # RAM-Situation
+
+# Was in config.txt wirklich angekommen ist
+vcgencmd get_config int       # alle gesetzten Ganzzahlen (nicht jede Option erscheint!)
+vcgencmd get_config str       # alle gesetzten Zeichenketten
 
 # Hardware-Interfaces
 i2cdetect -y 1                # I2C-Geräte
@@ -189,6 +201,16 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - Aktivitäts-LED blinkt nicht → beim Booten von NVMe blinkt sie nicht; der Pi 5 hat nur **eine** zweifarbige LED
 - Neue NVMe wird ignoriert → Bootreihenfolge steht noch auf «SD zuerst» (`raspi-config` → `A4 Boot Order`)
 - Zeilenumbruch in `cmdline.txt` → alles nach der ersten Zeile wird ignoriert, ohne Fehlermeldung
+- Lange `dtoverlay=`-Zeile mit vielen Parametern → **ab 98 Zeichen wird stumm abgeschnitten**; Parameter auf eigene `dtparam=`-Zeilen verteilen
+- Einstellung wirkt nur auf einem Gerät → sie steht hinter `[pi4]`/`[pi5]`; ein Filter gilt weiter, bis `[all]` kommt
+- `[pi5]` trifft auch CM5, 500 und 500+ → für genau ein Board `[board-type=…]` oder die Seriennummer verwenden
+- `gpu_mem`, `total_mem`, `start_x`, `uart_2ndstage` in einer per `include` eingebundenen Datei → wirkungslos, gehören in die Hauptdatei
+- Watchdog eingerichtet, greift aber nie → `RuntimeWatchdogSec` fehlt (unter Bookworm **nicht** voreingestellt)
+- Relais zieht beim Booten an → GPIO-Reset-Zustand; `gpio=` greift erst nach Sekunden, externer Pull-Widerstand nötig
+- «Die CPU läuft doch auf vollem Takt» → `scaling_cur_freq` ist der **angeforderte** Wert, `vcgencmd measure_clock arm` der tatsächliche
+- Manuelles `over_voltage` beim Übertakten → schaltet die automatische Spannungsregelung ab; auf Pi 4/5 `over_voltage_delta` verwenden
+- 1366×768-Monitor läuft am Pi 4 auf 1280×720 → DMT-Modus 81 ist bei 2 Pixel/Takt unmöglich und wird gefiltert (Pi 5 kann ihn)
+- NoIR-Kamera liefert farbstichige Bilder → `awb_auto_is_greyworld=1` in `config.txt`
 
 **Eskalationspfade** (zeitbasiert):
 - 0–15 Min: Isolationsmethode, Logs lesen
@@ -241,6 +263,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 **Konfiguration (raspi-config, config.txt, Device Tree/Overlays, Bootloader, fstab, Firewall):**
 `/mnt/skills/user/raspberry-pi-ai/references/configuration.md`
 
+**config.txt im Detail (Dateiformat, bedingte Filter, A/B-Boot, Watchdog, GPIO-Startzustände, Übertakten):**
+`/mnt/skills/user/raspberry-pi-ai/references/config-txt.md`
+
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`
 
@@ -268,6 +293,11 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
   Das offizielle 3D-Modell des Pi 5 ist laut eigener Lizenz «guidance only» und weicht
   bei den Micro-HDMI-Positionen um ~6,8 mm von der Zeichnung ab. Widersprüche benennen,
   statt eine Quelle stillschweigend zu bevorzugen.
+- **Auch eine einzelne Quelle widerspricht sich.** Die `config.txt`-Dokumentation nennt an
+  einer Stelle 98 Zeichen Zeilenlänge, an anderer 80; bei `initial_turbo` steht in der
+  Tabelle `0`, im Fliesstext `60` seit dem Firmware-Update von November 2024. In solchen
+  Fällen den **konservativeren** Wert verwenden, den Widerspruch benennen und – wo möglich –
+  am Gerät nachfragen (`vcgencmd get_config <name>`).
 - **Fehlende Masse nicht schätzen.** Werte, die in keiner Quelle stehen (Platinendicke,
   Header-Höhe, Cooler-Höhe), nachmessen lassen und den Messwert im `plan.md` dokumentieren.
 

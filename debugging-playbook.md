@@ -102,6 +102,8 @@ PCIe-Details (Pinout, FFC-Anforderungen, Sideband-Signale, M.2 HAT+): `pcie.md`.
 RP1-Pads, Latenzverhalten und Alternativfunktionen: `rp1-gpio.md`.
 Boot-Medium, Netzteilwahl, Headless-Provisionierung und erster Start: `setup-provisioning.md`.
 OS-Versionen, Updates, APT, venv und Diagnose-Werkzeuge: `os-and-software.md`.
+`raspi-config`, Device Tree, Bootloader, fstab und Firewall: `configuration.md`.
+Dateiformat von `config.txt`, bedingte Filter, A/B-Boot, Watchdog: `config-txt.md`.
 
 ### 1. Mini-CSI-Kabelinkompatibilität
 
@@ -605,6 +607,101 @@ Mehr Firmware-Protokoll mit `dtdebug=1` in `config.txt`.
 - Das Overlay gibt es für die Plattform `bcm2712` nicht oder unter anderem Namen –
   z.B. `disable-bt` → `disable-bt-pi5` (siehe `configuration.md`)
 - Ein Zeilenumbruch in `cmdline.txt`: alles nach der ersten Zeile wird ignoriert
+- 🔴 **Die Zeile ist länger als 98 Zeichen** – der Rest wird stillschweigend verworfen.
+  Trifft vor allem `dtoverlay=`-Zeilen mit mehreren angehängten Parametern.
+- 🔴 **Die Zeile steht hinter einem bedingten Filter**, der gerade nicht zutrifft. Ein
+  `[pi4]`- oder `[pi5]`-Abschnitt gilt weiter, bis ein `[all]` kommt.
+- Die Zeile steht in einer per `include` eingebundenen Datei, obwohl der **Bootloader** sie
+  auswertet (`gpu_mem`, `total_mem`, `start_x`, `uart_2ndstage`, …) – dort wirkt sie nicht.
+
+Details zu allen dreien in `config-txt.md`.
+
+---
+
+### 23. CPU ist langsamer als das System meldet
+
+**Symptom:** Die Inferenz dauert länger als auf einem baugleichen Gerät, aber
+`scaling_cur_freq` zeigt den vollen Takt.
+
+**Ursache:** `/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq` ist die vom Kernel
+**angeforderte** Frequenz. Drosselt die Firmware wegen Temperatur oder Unterspannung, sinkt
+der tatsächliche Takt – dieser Wert ändert sich dabei **nicht**.
+
+```bash
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq   # kHz – angefordert
+vcgencmd measure_clock arm                                  # Hz  – tatsächlich
+vcgencmd get_throttled                                      # 0x0 = keine Drosselung
+vcgencmd measure_temp
+vcgencmd pmic_read_adc EXT5V_V                              # Pi 5: Versorgungsspannung
+```
+
+➜ **Immer beide Werte vergleichen.** Weichen sie ab, ist die Ursache Temperatur oder
+Netzteil – nicht die Software. Unter 4,63 V (±5 %) drosseln Arm und GPU; für zuverlässigen
+Betrieb sind über 4,8 V nötig.
+
+---
+
+### 24. Monitor läuft auf 1280×720 statt 1366×768
+
+**Symptom:** Ein 1366×768-Display läuft am Pi 4 in einer niedrigeren Auflösung, obwohl es
+seine native Auflösung per EDID meldet.
+
+**Ursache:** Pi 4B, CM4, CM4S und Pi 400 erzeugen **zwei Bildpunkte pro Taktzyklus**.
+**DMT-Modus 81** (1366×768 bei 60 Hz) hat ungerade horizontale Timing-Werte und ist damit
+technisch unmöglich – Firmware und Kernel filtern ihn heraus und wählen den nächstbesten
+angebotenen Modus. Es ist der **einzige** betroffene Modus der CEA- und DMT-Standards.
+
+➜ **Kein Defekt und nicht durch Konfiguration behebbar.** Am Pi 5 läuft derselbe Monitor
+korrekt – diese Modelle beherrschen die Timings direkt.
+
+---
+
+### 25. Aktor zieht beim Einschalten kurz an
+
+**Symptom:** Relais klickt, Motor zuckt oder ein Heizelement schaltet für ein bis zwei
+Sekunden durch, bevor die Software startet.
+
+**Ursache:** Zwischen dem Anlegen der Spannung und dem Zeitpunkt, an dem irgendeine
+Software die Pins setzt, sind die GPIOs in ihrem Reset-Zustand. Beim Booten über Netzwerk
+oder USB-Massenspeicher dauert dieses Fenster **mehrere Sekunden**.
+
+**Teillösung** – definierte Startzustände in `config.txt`:
+
+```ini
+gpio=12=op,dl        # GPIO 12 als Ausgang, low
+gpio=17-21=ip,pd     # 17–21 Eingang mit Pull-down
+```
+
+> 🔴 **Das verkürzt das Fenster, schliesst es aber nicht.** Auch `gpio=` greift erst einige
+> Sekunden nach dem Einschalten, und `pinctrl`-Einträge im Device Tree können die
+> Einstellung später überschreiben.
+
+➜ **Die eigentliche Lösung ist elektrisch:** ein **externer Pull-Widerstand am
+Treibereingang**, der den Aktor im undefinierten Zustand sicher ausschaltet. Die Zeile in
+`config.txt` ist die zweite Verteidigungslinie. Bei allem, was Wärme, Bewegung oder
+Netzspannung schaltet, ist der Widerstand nicht optional.
+
+---
+
+### 26. NoIR-Kamera liefert unbrauchbare Farben
+
+**Symptom:** Aufnahmen einer NoIR-Kamera (oder einer HQ-Kamera mit ausgebautem IR-Filter)
+sind durchgehend rosa, magenta oder farbstichig; die Objekterkennung darauf ist schlecht.
+
+**Ursache:** Ohne IR-Sperrfilter fällt Infrarotlicht auf den Sensor, mit dem der normale
+automatische Weissabgleich nicht umgehen kann.
+
+```ini
+awb_auto_is_greyworld=1
+```
+
+➜ Schaltet den Automatikmodus auf den **Greyworld**-Algorithmus um. Wirkt auch für
+Programme und Bibliotheken, die diese Option selbst nicht anbieten – deshalb der richtige
+Ort dafür in `config.txt` statt im Anwendungscode. Für Nachtsicht-, Tier- und
+Pflanzenüberwachung mit Edge AI der entscheidende Schalter.
+
+Verwandt: `disable_camera_led=1` verhindert, dass sich die rote LED in einer Scheibe oder
+im Gehäuse spiegelt und die Erkennung stört.
 
 ---
 

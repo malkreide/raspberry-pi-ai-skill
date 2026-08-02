@@ -143,6 +143,12 @@ ab, das ohne Not zu tun, weil die Option künftig entfallen kann.
 ➜ Beide belegen die Header-Pins mit Konsolenausgabe. Wer dort ein Gerät angeschlossen
 hat, bekommt eine unerklärlich «schwatzende» Leitung.
 
+**Umgekehrt ist `enable_rp1_uart=1` genau dann richtig, wenn man die frühe Boot-Phase am
+Header sehen will:** Die Firmware initialisiert RP1 UART0 auf 115200 Bit/s und setzt RP1
+vor dem Start des OS **nicht** zurück – Ausgabe gibt es damit schon, bevor der Kernel
+läuft. Für Bare-Metal-Arbeit gehört `pciex4_reset=0` dazu, damit die PCIe-Konfiguration
+des Bootloaders erhalten bleibt. Details in `config-txt.md`.
+
 ### Zusätzliche UARTs freischalten
 
 ```ini
@@ -373,12 +379,34 @@ kosten würde. Wer eigene Treiber schreibt, sollte das nutzen.
 | Serielles Gerät an Pin 8/10 | **Nicht `/dev/serial0`** – das zeigt auf dem Pi 5 auf den Debug-Header |
 | «Der Mini-UART macht Ärger» | Gibt es auf dem Pi 5 nicht mehr – Ursache liegt woanders |
 | Bibliothekswahl | `gpiozero` mit lgpio; `RPi.GPIO` kennt RP1 nicht |
+| Aktor darf beim Einschalten nicht anziehen | **Externer Pull-Widerstand am Treibereingang**; `gpio=` in `config.txt` nur ergänzend |
+| JTAG gewünscht | `enable_jtag_gpio=1` belegt GPIO 22–27 dauerhaft – bei der Pinplanung einrechnen |
+
+### Startzustand der Pins
+
+Zwischen dem Anlegen der Spannung und dem ersten Zugriff durch Software sind die GPIOs in
+ihrem Reset-Zustand. `config.txt` kann definierte Zustände vorgeben:
+
+```ini
+gpio=12=op,dl        # Ausgang, treibt low
+gpio=17-21=ip,pd     # Eingang mit Pull-down
+gpio=0-27=a2         # Alternativfunktion 2 für den ganzen Bereich (z.B. DPI24)
+```
+
+> 🔴 **Das ist keine Absicherung, sondern eine Verkürzung des Fensters.** Auch diese
+> Einstellungen greifen erst **einige Sekunden** nach dem Einschalten – beim Booten über
+> Netzwerk oder USB-Massenspeicher später. Sie wirken ausserdem nicht auf den Kernel: Die
+> Pins erscheinen nicht in sysfs, und `pinctrl`-Einträge im Device Tree oder das Werkzeug
+> `pinctrl` können sie überschreiben.
+
+Alle Kürzel und die Zusammenarbeit mit bedingten Filtern stehen in `config-txt.md`.
 
 ---
 
 ## Weitere Ressourcen
 
 - [`configuration.md`](configuration.md) – Overlays, `config.txt`, `raspi-config`
+- [`config-txt.md`](config-txt.md) – Dateiformat, Filter, `gpio=`, `enable_rp1_uart`
 - [RP1 Peripherals Datasheet](https://datasheets.raspberrypi.com/rp1/rp1-peripherals.pdf)
 - [RP1 GPIO Linux Kernel Driver](https://github.com/raspberrypi/linux) – Referenzimplementierung
 - [gpiozero Dokumentation](https://gpiozero.readthedocs.io/)
