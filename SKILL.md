@@ -1,6 +1,6 @@
 ---
 name: raspberry-pi-ai
-description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit), oder (15) mit dem Linux-Kernel arbeitet (Kernel-Header, Kernelmodule, DKMS, Treiber nach Update verschwunden, eigenen Kernel bauen oder cross-kompilieren, menuconfig, Patches, PREEMPT_RT/Echtzeit, Beiträge an raspberrypi/linux), oder (16) auf ein Gerät aus der Ferne zugreift oder Daten austauscht (SSH, SSH-Schlüssel, VNC, Raspberry Pi Connect, IP-Adresse finden, mDNS/.local, scp, rsync, NFS, Samba/SMB, Apache, Netzwerk-Boot/PXE).
+description: Entwicklung von Raspberry Pi Projekten mit Edge AI Integration. Nutze diesen Skill wenn der User (1) ein Raspberry Pi Projekt plant oder baut, (2) Sensoren, Aktoren oder HATs integrieren möchte, (3) Edge AI auf Pi 4/5 oder mit Hailo-8L NPU deployen will, (4) Hardware- oder Software-Debugging durchführt (GPIO, I2C, SPI, Power, Python, Ollama, Hailo, Systemd), (5) einen detaillierten Bauplan mit Komponentenliste benötigt, (6) Fragen zu Pi-spezifischer Software-Konfiguration hat (gpiozero, NetworkManager, Virtual Environments), (7) ein Projekt feststeckt und systematisch debuggt werden muss, (8) Mechanik-, Montage- und Gehäusefragen hat (Abmessungen, Bohrbild, Steckerpositionen, HAT-Stacking, Bumper, 3D-Druck, Betriebstemperatur), (9) mit dem PCIe-Anschluss arbeitet (FFC-Kabel, Pinout, M.2 HAT+, NVMe, Hailo, eigene PCIe-Platine, Power States), (10) GPIO-Timing-, Pad- oder Alternativfunktions-Fragen hat (RP1, Treiberstrom, Bit-Banging, PIO, Entprellung, mehrere I2C-/SPI-Busse), (11) einen Pi erstmals aufsetzt oder provisioniert (Imager, Boot-Medium, SD-Karte, OS-Installation, Headless-Setup, SSH, WLAN, erster Boot, Netzteilwahl, Klassensatz), (12) Fragen zu Raspberry Pi OS, Updates und Software hat (apt, Paketverwaltung, venv, Trixie/Bookworm, Firmware, rpi-update, VLC, Audio-/Video-Ausgabe, vcgencmd), (13) ein laufendes System konfiguriert (raspi-config, config.txt, cmdline.txt, Device Tree, dtoverlay/dtparam, UART/serielle Schnittstelle, Bootreihenfolge, EEPROM-Bootloader, Overlay-Dateisystem, LED-Blinkcodes, fstab, UFW/Firewall), oder (14) ein Gerät für unbeaufsichtigten Dauerbetrieb absichert oder abstimmt (Watchdog, A/B-Boot, tryboot, ausfallsichere Updates, bedingte Filter für mehrere Modelle auf einer Karte, GPIO-Startzustände, Übertakten, Drosselung, Bootzeit), oder (15) mit dem Linux-Kernel arbeitet (Kernel-Header, Kernelmodule, DKMS, Treiber nach Update verschwunden, eigenen Kernel bauen oder cross-kompilieren, menuconfig, Patches, PREEMPT_RT/Echtzeit, Beiträge an raspberrypi/linux), oder (16) auf ein Gerät aus der Ferne zugreift oder Daten austauscht (SSH, SSH-Schlüssel, VNC, Raspberry Pi Connect, IP-Adresse finden, mDNS/.local, scp, rsync, NFS, Samba/SMB, Apache, Netzwerk-Boot/PXE), oder (17) mit Kamera-Software arbeitet (rpicam-apps, rpicam-still/vid/hello, libcamera, Picamera2, Kamera-Overlays, Tuning-Dateien, NoIR, Post-Processing-Stages, Bewegungserkennung, mehrere Kameras, Kamera-Streaming, USB-Webcam, raspistill/raspivid-Migration).
 ---
 
 # Raspberry Pi AI Skill
@@ -178,7 +178,8 @@ ethtool -P eth0               # MAC-Adresse; ab Pi 4 NICHT aus der Seriennummer 
 # Hardware-Interfaces
 i2cdetect -y 1                # I2C-Geräte
 lsusb -t                      # USB-Baum
-rpicam-hello --list-cameras   # Kameras
+rpicam-hello --list-cameras   # Kameras UND erreichbare Bildraten je Sensormodus
+rpicam-hello --version        # libcamera-/rpicam-apps-Version (fuer Fehlerberichte)
 
 # Software & Services
 sudo systemctl status <service> -l
@@ -227,7 +228,13 @@ curl -s http://localhost:11434/api/tags  # Ollama
 - «Die CPU läuft doch auf vollem Takt» → `scaling_cur_freq` ist der **angeforderte** Wert, `vcgencmd measure_clock arm` der tatsächliche
 - Manuelles `over_voltage` beim Übertakten → schaltet die automatische Spannungsregelung ab; auf Pi 4/5 `over_voltage_delta` verwenden
 - 1366×768-Monitor läuft am Pi 4 auf 1280×720 → DMT-Modus 81 ist bei 2 Pixel/Takt unmöglich und wird gefiltert (Pi 5 kann ihn)
-- NoIR-Kamera liefert farbstichige Bilder → `awb_auto_is_greyworld=1` in `config.txt`
+- NoIR-Kamera liefert farbstichige Bilder → NoIR-**Tuning-Datei** (`--tuning-file …_noir.json`); `awb_auto_is_greyworld` wirkt auf `rpicam-apps` **nicht**
+- Kamera-Anleitung nennt `raspistill`, `raspivid` oder `import picamera` → veraltet; der Legacy-Stack ist unbenutzbar und kennt Camera Module 3, GS und AI Camera gar nicht
+- Vorschau über `ssh -X` bleibt leer → X-Weiterleitung wird nicht unterstützt (Zero-Copy); `--qt-preview` oder headless mit `-n`
+- `dtoverlay=imx477` bleibt wirkungslos → `camera_auto_detect=0` fehlt
+- Video kostet auf dem Pi 5 unerwartet CPU → dort kodiert **Software**, nicht Hardware; `--low-latency` prüfen
+- `.h264`-Datei spielt in VLC nicht → in einen Container schreiben oder `ffplay` nehmen
+- Objekterkennungs-Stage lässt sich nicht laden → OpenCV- und TFLite-Stages fehlen in den ausgelieferten `rpicam-apps`; Neuübersetzung nötig
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`
 - Modulbau scheitert direkt nach dem Kernel-Update → das `apt`-Header-Paket zieht erst Wochen später nach
 - 32-Bit-Kernel gebaut, Pi bootet den alten → auf 4er-Modellen braucht es `ARCH=arm` **und** `arm_64bit=0`
@@ -301,6 +308,9 @@ Vor der Arbeit relevante Referenzen mit `view` Tool laden:
 
 **Fernzugriff (SSH und Schlüssel, VNC, Connect, Gerät im Netz finden, scp/rsync, NFS, Samba, Netzwerk-Boot):**
 `/mnt/skills/user/raspberry-pi-ai/references/remote-access.md`
+
+**Kamera-Software (rpicam-apps, libcamera, Tuning-Dateien, Post-Processing, Streaming, Picamera2):**
+`/mnt/skills/user/raspberry-pi-ai/references/camera.md`
 
 **Edge AI (Ollama, Hailo-8L, TFLite):**
 `/mnt/skills/user/raspberry-pi-ai/references/edge-ai.md`
