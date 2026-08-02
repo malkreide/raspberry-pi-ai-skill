@@ -663,9 +663,22 @@ sudo apt install -y python3-picamera2 --no-install-recommends # ohne
 > 🔴 **Nicht über `pip` installieren.** Wer das früher getan hat:
 > `pip3 uninstall picamera2`. Picamera2 gehört zu den Paketen, die über `apt` kommen –
 > passend zur Regel aus `os-and-software.md`.
+>
+> **Der Grund ist konkret:** Picamera2 und die darunterliegende `libcamera` müssen
+> **zueinander passen**. Nur der APT-Weg liefert ein Paar, das nachweislich zusammen
+> funktioniert. Eine über `pip` gezogene Fassung trifft auf die vom System installierte
+> `libcamera` – und das Fehlerbild sind dann Importfehler oder Kameras, die plötzlich nicht
+> mehr erkannt werden, obwohl `rpicam-hello` sie anzeigt.
 
-Aktuelle Raspberry-Pi-OS-Abbilder bringen Picamera2 mit; die Lite-Abbilder ohne
-GUI-Abhängigkeiten, Vorschau dort über DRM/KMS.
+**Voraussetzung:** Raspberry Pi OS **Bookworm oder neuer** (32 oder 64 Bit). Auf Buster und
+älter sowie mit dem Legacy-Kamera-Stack läuft Picamera2 nicht.
+
+Die Standard-Abbilder bringen Picamera2 mit, **die Lite-Abbilder nicht** – dort ist es
+nachzuinstallieren, sinnvollerweise mit `--no-install-recommends`. Die Vorschau läuft
+dann über DRM/KMS.
+
+> ℹ️ Picamera2 läuft auf allen Modellen, auf schwächeren wie dem Zero aber entsprechend
+> langsam. Beispielprogramme liegen im Verzeichnis `examples`, Qt-Anwendungen unter `apps`.
 
 ---
 

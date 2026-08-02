@@ -374,6 +374,39 @@ sudo reboot
 Release-Track wechseln: `raspi-config` → `6 Advanced Options` → `A5 Bootloader Version`
 (`E1 Latest` = neueste Funktionen, `E2 Default` = stabil, getestet).
 
+### Wie das Update abläuft – und was dabei schiefgehen kann
+
+Standardmässig wird das neue Abbild nur **vorgemerkt** und beim nächsten Neustart von
+`recovery.bin` geschrieben. Das ist der sichere Weg: Bricht etwas ab, ist das alte EEPROM
+noch intakt.
+
+```bash
+sudo rpi-eeprom-update -a     # vormerken
+sudo reboot                   # schreiben
+```
+
+Mit **`RPI_EEPROM_IMMEDIATE_UPDATE=1`** wird stattdessen **im laufenden Betrieb**
+geschrieben – über `rpi-eeprom-ab` oder `flashrom`.
+
+> 🔴 **Während eines `flashrom`-Schreibvorgangs darf die Spannung nicht wegbrechen.**
+> Passiert es doch, hilft nur noch das Neubeschreiben über die
+> **Bootloader-Wiederherstellung des Raspberry Pi Imager** (Misc utility images →
+> Bootloader). Das ist der Grund, den Sofortmodus auf Geräten ohne gesicherte Versorgung
+> **nicht** zu verwenden.
+
+> 🔴 **`flashrom` in den Versionen 1.4 bis 1.6 hat einen Fehler beim Löschen**, der das
+> EEPROM teilweise beschädigen kann. Vor einem Sofort-Update die Version prüfen.
+
+**Nicht auf eine ältere Fassung zurückgehen als das Board verlangt.** Jedes Board hat eine
+Mindestversion des Bootloaders; ein älteres Abbild kann dazu führen, dass es **unzuverlässig
+oder gar nicht mehr startet**. `rpi-eeprom-update` warnt davor; mit
+**`STRICT_MIN_VER_CHECK=1`** lässt sich die Prüfung erzwingen statt nur anzeigen.
+
+➜ Für Geräteflotten ist die Kombination aus `FREEZE_VERSION` (siehe unten),
+`STRICT_MIN_VER_CHECK=1` und dem vorgemerkten statt sofortigen Update die konservative
+Wahl. Versionsstände und Änderungen stehen in
+[`releases.md`](https://github.com/raspberrypi/rpi-eeprom/blob/master/releases.md).
+
 ### Verbrauch im ausgeschalteten Zustand senken
 
 Ein heruntergefahrener Pi 5 zieht weiterhin **1 bis 1,4 W** – über ein Jahr gerechnet
