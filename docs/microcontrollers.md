@@ -425,6 +425,40 @@ externen Flash gibt es eine eigene UF2-Datei in `pico-examples`. Das ist ein
 bemerkenswerter Unterschied zum Pi, wo ein misslungenes EEPROM-Update
 (`os-and-software.md`) sehr wohl ein totes Gerät hinterlassen kann.
 
+### 🔴 Im BOOTSEL-Modus hängen zwei Schnittstellen am USB, nicht eine
+
+Der sichtbare Massenspeicher ist nur die eine Hälfte:
+
+| Schnittstelle | Was sie ist | Wer sie nutzt |
+|---------------|-------------|---------------|
+| **USB Mass Storage** | das Laufwerk `RPI-RP2` bzw. `RP2350` | Drag-and-Drop einer `.uf2` von Hand |
+| **PICOBOOT** | ein Befehlsprotokoll über eigene Endpunkte | **`picotool`** und jede automatisierte Programmierung |
+
+Beide lassen sich einzeln abschalten – über `disable_interface_mask` beim programmatischen
+Sprung in den BOOTSEL-Modus (`rom_reset_usb_boot`).
+
+**Für Serienprogrammierung ist das der entscheidende Punkt.** Über PICOBOOT kann sich ein
+Werkzeug **exklusiven Zugriff** sichern:
+
+| Stufe | Wirkung |
+|-------|---------|
+| `NOT_EXCLUSIVE` | keine Einschränkung; das Laufwerk bleibt beschreibbar |
+| `EXCLUSIVE` | Schreibzugriffe über den Massenspeicher werden gesperrt – **ein laufender UF2-Transfer wird abgebrochen** |
+| `EXCLUSIVE_AND_EJECT` | das Laufwerk wird als **nicht vorhanden** gemeldet, also ausgeworfen |
+
+> ➜ **`EXCLUSIVE_AND_EJECT` ist die Antwort auf ein Betriebssystem, das dazwischenfunkt.**
+> Windows, macOS und viele Linux-Desktops binden einen neu erschienenen Massenspeicher
+> automatisch ein, schreiben Metadaten darauf und halten ihn offen. Bei einem einzelnen
+> Gerät fällt das nicht auf; bei einem Programmierplatz, der Boards im Takt durchschleust,
+> ist es die Ursache für sporadisch fehlschlagende Vorgänge. Wer den Datenträger
+> auswerfen lässt, nimmt dem Desktop die Gelegenheit.
+
+➜ Das ist dieselbe Überlegung wie bei der Serienprovisionierung auf der Linux-Seite
+(`setup-provisioning.md`, `compute-module.md`): **Ein Verfahren, das für ein Gerät auf dem
+Schreibtisch funktioniert, ist noch kein Verfahren für hundert Geräte in der Fertigung.**
+Der Unterschied liegt selten in der Programmierung selbst, sondern in allem, was drumherum
+mitläuft.
+
 ---
 
 ## Pi und Pico zusammen betreiben

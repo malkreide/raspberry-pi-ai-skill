@@ -265,6 +265,7 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - Pico-Programm gebaut, aber kein Funk und falsche Pin-Vorgaben → `-DPICO_BOARD=pico_w` vergessen; äussert sich als fehlende Funktion, nicht als Übersetzungsfehler
 - Pico-1-Anleitung läuft auf dem Pico 2 nicht → **RP2350 ≠ RP2040**: Hardware-Dividierer entfällt, andere Kernarchitektur, BOOTSEL-Datenträger heisst `RP2350` statt `RPI-RP2`, UF2 nicht austauschbar
 - `.uf2` an OpenOCD übergeben → über SWD wird die **`.elf`** geladen; UF2 ist nur für Drag-and-Drop im BOOTSEL-Modus
+- Automatisierte Pico-Programmierung schlägt sporadisch fehl → der Desktop bindet den BOOTSEL-Datenträger ein und schreibt darauf; über PICOBOOT **`EXCLUSIVE_AND_EJECT`** anfordern (`microcontrollers.md`)
 - Keine Haltepunkte im Debugger → mit `-DCMAKE_BUILD_TYPE=Debug` bauen; ein Release-Build trägt die Information nicht
 - Debug Probe defekt nach dem Anstecken → **erst GND, dann Signale**; bei getrennt gespeisten Systemen zerstört die Potenzialdifferenz den Probe
 - «Der Pico schläft sich durch den Winter» → RP2040 zieht auch im Dormant-Modus **~180 µA**; für Monate abschalten statt schlafen legen (Schaltung, nicht Firmware)
