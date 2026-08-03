@@ -279,6 +279,19 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - Konfigurationswert im Flash «einfach überschrieben» → Programmieren setzt Bits nur **1 → 0**; ohne Sektorlöschung entsteht das UND aus alt und neu
 - Flash zur Laufzeit beschreiben stürzt ab → der Code läuft **aus dem Flash** (XIP); `flash_safe_execute()` verwenden, Interrupts abschalten
 - Ruhestrom des Pico 2 misst sich absurd hoch → **mit angeschlossenem Debugger schläft powman nie**; OpenOCD löscht `pwrupreq` nicht (`powman_set_debug_power_request_ignored`)
+- Pico-1-Entwurf auf den Pico 2 portiert, Laufzeit wird schlechter → **im Dormant-Modus zieht der Pico 2 rund das Dreifache** (3,3 mA gegen 0,95 mA); der Gewinn steckt allein im **Pstate**
+- Ruhestrom bleibt trotz Pstate hoch → ungenutzte Pins lecken (`low_power_set_pins_low_leakage_exclude_mask`), und Speisung über **VSYS statt 3V3 kostet fast das Dreifache**
+- Variablen sind nach dem Aufwachen aus dem Pstate weg → **Pstate ist ein Neustart**, nicht ein Schlaf; `crt0` überschreibt alles ohne `__persistent_data`
+- Zeitgesteuertes Dormant auf dem **RP2040** schlägt fehl → dort braucht der AON-Timer eine **externe Taktquelle** am GPIO (`low_power_set_external_clock_source`)
+- Eigene Daten über die Inter-Core-FIFOs geschickt → die sind vom SDK (Kernstart, Lockout) und von FreeRTOS SMP belegt; `queue` aus `pico_util` nehmen. Tiefe **8 auf dem RP2040, nur 4 auf dem RP2350**
+- LED-Code soll auf Pico *und* Pico W laufen → **`pico_status_led`** statt eigener GPIO-Fallunterscheidung
+- Binary unerwartet gross bei Zeitfunktionen → auf dem RP2040 die `_calendar()`-Varianten nehmen, auf dem RP2350 die ohne; sonst kommt `localtime_r` bzw. `mktime` mit
+- Pico W verbindet sich, aber Sockets schlagen fehl → **`CYW43_LINK_JOIN` heisst «am AP, aber ohne IP»**; bis `CYW43_LINK_UP` warten und `cyw43_tcpip_link_status()` statt `cyw43_wifi_link_status()` abfragen
+- WLAN am Pico W ist langsam oder instabil → `cyw43_arch_init()` startet mit **`CYW43_COUNTRY_WORLDWIDE`**; Zielland über `cyw43_arch_init_with_country()` setzen
+- Sporadische Abstürze im Netzwerkcode des Pico W → lwIP ist nicht threadsicher; Aufrufe mit `cyw43_arch_lwip_begin()`/`_end()` klammern (ausser aus lwIP-Callbacks)
+- Erste `printf`-Ausgaben über USB fehlen → der Host verbindet sich nach dem Programmstart; `PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS` setzen oder `stdio_usb_connected()` abfragen
+- Eigene Daten am Ende des Flash verschwinden nach dem Bluetooth-Pairing → **BTstack belegt die letzten zwei Flash-Sektoren** (`PICO_FLASH_BANK_STORAGE_OFFSET`)
+- RP2350 auf RISC-V umgeschaltet, `double`-Rechnung wird langsam → dort gibt es **keine optimierte Doppelgenauigkeit**; die DCP-Beschleunigung ist Arm-only
 - `lspci` zeigt gar nichts, `dmesg` meldet «Link Down» → Link-Training gescheitert; FFC-Richtung, ZIF-Konnektor, Kontakte unter Lupe prüfen
 - 7B-Modell auf der CPU «zu langsam» → unter 3B bleiben und quantisieren; mehr RAM löst es nicht, der Engpass ist die Rechenkapazität
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`
