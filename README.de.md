@@ -261,7 +261,7 @@ python3 scripts/validate-skill.py
 Geprüft wird:
 
 1. Das Manifest ist wohlgeformt und alle Quelldateien existieren
-2. `SKILL.md` hat gültiges Frontmatter (`name`, `description`)
+2. `SKILL.md` hat gültiges Frontmatter (`name`, `description` – max. 1024 Zeichen, Limit der Plattform)
 3. Alle in `SKILL.md` referenzierten Skill-Pfade sind im Manifest abgedeckt
 4. Das eingecheckte `raspberry-pi-ai.skill` entspricht den Quelldateien
 5. Keine toten relativen Links in den Markdown-Dokumenten
