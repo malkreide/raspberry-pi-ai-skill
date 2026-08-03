@@ -270,6 +270,15 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - «Der Pico schläft sich durch den Winter» → RP2040 zieht auch im Dormant-Modus **~180 µA**; für Monate abschalten statt schlafen legen (Schaltung, nicht Firmware)
 - Interner Temperatursensor des RP2040 liefert Unsinn → unkalibriert **und** abhängig von einer VREF, die der Chip nicht selbst bereitstellt; Sensorspannung fällt bei steigender Temperatur
 - RM2 in ein Produkt für **Indien oder Malaysia** → dort **keine modulare Zulassung**; das Hostgerät braucht eine eigene Zertifizierung (in EU/UK/USA/Kanada nicht)
+- Messung auf 12 ADC-Bit ausgelegt → effektiv sind es **8,7 Bit (RP2040)** bzw. 9,2 (RP2350); für Genauigkeit externer ADC an SPI/I²C
+- Temperatursensor des RP2040 misst grob daneben → **0,58 °C Fehler je mV VREF-Abweichung**; ein aus 3,3 V abgeleitetes VREF schwankt um weit mehr
+- Temperatursensor auf ADC-Eingang 4 fest verdrahtet → auf dem **RP2350B liegt er auf Eingang 8**, Eingang 4 ist dort ein Analogeingang
+- DMA-Transferzahl > 2²⁸ auf dem RP2350 → nur die unteren **28 Bit** sind die Anzahl, die oberen vier kodieren Optionen; still falsch statt Fehler
+- Beide GPIO-Pulls gleichzeitig gesetzt → auf dem RP2040 ist das **«bus keep»** (schwaches Halten des aktuellen Pegels), kein stärkerer Pull
+- Spuriose DMA-Abschluss-Interrupts nach `dma_channel_abort` → **Errata RP2040-E13**; IRQ vorher abschalten, danach quittieren
+- Konfigurationswert im Flash «einfach überschrieben» → Programmieren setzt Bits nur **1 → 0**; ohne Sektorlöschung entsteht das UND aus alt und neu
+- Flash zur Laufzeit beschreiben stürzt ab → der Code läuft **aus dem Flash** (XIP); `flash_safe_execute()` verwenden, Interrupts abschalten
+- Ruhestrom des Pico 2 misst sich absurd hoch → **mit angeschlossenem Debugger schläft powman nie**; OpenOCD löscht `pwrupreq` nicht (`powman_set_debug_power_request_ignored`)
 - `lspci` zeigt gar nichts, `dmesg` meldet «Link Down» → Link-Training gescheitert; FFC-Richtung, ZIF-Konnektor, Kontakte unter Lupe prüfen
 - 7B-Modell auf der CPU «zu langsam» → unter 3B bleiben und quantisieren; mehr RAM löst es nicht, der Engpass ist die Rechenkapazität
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`

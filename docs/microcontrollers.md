@@ -22,6 +22,11 @@ Quelle: **Offizielle Raspberry-Pi-Dokumentation, «Microcontrollers»**
 6. [Radio Module 2 (RM2) und die Zulassungsfrage](#radio-module-2-rm2-und-die-zulassungsfrage)
 7. [Debug Probe – SWD, UART und RTT](#debug-probe--swd-uart-und-rtt)
 8. [Pi und Pico zusammen betreiben](#pi-und-pico-zusammen-betreiben)
+9. [Der ADC – und die 12 Bit, die keine sind](#der-adc--und-die-12-bit-die-keine-sind)
+10. [GPIO-Pads am Mikrocontroller](#gpio-pads-am-mikrocontroller)
+11. [Errata, die man als Fehler im eigenen Code sucht](#errata-die-man-als-fehler-im-eigenen-code-sucht)
+12. [Flash zur Laufzeit beschreiben](#flash-zur-laufzeit-beschreiben)
+13. [Stromsparen – und warum der Debugger es verhindert](#stromsparen--und-warum-der-debugger-es-verhindert)
 
 ---
 
@@ -101,11 +106,22 @@ die konkreten Gründe:
 | Falle | Was passiert |
 |-------|--------------|
 | 🔴 **Der Hardware-Dividierer ist weg** | Code, der die speichermappten Divider-Register des RP2040 direkt beschreibt, findet sie nicht mehr. Der RP2350 dividiert in der CPU – schneller, aber an anderer Stelle |
-| **Andere Kernarchitektur** | M0+ → M33: anderer Befehlssatz, andere Assembler-Fragmente, andere Interrupt-Prioritätsstufen |
+| 🔴 **DMA-Transferzähler ist schmaler** | RP2040: volle **32 Bit**. RP2350: nur die unteren **28 Bit** sind die Anzahl, die oberen 4 kodieren Optionen. Eine Zahl > 2²⁸−1 wird **still** falsch interpretiert |
+| **Andere Kernarchitektur** | M0+ → M33: anderer Befehlssatz, andere Assembler-Fragmente, andere Interrupt-Prioritätsstufen (2 signifikante Bits beim M0+, 4 beim M33, **auf RISC-V gar keine**) |
 | **Mehr PIO, aber neu zu verteilen** | 3 Blöcke statt 2; fest verdrahtete Blocknummern in Beispielcode passen nicht mehr |
+| **PIO sieht auf dem RP2350B nur 32 der 48 Pins** | Jede PIO-Instanz adressiert **entweder 0–31 oder 16–47**. Ein Entwurf, der Pins aus 0–15 *und* 32–47 in derselben Instanz braucht, ist nicht umsetzbar |
+| **`in_count` ist auf dem RP2040 zwingend 32** | Der RP2040 kann ungenutzte Eingangspins nicht ausmaskieren; RP2350-Code mit kleinerem Wert läuft dort anders |
+| 🔴 **Die RTC gibt es nur auf dem RP2040** | Der RP2350 ersetzt sie durch **powman** mit AON-Timer – andere API, anderes Konzept (siehe unten) |
+| **Watchdog-Höchstdauer** | RP2040 **8388 ms** (~8,3 s, Errata RP2040-E1), RP2350 **16777 ms** (~16,7 s) |
 | **Anderes Spannungskonzept** | SMPS statt LDO – Beschaltung, Entstörung und Ruhestromverhalten unterscheiden sich |
 | **BOOTSEL-Datenträger heisst anders** | `RPI-RP2` beim Pico, **`RP2350`** beim Pico 2. Skripte, die auf den Datenträgernamen prüfen, brechen |
 | **Eigene UF2-Dateien** | Firmware ist **nicht** zwischen den Generationen austauschbar – z.B. `debugprobe_on_pico.uf2` gegen `debugprobe_on_pico2.uf2` |
+
+> ℹ️ **Zum Dividierer die Entwarnung:** Gewöhnliches `/` und `%` in C laufen über die
+> `pico_divider`-Bibliothek und funktionieren auf beiden Generationen unverändert. Betroffen
+> ist nur Code, der die Divider-Register **direkt** anspricht oder die inlined
+> `hw_divider_*`-Funktionen benutzt – typischerweise handoptimierte Fragmente aus fremden
+> Beispielen.
 
 ➜ **Der Reflex bei «die Anleitung funktioniert auf dem Pico 2 nicht» ist deshalb nicht
 Fehlersuche im eigenen Code, sondern die Frage, für welche Generation die Anleitung
@@ -141,10 +157,21 @@ Firmware.
 Der Temperatursensor im RP2040 ist **niedrig aufgelöst und benutzerseitig zu
 kalibrieren**. Ohne Kalibrierung ist er unwahrscheinlich genau.
 
-Der Grund liegt in der Referenzspannung: Die Umrechnungsformel reagiert **sehr empfindlich
-auf VREF**, und der RP2040 hat **keine interne feste Spannungsreferenz**. VREF muss
-deshalb entweder extern gemessen (und es ändert sich über die Zeit) oder von einer externen
-Präzisionsreferenz geliefert werden.
+Der Grund steckt in der Umrechnungsformel selbst:
+
+```
+T = 27 − (ADC_Spannung − 0,706) / 0,001721
+```
+
+Der Nenner ist die Steilheit: **1,721 mV pro °C**. Umgestellt heisst das
+**0,58 °C Fehler pro Millivolt Abweichung der Referenzspannung** – und der RP2040 hat
+**keine interne feste Spannungsreferenz**. VREF muss deshalb entweder extern gemessen
+werden (und ändert sich über die Zeit) oder von einer externen Präzisionsreferenz kommen.
+
+> 🔴 **Zehn Millivolt daneben sind knapp sechs Grad daneben.** Das ist die ganze Geschichte
+> hinter «unkalibriert ist unwahrscheinlich genau» – und der Grund, warum ein aus 3,3 V
+> abgeleitetes VREF für Temperaturmessung nicht taugt: Die Versorgungsspannung schwankt
+> mit Last und USB-Kabel um deutlich mehr als 10 mV.
 
 > ℹ️ Die Sensorspannung **fällt**, wenn die Temperatur steigt – wer das Vorzeichen
 > vertauscht, misst plausible, aber gespiegelte Werte.
@@ -446,9 +473,195 @@ genügen die Textfelder `iManufacturer`, `iProduct` und `iSerial`.
 
 ---
 
+## Der ADC – und die 12 Bit, die keine sind
+
+Der ADC ist die Baugruppe, die am häufigsten überschätzt wird, weil auf dem Datenblatt
+«12 Bit» steht.
+
+| Angabe | RP2040 | RP2350 |
+|--------|--------|--------|
+| Nennauflösung | 12 Bit | 12 Bit |
+| **Effektive Auflösung (ENOB)** | **8,7 Bit** | **9,2 Bit** |
+| Abtastrate | 500 kS/s | 500 kS/s |
+| Nutzbare Eingänge | 4 | 4 (QFN-60) bzw. **8** (QFN-80) |
+| Empfangs-FIFO | 8 Einträge | 8 Einträge |
+
+> 🔴 **8,7 effektive Bit sind rund ein Achtel der nominellen 4096 Stufen.** Wer eine Messung
+> auf 12 Bit auslegt, plant mit Auflösung, die nicht da ist. Für alles, was Genauigkeit
+> braucht – Wägezellen, Präzisionsthermometrie, Strommessung – gehört ein **externer ADC**
+> an SPI oder I²C.
+
+➜ **Das ist dasselbe Muster wie bei den MB/s auf der SD-Kartenverpackung
+(`component-catalog.md`): Die beworbene Zahl beschreibt die Schnittstelle, nicht das
+Ergebnis.** Die Frage im Entwurf lautet nicht «wie viele Bit hat der Wandler», sondern
+«wie viele davon sind Signal».
+
+### Die Kanalzuordnung wechselt mit dem Gehäuse
+
+| Chip | Nutzereingänge | Temperatursensor |
+|------|----------------|------------------|
+| RP2040, RP2350A (QFN-60) | Eingang 0–3 = **GPIO 26–29** | Eingang **4** |
+| RP2350B (QFN-80) | Eingang 0–7 = **GPIO 40–47** | Eingang **8** |
+
+⚠️ Code, der den Temperatursensor fest auf Eingang 4 legt, misst auf einem RP2350B einen
+Analogeingang. Kein Fehler, nur ein falscher Wert.
+
+Zwei Dinge, die dabei leicht untergehen: `adc_gpio_init()` muss den Pin **hochohmig**
+machen (Pull-ups aus), und der Temperatursensor braucht ein ausdrückliches
+`adc_set_temp_sensor_enabled(true)` – ohne das liefert er nichts Sinnvolles.
+
+---
+
+## GPIO-Pads am Mikrocontroller
+
+Die Treiberstärken sind dieselbe Leiter wie beim RP1 des Pi 5 (`rp1-gpio.md`):
+
+| Stufe | 2 mA | 4 mA | 8 mA | 12 mA |
+|-------|------|------|------|-------|
+
+➜ **Der RP2040, der RP2350 und der RP1 teilen sich diese Staffelung** – sichtbarer Beleg
+der gemeinsamen Herkunft. Zur Einordnung gegenüber den älteren SoCs: Pi 1/2/3 gehen bis
+16 mA, der **Pi 4 nur bis 8 mA** (`hardware-specs.md`).
+
+Drei Eigenheiten, die im Entwurf zählen:
+
+| Merkmal | Wirkung |
+|---------|---------|
+| 🔴 **Beide Pulls gleichzeitig** | Auf dem RP2040 ist das **kein** stärkerer Pull, sondern **«bus keep»**: ein schwaches Halten des *aktuellen* Pegels. Wer beides setzt in der Annahme, es addiere sich, bekommt etwas völlig anderes |
+| **Schmitt-Trigger** | Auf allen GPIOs **voreingestellt an**. Abschalten verkürzt die Eingangsverzögerung minimal, macht Messwerte bei langsamen Flanken aber unzuverlässig |
+| **Flankensteilheit** | Begrenzbar (`slow`/`fast`). Die langsame Stufe senkt die Störabstrahlung – relevant, sobald ein Funkmodul oder ein GPS-Empfänger im selben Gehäuse sitzt (`camera.md`) |
+
+---
+
+## Errata, die man als Fehler im eigenen Code sucht
+
+Diese Hardwarefehler äussern sich als plausible Software-Symptome. Wer sie nicht kennt,
+sucht sehr lange an der falschen Stelle.
+
+| Errata | Symptom | Umgang |
+|--------|---------|--------|
+| 🔴 **RP2040-E13** | Nach dem Abbruch eines DMA-Kanals kommt ein **Abschluss-Interrupt, obwohl nichts abgeschlossen wurde** | IRQ für den Kanal vor dem Abbruch abschalten, danach quittieren und wieder einschalten |
+| **RP2350-E5** | Ein abgebrochener DMA-Kanal **löst sich selbst erneut aus** | Vor dem Abbruch die Enable-Bits des Kanals **und aller verketteten Kanäle** löschen |
+| 🔴 **RP2040-E1** | `watchdog_get_time_remaining_*` liefert **den zuletzt gesetzten Wert statt der Restzeit** | Auf dem RP2040 nicht zur Laufzeitüberwachung verwenden; ausserdem Höchstdauer 8388 ms |
+| **RP2350-E2** | Schreibzugriffe auf SIO-Register oberhalb +0x180 **überlagern die Spinlocks** und geben sie unbeabsichtigt frei | Das SDK weicht auf atomare Speicherzugriffe aus – bei eigenem Registerzugriff selbst bedenken |
+| **RP2350-E11** | `xip_cache_clean_all()` **verwirft nebenbei den gesamten Cache**; der nächste Zugriff auf jede Zeile geht ins externe Medium | `xip_cache_clean_range()` verwenden, wenn der Cache warm bleiben soll |
+| **RP2040-E10** | Das BADWRITE-Flag des Ringoszillators ist **unzuverlässig** | Nicht als Erfolgsprüfung eines ROSC-Schreibzugriffs auswerten |
+
+➜ **Die gemeinsame Lehre: Ein Symptom, das «unmöglich» aussieht, ist auf einem
+Mikrocontroller häufiger ein bekanntes Errata als ein eigener Denkfehler.** Der erste Griff
+bei unerklärlichem Verhalten gehört ins Errata-Kapitel des jeweiligen Datenblatts – nicht in
+den nächsten Debug-Durchlauf.
+
+---
+
+## Flash zur Laufzeit beschreiben
+
+Ein Pico führt seinen Code **aus dem Flash heraus** aus (XIP, Execute In Place). Daraus
+folgt die zentrale Regel:
+
+> 🔴 **Wer Flash löscht oder programmiert, sägt an dem Ast, auf dem der Code sitzt.**
+> Während der Operation ist der Flash für Befehlsabrufe nicht verfügbar. Läuft in dieser
+> Zeit ein Interrupt-Handler aus dem Flash oder führt der zweite Kern Flash-Code aus,
+> stürzt das Gerät ab.
+
+**Die drei Vorkehrungen:**
+
+1. **`flash_safe_execute()`** benutzen – es schaltet Interrupts ab und stimmt sich mit dem
+   zweiten Kern ab.
+2. Bei eigener Absicherung: **Interrupts aus**, wenn Handler oder Vektortabelle im Flash
+   liegen.
+3. Den anderen Kern anhalten oder in RAM-Code parken.
+
+**Die Geometrie ist nicht verhandelbar:**
+
+| Operation | Ausrichtung und Vielfaches |
+|-----------|----------------------------|
+| Löschen | **4096 Byte** (ein Sektor) |
+| Programmieren | **256 Byte** (eine Seite) |
+
+> ⚠️ **Programmieren setzt Bits nur von 1 auf 0.** Der Weg zurück führt ausschliesslich
+> über das Löschen des **ganzen Sektors**. Wer einen Zähler oder ein Konfigurationsfeld
+> «einfach überschreibt», bekommt das UND aus altem und neuem Wert – ein Fehlerbild, das
+> wie ein Speicherfehler aussieht und keiner ist.
+
+### Wenn Flash und PSRAM zusammenkommen
+
+Der XIP-Cache weiss nichts von seriellen Flash-Operationen. Die verlässliche Reihenfolge:
+
+```
+1. Cache vollständig zurückschreiben   (xip_cache_clean_all)
+2. Flash löschen und programmieren
+3. Cache vollständig verwerfen          (xip_cache_invalidate_all)
+```
+
+➜ **Das Zurückschreiben vor dem Verwerfen ist der Schritt, den man auslässt und dann
+bereut:** Ohne ihn gehen noch nicht geschriebene PSRAM-Daten beim Verwerfen verloren. Auf
+dem RP2040 entfällt er – dessen XIP-Cache ist reiner Lesecache.
+
+### Seriennummer ohne eigene Verwaltung
+
+`flash_get_unique_id()` liest die 64-Bit-Kennung des Flash-Bausteins. Da Chip und
+Mikrocontroller fest zusammengehören, ist das **eine eindeutige Kennung der Platine** –
+das Gegenstück zur Seriennummer aus dem OTP auf der Linux-Seite
+(`setup-provisioning.md`).
+
+---
+
+## Stromsparen – und warum der Debugger es verhindert
+
+Der RP2350 beantwortet das 180-µA-Problem des RP2040 (siehe oben) auf dem Chip selbst:
+Der **powman**-Block hält einen Always-On-Timer am Laufen und schaltet einzelne
+Leistungsbereiche ab.
+
+| Abschaltbarer Bereich | Inhalt |
+|-----------------------|--------|
+| Switched Core | Prozessoren, Busfabric, Peripherie |
+| XIP-Cache | 2 × 8 kB |
+| SRAM Bank 0 | untere 256 kB |
+| SRAM Bank 1 | obere 256 kB plus Scratch X/Y |
+
+Geweckt wird über den **Alarm des AON-Timers** oder über **bis zu vier GPIO-Quellen**
+(flanken- oder pegelgesteuert, aktiv high oder low).
+
+➜ **Das verschiebt die Antwort aus der Schaltung in die Firmware.** Beim RP2040 lautete die
+Empfehlung, das System extern abzuschalten; der RP2350 kann Zustand in einer SRAM-Bank
+behalten, während alles andere stromlos ist. Für batteriebetriebene Aufbauten ist das der
+gewichtigere Unterschied zwischen den Generationen – deutlich mehr als die 17 MHz mehr Takt.
+
+### 🔴 Die Falle, die jede Messung ruiniert
+
+> 🔴 **Mit angeschlossenem Debugger schläft powman nie ein.** Ein angehängter Debugger setzt
+> das Signal `pwrupreq` – und OpenOCD löscht es beim Beenden **nicht** wieder. Ab dem ersten
+> Anstecken bleibt der Chip wach, auch nachdem das Debug-Werkzeug längst zu ist.
+
+Der Ausweg ist `powman_set_debug_power_request_ignored(true)`. Zwei Konsequenzen:
+
+- **Strommessungen sind mit angeschlossenem Debug Probe wertlos**, solange das nicht gesetzt
+  ist. Wer den Ruhestrom eines Aufbaus beurteilen will, misst ohne Debugger – oder
+  wundert sich über Werte, die um Grössenordnungen danebenliegen.
+- Wird der Switched Core mit angeschlossenem Debugger abgeschaltet, **bricht der Debugger
+  ab** – die Prozessoren sind dann stromlos. Das ist kein Defekt.
+
+### Zeitquellen des AON-Timers
+
+| Quelle | Wofür |
+|--------|-------|
+| **LPOSC** (~32 kHz) | Standard; Kalibrierwert kommt aus dem OTP |
+| **XOSC** | genauer, aber teurer im Verbrauch |
+| **GPIO, 1 kHz** | externer Takt (nur GPIO 12, 14, 20, 22) |
+| **GPIO, 1 Hz** | **Sekundenimpuls z.B. eines GPS-Empfängers** (nur GPIO 12, 14, 20, 22) |
+
+➜ **Der 1-Hz-Eingang ist der Weg zu einer Uhr, die ohne Netz genau bleibt.** Die
+Millisekunden kommen weiter aus LPOSC oder XOSC, die Sekunden vom GPS-PPS. Für
+Feldmesstechnik mit Zeitstempeln ist das die saubere Lösung – dort allerdings mit dem
+Störungshinweis aus `camera.md` im Hinterkopf, falls im selben Aufbau eine Kamera läuft.
+
+---
+
 ## Weitere Ressourcen
 
 - [Microcontrollers – offizielle Dokumentation](https://www.raspberrypi.com/documentation/microcontrollers/)
+- [Raspberry Pi Pico C/C++ SDK – API-Dokumentation](https://www.raspberrypi.com/documentation/pico-sdk/) – die Funktionsreferenz selbst; hier stehen nur die Entwurfsfolgen
 - [Debug Probe](https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html)
 - [Raspberry Pi 3-pin Debug Connector Specification](https://datasheets.raspberrypi.com/debug/debug-connector-specification.pdf)
 - [`debugprobe`](https://github.com/raspberrypi/debugprobe) – Firmware, auch für einen Pico als Probe
