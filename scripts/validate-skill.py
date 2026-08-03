@@ -3,7 +3,7 @@
 
 Prüfungen:
   1. Manifest ist wohlgeformt und alle Quelldateien existieren
-  2. SKILL.md hat gültiges Frontmatter (name, description)
+  2. SKILL.md hat gültiges Frontmatter (name, description inkl. Längenlimit)
   3. Alle in SKILL.md referenzierten Skill-Pfade sind im Manifest abgedeckt
   4. Das eingecheckte raspberry-pi-ai.skill entspricht den Quelldateien
   5. Relative Links loesen auch im Paket-Layout auf (references/ ist flach)
@@ -28,6 +28,8 @@ SKILL_NAME = "raspberry-pi-ai"
 MANIFEST = ROOT / "skill-manifest.txt"
 ARCHIVE = ROOT / f"{SKILL_NAME}.skill"
 MOUNT_PREFIX = f"/mnt/skills/user/{SKILL_NAME}/"
+# Obergrenze der Skill-Plattform für das Frontmatter-Feld 'description'.
+DESCRIPTION_MAX_CHARS = 1024
 
 errors: list[str] = []
 notes: list[str] = []
@@ -93,8 +95,15 @@ def check_frontmatter() -> None:
 
     if not description:
         fail("SKILL.md: Frontmatter-Feld 'description' fehlt.")
-    elif len(description.group(1).strip()) < 40:
-        fail("SKILL.md: 'description' ist zu kurz, um den Skill zuverlässig auszulösen.")
+    else:
+        length = len(description.group(1).strip())
+        if length < 40:
+            fail("SKILL.md: 'description' ist zu kurz, um den Skill zuverlässig auszulösen.")
+        elif length > DESCRIPTION_MAX_CHARS:
+            fail(
+                f"SKILL.md: 'description' hat {length} Zeichen, erlaubt sind höchstens "
+                f"{DESCRIPTION_MAX_CHARS}. Claude weist den Upload sonst ab."
+            )
 
 
 def check_skill_references(mapping: dict[str, str]) -> None:

@@ -262,7 +262,7 @@ python3 scripts/validate-skill.py
 Checks:
 
 1. The manifest is well-formed and every source file exists
-2. `SKILL.md` has valid frontmatter (`name`, `description`)
+2. `SKILL.md` has valid frontmatter (`name`, `description` — max. 1024 characters, the platform limit)
 3. Every skill path referenced in `SKILL.md` is covered by the manifest
 4. The committed `raspberry-pi-ai.skill` matches the source files
 5. No dead relative links in any Markdown document
