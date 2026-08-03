@@ -279,6 +279,13 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - Konfigurationswert im Flash «einfach überschrieben» → Programmieren setzt Bits nur **1 → 0**; ohne Sektorlöschung entsteht das UND aus alt und neu
 - Flash zur Laufzeit beschreiben stürzt ab → der Code läuft **aus dem Flash** (XIP); `flash_safe_execute()` verwenden, Interrupts abschalten
 - Ruhestrom des Pico 2 misst sich absurd hoch → **mit angeschlossenem Debugger schläft powman nie**; OpenOCD löscht `pwrupreq` nicht (`powman_set_debug_power_request_ignored`)
+- Pico-1-Entwurf auf den Pico 2 portiert, Laufzeit wird schlechter → **im Dormant-Modus zieht der Pico 2 rund das Dreifache** (3,3 mA gegen 0,95 mA); der Gewinn steckt allein im **Pstate**
+- Ruhestrom bleibt trotz Pstate hoch → ungenutzte Pins lecken (`low_power_set_pins_low_leakage_exclude_mask`), und Speisung über **VSYS statt 3V3 kostet fast das Dreifache**
+- Variablen sind nach dem Aufwachen aus dem Pstate weg → **Pstate ist ein Neustart**, nicht ein Schlaf; `crt0` überschreibt alles ohne `__persistent_data`
+- Zeitgesteuertes Dormant auf dem **RP2040** schlägt fehl → dort braucht der AON-Timer eine **externe Taktquelle** am GPIO (`low_power_set_external_clock_source`)
+- Eigene Daten über die Inter-Core-FIFOs geschickt → die sind vom SDK (Kernstart, Lockout) und von FreeRTOS SMP belegt; `queue` aus `pico_util` nehmen. Tiefe **8 auf dem RP2040, nur 4 auf dem RP2350**
+- LED-Code soll auf Pico *und* Pico W laufen → **`pico_status_led`** statt eigener GPIO-Fallunterscheidung
+- Binary unerwartet gross bei Zeitfunktionen → auf dem RP2040 die `_calendar()`-Varianten nehmen, auf dem RP2350 die ohne; sonst kommt `localtime_r` bzw. `mktime` mit
 - `lspci` zeigt gar nichts, `dmesg` meldet «Link Down» → Link-Training gescheitert; FFC-Richtung, ZIF-Konnektor, Kontakte unter Lupe prüfen
 - 7B-Modell auf der CPU «zu langsam» → unter 3B bleiben und quantisieren; mehr RAM löst es nicht, der Engpass ist die Rechenkapazität
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`

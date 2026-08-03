@@ -27,6 +27,7 @@ Quelle: **Offizielle Raspberry-Pi-Dokumentation, «Microcontrollers»**
 11. [Errata, die man als Fehler im eigenen Code sucht](#errata-die-man-als-fehler-im-eigenen-code-sucht)
 12. [Flash zur Laufzeit beschreiben](#flash-zur-laufzeit-beschreiben)
 13. [Stromsparen – und warum der Debugger es verhindert](#stromsparen--und-warum-der-debugger-es-verhindert)
+14. [Probleme, die das SDK bereits gelöst hat](#probleme-die-das-sdk-bereits-gelöst-hat)
 
 ---
 
@@ -438,13 +439,30 @@ Aufgabenteilung folgt aus den Grenzen beider Seiten:
 | Sensorik ausserhalb 0–70 °C | **Pico** | die Umgebungsgrenze des Pi (`mechanical.md`) |
 | Weiterlaufen bei abruptem Stromverlust | **Pico** | kein Dateisystem, das korrumpieren kann |
 
-**Verbindung:** UART (GPIO 14/15 am Pi, GP0/GP1 am Pico – gekreuzt, GND gemeinsam) oder
-USB. Beim USB-Weg meldet sich der Pico als CDC-Gerät; unter Linux erscheint er als
-`/dev/ttyACM*`.
+### Drei Wege, die beiden zu verbinden
 
-> ⚠️ **Zwei Systeme, zwei Netzteile, eine Masse.** Für die UART-Verbindung zwischen Pi und
-> Pico gilt dieselbe Regel wie für den Debug Probe: **gemeinsame Masse zuerst.** Und der Pi
-> spricht 3,3 V – ein 5-V-Seriellkabel beschädigt den Anschluss (`rp1-gpio.md`).
+| Weg | Wie es sich am Pi darstellt | Wofür |
+|-----|-----------------------------|-------|
+| **UART** | `/dev/serial0` bzw. der Debug-Header | Einfachster Fall; GPIO 14/15 am Pi, GP0/GP1 am Pico, **gekreuzt** |
+| **USB** | `/dev/ttyACM*` (CDC-Gerät) | Strom und Daten über ein Kabel; der Pico hängt nicht an der GPIO-Leiste |
+| **I²C – der Pico als Slave** | ein **Busteilnehmer wie jeder Sensor** | Der elegante Weg, wenn am Pi schon ein I²C-Bus liegt |
+
+➜ **Der I²C-Slave-Weg ist der architektonisch sauberste und wird am seltensten gesehen.**
+Der Pico meldet sich unter einer eigenen 7-Bit-Adresse und verhält sich für den Pi wie ein
+gewöhnliches Peripheriegerät – auslesbar mit `i2cdetect`, ansprechbar aus `smbus2`, ohne
+eigenes Protokoll über eine serielle Leitung. Der Pi bleibt Master und braucht keine
+Kenntnis davon, dass hinter der Adresse ein zweiter Rechner steckt.
+
+> 🔴 **Der Slave-Handler läuft im Interrupt und muss in unter 25 µs zurückkehren**
+> (bei 400 kbit/s). Rechnen, Blockieren oder Loggen gehört nicht hinein – der Handler
+> nimmt Bytes an oder gibt Bytes heraus, alles andere macht die Hauptschleife. Grosse
+> Übertragungen werden über mehrere Aufrufe verteilt.
+
+> ⚠️ **Zwei Systeme, zwei Netzteile, eine Masse.** Für jede dieser Verbindungen gilt
+> dieselbe Regel wie für den Debug Probe: **gemeinsame Masse zuerst.** Und der Pi spricht
+> 3,3 V – ein 5-V-Seriellkabel beschädigt den Anschluss (`rp1-gpio.md`). Beim I²C-Weg
+> zusätzlich: **die Pull-ups gehören genau einmal in den Bus**, nicht auf beide Seiten
+> (`interfaces.md`).
 
 ➜ **Der Pi 5 verwischt die Grenze ein Stück:** Sein RP1 bringt einen **PIO-Block mit vier
 State Machines** mit – denselben programmierbaren I/O-Baustein wie der RP2040. Zeitkritische
@@ -609,9 +627,54 @@ das Gegenstück zur Seriennummer aus dem OTP auf der Linux-Seite
 
 ## Stromsparen – und warum der Debugger es verhindert
 
-Der RP2350 beantwortet das 180-µA-Problem des RP2040 (siehe oben) auf dem Chip selbst:
-Der **powman**-Block hält einen Always-On-Timer am Laufen und schaltet einzelne
-Leistungsbereiche ab.
+Es gibt **drei** Stufen, nicht zwei – und die gemessenen Werte widersprechen der Intuition
+an einer entscheidenden Stelle.
+
+| Stufe | Was passiert |
+|-------|--------------|
+| **Sleep** | Ausgewählte Takte laufen weiter. Aufwachen durch **jeden** Interrupt, dessen Takt aktiv bleibt |
+| **Dormant** | XOSC und ROSC stehen. Aufwachen **nur** über AON-Timer oder GPIO-Interrupt; USB wird ab- und danach wieder angeschaltet |
+| **Pstate** (nur RP2350) | Ganze Leistungsbereiche sind stromlos. Aufwachen **nur** über AON-Timer oder GPIO |
+
+### 🔴 Die gemessenen Werte – und die Überraschung
+
+Offizielle Messwerte an Pico-Boards, einmal aus **VSYS** (5,2 V) und einmal direkt aus
+**3V3** gespeist:
+
+| Modus | Pico (VSYS) | Pico 2 (VSYS) | Pico (3V3) | Pico 2 (3V3) |
+|-------|-------------|---------------|------------|--------------|
+| Sleep | 7,3 mA | 5,9 mA | 8,7 mA | 6,9 mA |
+| **Dormant** | **0,95 mA** | 🔴 **3,3 mA** | **1,2 mA** | 🔴 **3,7 mA** |
+| Pstate (SRAM0 an) | – | 0,25 mA | – | 0,14 mA |
+| Pstate (XIP-SRAM an) | – | 0,22 mA | – | 0,10 mA |
+| **Pstate (alles aus)** | – | **0,18 mA** | – | **0,08 mA** |
+
+> 🔴 **Im Dormant-Modus zieht der Pico 2 rund das Dreifache des Pico 1.** Der Grund ist
+> kein Defekt: Der RP2350 lässt `clk_ref` aus dem LPOSC weiterlaufen, damit der Timer
+> weiterzählt, während der RP2040 nur `clk_rtc` aus dem XOSC betreibt.
+>
+> ➜ **Wer einen Pico-1-Entwurf auf den Pico 2 überträgt und beim Dormant-Modus bleibt,
+> verschlechtert die Laufzeit um Faktor drei.** Der Gewinn liegt ausschliesslich im
+> **Pstate** – dort ist der Pico 2 gegenüber dem besten Wert des Pico 1 um mehr als
+> **Faktor zehn** besser. Die Generationsverbesserung ist also kein Automatismus, sondern
+> hängt daran, dass man die neue Stufe auch benutzt.
+
+Das korrigiert die Faustregel weiter oben: Der RP2350 beantwortet das 180-µA-Problem –
+**aber nur über Pstate**, nicht über den Schlafmodus, den man aus dem RP2040-Code
+mitbringt.
+
+### ⚠️ Wie gespeist wird, kostet mehr als was schläft
+
+Bei den kleinen Strömen dreht sich das Verhältnis um: **Pstate aus 3V3 zieht 0,40 mW,
+aus VSYS 1,10 mW.** Der Aufwärtsregler auf dem Board hat seinen eigenen Ruheverbrauch, der
+im Tiefschlaf plötzlich den grösseren Anteil ausmacht.
+
+➜ **Für ein batteriebetriebenes Produkt ist die Speisungsarchitektur damit wichtiger als
+die letzte Sparstufe der Firmware.** Wer aus zwei Zellen über den VSYS-Eingang speist,
+verschenkt den grössten Teil dessen, was Pstate einbringt. Auf einer eigenen Platine
+(`Minimal Viable Board`, siehe oben) speist man 3,3 V direkt.
+
+### Was im Pstate abgeschaltet wird
 
 | Abschaltbarer Bereich | Inhalt |
 |-----------------------|--------|
@@ -620,13 +683,35 @@ Leistungsbereiche ab.
 | SRAM Bank 0 | untere 256 kB |
 | SRAM Bank 1 | obere 256 kB plus Scratch X/Y |
 
-Geweckt wird über den **Alarm des AON-Timers** oder über **bis zu vier GPIO-Quellen**
-(flanken- oder pegelgesteuert, aktiv high oder low).
+### 🔴 Pstate ist kein Schlaf – es ist ein Neustart
 
-➜ **Das verschiebt die Antwort aus der Schaltung in die Firmware.** Beim RP2040 lautete die
-Empfehlung, das System extern abzuschalten; der RP2350 kann Zustand in einer SRAM-Bank
-behalten, während alles andere stromlos ist. Für batteriebetriebene Aufbauten ist das der
-gewichtigere Unterschied zwischen den Generationen – deutlich mehr als die 17 MHz mehr Takt.
+> 🔴 **Beim Aufwachen aus dem Pstate läuft das Programm wieder von vorn.** `crt0`
+> überschreibt sämtliche nicht-persistenten Daten; ein `resume_func` wird während der
+> Laufzeitinitialisierung aufgerufen und bekommt den benutzten Pstate übergeben.
+
+Das ist ein anderes mentales Modell als «schlafen und weitermachen». Wer Zustand über den
+Tiefschlaf retten will, markiert ihn ausdrücklich:
+
+```c
+__persistent_data static uint32_t messwertzaehler;
+```
+
+Der Ablageort wird über die CMake-Funktion `pico_set_persistent_data_loc` gewählt –
+**XIP-SRAM oder Haupt-SRAM**. Die Messwerte oben zeigen, was das kostet: XIP-SRAM
+anzulassen ist mit 0,10 mA billiger als SRAM Bank 0 mit 0,14 mA.
+
+⚠️ Die **letzten beiden powman-Scratch-Register** werden von den Pstate-Funktionen
+überschrieben; die übrigen bleiben für eigene persistente Daten nutzbar.
+
+### Zwei Dinge, die den gemessenen Wert verderben
+
+| Punkt | Wirkung |
+|-------|---------|
+| 🔴 **Pins lecken** | Ungenutzte GPIOs mit aktiven Pulls oder Eingangspuffern ziehen messbar Strom. `low_power_set_pins_low_leakage_exclude_mask()` schaltet Pulls und Eingänge ab und setzt alles auf Eingang – ohne diesen Schritt sind die Tabellenwerte oben nicht erreichbar |
+| 🔴 **RP2040: zeitgesteuertes Dormant braucht einen externen Takt** | Für Dormant mit AON-Timer muss auf dem RP2040 eine **externe Taktquelle** an einem GPIO anliegen (`low_power_set_external_clock_source`). Ohne sie schlägt der Aufruf fehl. Nur der Weg über `DORMANT_CLOCK_SOURCE_RTC` kommt ohne aus – dann bleibt aber der XOSC an |
+
+➜ **Für reines GPIO-Aufwachen ist `DORMANT_CLOCK_SOURCE_ROSC` die sparsamste Wahl** – ein
+GPIO-Interrupt braucht überhaupt keinen Takt.
 
 ### 🔴 Die Falle, die jede Messung ruiniert
 
@@ -655,6 +740,73 @@ Der Ausweg ist `powman_set_debug_power_request_ignored(true)`. Zwei Konsequenzen
 Millisekunden kommen weiter aus LPOSC oder XOSC, die Sekunden vom GPS-PPS. Für
 Feldmesstechnik mit Zeitstempeln ist das die saubere Lösung – dort allerdings mit dem
 Störungshinweis aus `camera.md` im Hinterkopf, falls im selben Aufbau eine Kamera läuft.
+
+---
+
+## Probleme, die das SDK bereits gelöst hat
+
+Mehrere der Fallen aus dieser Referenz haben eine fertige Antwort in einer
+SDK-Bibliothek. Wer sie kennt, schreibt den Workaround nicht selbst.
+
+| Problem | Antwort |
+|---------|---------|
+| 🔴 **LED an GP25 oder WL_GPIO0?** (siehe oben) | **`pico_status_led`** – `status_led_init()` und `status_led_set_state()` finden die richtige LED selbst, egal ob einfarbig, am Funkchip oder als WS2812. Damit läuft derselbe Quelltext auf Pico, Pico W und Pico 2 W |
+| **Seriennummer der Platine** | **`pico_unique_id`** liest sie **vor `main()`** und legt sie sicher ab – ohne die Flash-Klippen aus dem Abschnitt oben. Quelle ist der **Flash-Baustein (RP2040)** bzw. das **OTP (RP2350)** |
+| **BOOTSEL-Taste unerreichbar im Gehäuse** | **`pico_bootsel_via_double_reset`** – zweimaliges schnelles Zurücksetzen führt in den BOOTSEL-Modus |
+| **Neu flashen ohne Anfassen** | **`pico_usb_reset`** – Rücksetzen über die USB-Schnittstelle; bei `pico_stdio_usb` ohnehin enthalten |
+| **Daten zwischen den Kernen** | **`queue`** aus `pico_util` – multicore- und interruptsicher, **nicht** die FIFOs (siehe unten) |
+
+### 🔴 Die Inter-Core-FIFOs gehören nicht dir
+
+> 🔴 **Die beiden FIFOs zwischen den Kernen sind eine knappe, vom SDK selbst belegte
+> Ressource.** Sie werden für den Start von Kern 1 und für die Lockout-Funktionen gebraucht,
+> und ein RTOS wie FreeRTOS SMP beansprucht sie exklusiv. Wer eigene Daten darüber schickt,
+> kollidiert früher oder später mit einem dieser Nutzer.
+
+Dazu ein Portierungsdetail: Die FIFOs sind **8 Einträge tief auf dem RP2040, aber nur 4 auf
+dem RP2350**. Code, der sich auf die Tiefe verlässt, blockiert auf dem Pico 2 früher.
+
+➜ **Für den Datenaustausch zwischen den Kernen ist `queue` die richtige Wahl** – sie deckt
+praktisch alle Fälle ab und kollidiert mit nichts.
+
+### Zwei Kerne und Flash gleichzeitig
+
+Der Abschnitt zum Flash-Schreiben oben nennt `flash_safe_execute()`. Was dort nicht steht:
+**Die Absicherung funktioniert nicht in jeder Umgebung.**
+
+| Situation | Sicher? |
+|-----------|---------|
+| Ein Kern, Interrupts aus | ✅ |
+| `pico_multicore` **mit** `flash_safe_execute_core_init()` auf dem anderen Kern | ✅ |
+| `pico_multicore` **ohne** diesen Aufruf | 🔴 nein – das SDK weiss nicht, was der andere Kern tut |
+| FreeRTOS SMP mit `configNUM_CORES=1` | 🔴 nein |
+| FreeRTOS ohne SMP, aber mit `pico_multicore` | 🔴 nein |
+
+Für die unsicheren Fälle gibt es die ausdrückliche Zusicherung
+`PICO_FLASH_ASSUME_CORE0_SAFE=1` bzw. `..._CORE1_SAFE=1` – eine Aussage des Entwicklers,
+dass der betreffende Kern nie aus dem Flash arbeitet.
+
+⚠️ Der Mechanismus dahinter (`multicore_lockout`) **belegt die Inter-Core-FIFOs**. Wer
+`multicore_lockout_victim_init()` aufruft, kann sie danach für nichts anderes mehr nutzen –
+siehe oben.
+
+### Der Speicherfresser im Zeitcode
+
+Der AON-Timer bietet zwei Sorten von Funktionen: mit **Kalenderdatum** (`struct tm`) und mit
+**linearer Zeit** (`struct timespec`). Welche billiger ist, hängt vom Chip ab:
+
+| Chip | Sparsame Variante | Weil |
+|------|-------------------|------|
+| **RP2040** | die `_calendar()`-Funktionen | intern liegt eine Kalenderuhr (RTC); die lineare Variante zieht `localtime_r` aus der C-Bibliothek nach |
+| **RP2350** | die Funktionen **ohne** `_calendar` | intern liegt ein linearer Zähler; die Kalendervariante zieht `mktime` nach |
+
+> ⚠️ **`localtime_r` und `mktime` vergrössern das Binary erheblich.** Auf einem Chip mit
+> 2 MB Flash fällt das nicht auf, auf einem Entwurf mit knappem Speicher sehr wohl. Beide
+> sind als schwache Symbole deklariert und können durch eine schlankere eigene
+> Implementierung ersetzt werden.
+
+➜ **Die Regel: die Zeitdarstellung nehmen, die der Chip ohnehin führt.** Das ist eine der
+wenigen Stellen, an denen dieselbe API auf beiden Generationen unterschiedlich teuer ist.
 
 ---
 
