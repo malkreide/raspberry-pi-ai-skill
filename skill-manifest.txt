@@ -27,6 +27,7 @@ references/rp1-gpio.md=docs/rp1-gpio.md
 references/interfaces.md=docs/interfaces.md
 references/compute-module.md=docs/compute-module.md
 references/accessories.md=docs/accessories.md
+references/microcontrollers.md=docs/microcontrollers.md
 references/edge-ai.md=docs/edge-ai.md
 references/component-catalog.md=docs/component-catalog.md
 

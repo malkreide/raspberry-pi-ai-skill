@@ -90,6 +90,7 @@ The skill is automatically activated when you say things like:
 - **[interfaces.md](docs/interfaces.md)** – SPI buses and the 3-wire trap, USB power budget and hub quirks, DPI parallel display
 - **[compute-module.md](docs/compute-module.md)** – Compute Modules CM1-CM5, IO Boards, eMMC flashing, carrier board design, cameras on CM
 - **[accessories.md](docs/accessories.md)** – GPIO map of the official HATs, Build HAT (8 V supply, no Trixie support yet), Sense HAT, audio boards, TV HAT, Monitor power trap, USB hub and Flash Drive
+- **[microcontrollers.md](docs/microcontrollers.md)** – RP2040 vs RP2350 and the migration traps, Pico variants, the Pico W pin-sharing gotchas, RM2 and regional radio approval, Debug Probe (SWD, UART, RTT), running a Pi and a Pico together
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite setup and best practices
 - **[component-catalog.md](docs/component-catalog.md)** – Recommended components with suppliers
 

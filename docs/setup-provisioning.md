@@ -30,7 +30,7 @@ Grundlage für den Pre-Flight-Check in `SKILL.md`.
 | **Raspberry Pi Zero** | Kleiner, weniger USB, geringerer Verbrauch | teilweise – Besonderheiten unten |
 | **Keyboard-Computer** (400, 500, 500+) | Rechner im Tastaturgehäuse | ✅ `hardware-specs.md`, `configuration.md` |
 | **Compute Module** | System-on-Module für Industrie und Embedded | ✅ `compute-module.md` |
-| **Raspberry Pi Pico** | Mikrocontroller (RP2040 / RP2350), **kein Linux** | nur die Abgrenzung unten |
+| **Raspberry Pi Pico** | Mikrocontroller (RP2040 / RP2350), **kein Linux** | Abgrenzung unten, Details in `microcontrollers.md` |
 
 ### Pico oder Pi? Die Entscheidung vor allen anderen
 
@@ -45,7 +45,7 @@ Frage nicht «welches Modell», sondern **welche Gattung** – und sie fällt zu
 | **Deterministisches Timing**, harte Echtzeit | **Pico** |
 | Betrieb ausserhalb 0–70 °C | **Pico** (der Pi 5 ist nur dafür spezifiziert) |
 | Start in Millisekunden statt Sekunden | **Pico** |
-| Batteriebetrieb über Wochen | **Pico** |
+| Batteriebetrieb über Wochen | **Pico** – aber mit Abschaltung, nicht nur mit Schlafmodus ⚠️ |
 | Abrupte Stromtrennung ohne Herunterfahren | **Pico** – es gibt kein Dateisystem, das korrumpieren kann |
 
 ➜ **Die ergiebigste Bauform für anspruchsvolle Projekte ist oft beides:** ein Pi für
@@ -68,7 +68,20 @@ Beim Pico 2 heisst die bestückte Variante ausgeschrieben **«with headers»** s
 
 ⚠️ **Der Pico 2 ist keine reine Aufwertung.** Zwischen RP2040 und RP2350 gibt es
 Änderungen, die Beispielcode und **in manchen Fällen die Beschaltung** betreffen – wer
-Anleitungen für den Pico 1 auf einen Pico 2 überträgt, prüft beides.
+Anleitungen für den Pico 1 auf einen Pico 2 überträgt, prüft beides. Die konkreten Fallen
+(entfallener Hardware-Dividierer, andere Kernarchitektur, anderer BOOTSEL-Datenträgername,
+nicht austauschbare UF2-Dateien) stehen in [`microcontrollers.md`](microcontrollers.md).
+
+> ⚠️ **Zwei verbreitete Fehlannahmen, die hier ihren Ursprung haben:**
+>
+> - **«Der Pico schläft sich durch den Winter.»** Der RP2040 zieht **auch im Dormant-Modus
+>   typisch ~180 µA**. Für Laufzeiten über Monate ist die offizielle Empfehlung, das System
+>   **abzuschalten** statt es schlafen zu legen – das ist eine Schaltungs-, keine
+>   Firmware-Entscheidung.
+> - **«Der Pico hat doch einen Temperatursensor.»** Er ist unkalibriert und hängt an einer
+>   Referenzspannung, die der Chip selbst nicht bereitstellt.
+>
+> Beides in [`microcontrollers.md`](microcontrollers.md).
 
 ---
 
