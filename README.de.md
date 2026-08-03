@@ -89,6 +89,7 @@ Das Skill wird automatisch aktiviert bei:
 - **[interfaces.md](docs/interfaces.md)** – SPI-Busse und die 3-Draht-Falle, USB-Strombudget und Hub-Eigenheiten, DPI-Parallel-Display
 - **[compute-module.md](docs/compute-module.md)** – Compute Modules CM1–CM5, IO-Boards, eMMC beschreiben, Trägerboard-Entwurf, Kameras am CM
 - **[accessories.md](docs/accessories.md)** – GPIO-Landkarte der offiziellen HATs, Build HAT (8-V-Speisung, noch kein Trixie), Sense HAT, Audio-Boards, TV HAT, Stromfalle des Monitors, USB-Hub und Flash Drive
+- **[microcontrollers.md](docs/microcontrollers.md)** – RP2040 gegen RP2350 und die Umstiegsfallen, Pico-Varianten, geteilte Pins der Funkmodelle, RM2 und regionale Funkzulassung, Debug Probe (SWD, UART, RTT), Pi und Pico kombiniert
 - **[edge-ai.md](docs/edge-ai.md)** – Ollama, Hailo-8L, TFLite Setup und Best Practices
 - **[component-catalog.md](docs/component-catalog.md)** – Empfohlene Komponenten mit Bezugsquellen
 
