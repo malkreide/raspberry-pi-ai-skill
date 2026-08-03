@@ -766,6 +766,34 @@ Zeitraffer über `crontab -e`, etwa `* * * * * /home/<benutzer>/webcam.sh 2>&1`.
 4. **Netzteil:** Ein Kameramodul zieht zusätzlich **200–250 mA**. Bei knappem Netzteil ist
    die Kamera das Erste, was ausfällt – siehe auch `setup-provisioning.md`.
 
+### 🔴 GPS-Empfang bricht ein, sobald die Kamera läuft
+
+> 🔴 **Das Camera Module 3 kann Hochfrequenzstörungen auf einer Oberwelle des CSI-Takts
+> abstrahlen, die genau im GPS-L1-Band (1575 MHz) liegt.** In Aufbauten mit GPS-Empfänger
+> äussert sich das als schlechter Fix, springende Position oder Totalausfall der Ortung –
+> **nur, während die Kamera streamt**.
+
+Das ist eine der unangenehmsten Fehlerklassen überhaupt, weil sie zwei Baugruppen
+verbindet, die softwareseitig nichts miteinander zu tun haben. Der Verdacht kommt
+erfahrungsgemäss zuletzt.
+
+**Prüfung:** Satellitenzahl bzw. C/N₀ des Empfängers **mit und ohne laufende Kamera**
+vergleichen – bei sonst identischem Aufbau. Bricht der Wert beim Start von
+`rpicam-hello` ein, ist die Ursache gefunden.
+
+**Gegenmassnahmen, in dieser Reihenfolge:**
+
+1. **Abstand.** GPS-Antenne so weit wie möglich von Kamera und CSI-Kabel entfernen; das
+   FFC-Kabel nicht parallel zur Antennenzuleitung führen.
+2. **Schirmung.** Geschirmtes CSI-Kabel bzw. Masseblech zwischen Kabel und Antenne.
+3. **Anderes Kameramodul.** Betrifft die CSI-Taktrate des jeweiligen Sensors – ein anderes
+   Modul verschiebt die Oberwelle.
+
+➜ **Für Projekte, die Kamera und GPS kombinieren (Drohnen, Fahrzeugtechnik, Feldmesstechnik),
+gehört das in die Risikobetrachtung des Entwurfs**, nicht in die Fehlersuche. Der Test
+gegen einen realen Empfänger sollte früh im Prototyp stattfinden, solange die Antennenlage
+noch änderbar ist.
+
 ### Defektpixelkorrektur der HQ-Kamera
 
 Der `imx477`-Treiber aktiviert die sensorseitige Korrektur (DPC) voreingestellt:

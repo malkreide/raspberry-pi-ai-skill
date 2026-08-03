@@ -194,7 +194,7 @@ sudo systemctl disable ollama
 > |----------|-----|--------|---------|
 > | **AI Kit** (M.2 HAT+) | Hailo-8L | ✅ | ❌ – 🔴 nicht mehr in Produktion |
 > | **AI HAT+** | Hailo-8L / Hailo-8 | ✅ | ❌ |
-> | **AI HAT+ 2** | **Hailo-10H** | ✅ | ✅ |
+> | **AI HAT+ 2** | **Hailo-10H** + 8 GB eigener Speicher | ✅ | ✅ bis ~6 Mrd. Parameter |
 >
 > 🔴 **Nur das AI HAT+ 2 kann Sprachmodelle auf der NPU ausführen.** Das lässt sich später
 > nicht per Software nachrüsten – und es ist die Antwort auf den Zielkonflikt weiter unten,
@@ -210,7 +210,20 @@ auf Computer Vision.
 |------|------------------|---------|-----------|-------|
 | **Hailo-8L** | **13 TOPS** | AI Kit, AI HAT+ 13 TOPS | ~70 USD | Einzelnes Modell (z.B. nur Objekterkennung); Einstieg, Bildung |
 | **Hailo-8** | **26 TOPS** | AI HAT+ 26 TOPS | ~110 USD | **Mehrere Modelle parallel** (Erkennung + Pose + Tracking) auf hochauflösenden Strömen |
-| **Hailo-10H** | GenAI-fähig | AI HAT+ 2 | – | Zusätzlich Sprachmodelle (`hailo.md`) |
+| **Hailo-10H** | **40 TOPS (INT4)** | AI HAT+ 2 | – | Zusätzlich Sprachmodelle (`hailo.md`) |
+
+> 🔴 **Die 40 TOPS des Hailo-10H gelten bei INT4, nicht bei INT8.** Die 13 und 26 TOPS der
+> Hailo-8-Familie sind INT8-Werte. Wer die drei Zahlen nebeneinanderstellt, vergleicht
+> unterschiedliche Datentypen – der Sprung von 26 auf 40 ist **kein Faktor 1,5 bei gleicher
+> Genauigkeit**. Für Vision-Modelle in INT8 ist der Hailo-8 nicht automatisch der langsamere
+> Chip; der Gewinn des 10H liegt in **GenAI**, wo INT4 der übliche Datentyp ist.
+
+> ➜ **Das AI HAT+ 2 hat 8 GB eigenen Arbeitsspeicher auf dem HAT.** Das ist der Grund,
+> warum es Sprachmodelle ausführen kann und die Hailo-8-Familie nicht: Modellgewichte
+> liegen im Speicher des Beschleunigers, nicht im RAM des Pi. **Damit ist die
+> RAM-Ausstattung des Pi für die Modellgrösse nicht mehr massgeblich** – ein 4-GB-Pi 5 mit
+> AI HAT+ 2 führt grössere Modelle aus als ein 16-GB-Pi 5 ohne. Die Obergrenze liegt bei
+> rund **6 Milliarden Parametern**.
 
 > ⚠️ **Der Hailo-8L leistet 13 TOPS, nicht 26.** Die 26 TOPS gehören zum **Hailo-8**. Die
 > Verwechslung ist verbreitet, weil beide Chips im selben Formfaktor und unter demselben
@@ -466,6 +479,82 @@ PCIe frei.
 | Sprachmodelle auf der NPU | AI HAT+ 2 (Hailo-10H) |
 | Vorhandene Kamera weiterverwenden | AI HAT+ |
 | Mehrere Kameras an einem Gerät | AI HAT+ (die AI Camera beschleunigt nur sich selbst) |
+
+### In Betrieb nehmen
+
+```bash
+sudo apt update && sudo apt full-upgrade
+sudo apt install imx500-all          # Firmware, Beispielmodelle, Werkzeuge
+sudo reboot
+```
+
+Fertige Demos liegen danach unter `/usr/share/rpi-camera-assets/`:
+
+```bash
+rpicam-hello -t 0s --post-process-file /usr/share/rpi-camera-assets/imx500_mobilenet_ssd.json \
+             --viewfinder-width 1920 --viewfinder-height 1080 --framerate 30
+```
+
+> 🔴 **Der erste Start nach jedem Kaltstart dauert scheinbar ewig.** Das Netzwerk wird beim
+> Start **über CSI in den Sensor geladen** – je nach Modellgrösse sind das mehrere Sekunden
+> bis über eine Minute, in denen nichts passiert. Das sieht aus wie ein Hänger und ist
+> keiner.
+>
+> ```bash
+> rpicam-hello --verbose ...   # zeigt den Fortschrittsbalken des Firmware-Uploads
+> ```
+>
+> ➜ **Konsequenz für den Entwurf:** Ein Dienst, der die AI Camera nutzt, braucht eine
+> entsprechend grosszügige `TimeoutStartSec` in seiner systemd-Unit – und darf nicht mit
+> `Restart=on-failure` in eine Schleife laufen, weil er die Ladezeit für einen Fehler hält.
+
+### Eigene Modelle auf den IMX500 bringen
+
+Der IMX500 führt **keine gewöhnlichen `.tflite`- oder `.onnx`-Dateien** aus. Ein Modell muss
+durch eine dreistufige Werkzeugkette, an deren Ende eine **`.rpk`-Datei** steht.
+
+| Schritt | Werkzeug | Läuft auf |
+|---------|----------|-----------|
+| 1. Quantisieren (INT8) | **Edge-MDT / MCT** (Model Compression Toolkit) | Entwicklungsrechner (x86 üblich) |
+| 2. Konvertieren | **`imxconv-pt`** (PyTorch) / **`imxconv-tf`** (TensorFlow) | Entwicklungsrechner |
+| 3. Paketieren | **`imx500-package`** | 🔴 **Raspberry Pi** |
+
+```bash
+# Schritt 1+2 auf dem Entwicklungsrechner
+pip install edge-mdt[pt]            # PyTorch;  edge-mdt[tf] für TensorFlow
+# ... Modell mit MCT quantisieren und exportieren ...
+imxconv-pt -i <quantisiertes-modell> -o <ausgabeverzeichnis>
+```
+
+```bash
+# Schritt 3 auf dem Raspberry Pi
+sudo apt install imx500-tools
+imx500-package -i <pfad>/packerOut.zip -o <ausgabeverzeichnis>
+# → <ausgabeverzeichnis>/network.rpk
+```
+
+> 🔴 **Der Paketierungsschritt läuft nur auf einem Raspberry Pi.** Wer eine reine
+> x86-CI-Pipeline plant, stösst genau hier an die Wand – der Build braucht einen Pi als
+> Runner. Das ist eine Infrastrukturentscheidung und gehört in die Projektplanung, nicht in
+> die Fehlersuche kurz vor der Auslieferung.
+
+**Nützliche Option:**
+
+```bash
+imxconv-pt -i <modell> -o <ausgabe> --no-input-persistency
+```
+
+`--no-input-persistency` verzichtet darauf, den **Eingangstensor** mitzuliefern. Das spart
+Speicher im Beschleuniger – zum Preis, dass der Eingangstensor in den Metadaten nicht mehr
+zur Verfügung steht. **Für Produktivbetrieb meist richtig, für die Fehlersuche falsch:**
+ohne Eingangstensor lässt sich nicht mehr nachvollziehen, *was* das Modell gesehen hat, als
+es danebenlag.
+
+➜ **Die Werkzeugkette ist der eigentliche Preis der AI Camera.** Beim Hailo lässt sich ein
+Modell aus dem Model Zoo direkt laden; beim IMX500 steht zwischen Training und Gerät eine
+Quantisierung, die die Genauigkeit verändert. **Wer eigene Modelle einsetzt, plant eine
+Validierungsrunde nach der Quantisierung ein** – die INT8-Version ist nicht das Modell, das
+trainiert wurde.
 
 ---
 
