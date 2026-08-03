@@ -286,6 +286,12 @@ curl -s http://localhost:8000/hailo/v1/list    # hailo-ollama auf der NPU (AI HA
 - Eigene Daten über die Inter-Core-FIFOs geschickt → die sind vom SDK (Kernstart, Lockout) und von FreeRTOS SMP belegt; `queue` aus `pico_util` nehmen. Tiefe **8 auf dem RP2040, nur 4 auf dem RP2350**
 - LED-Code soll auf Pico *und* Pico W laufen → **`pico_status_led`** statt eigener GPIO-Fallunterscheidung
 - Binary unerwartet gross bei Zeitfunktionen → auf dem RP2040 die `_calendar()`-Varianten nehmen, auf dem RP2350 die ohne; sonst kommt `localtime_r` bzw. `mktime` mit
+- Pico W verbindet sich, aber Sockets schlagen fehl → **`CYW43_LINK_JOIN` heisst «am AP, aber ohne IP»**; bis `CYW43_LINK_UP` warten und `cyw43_tcpip_link_status()` statt `cyw43_wifi_link_status()` abfragen
+- WLAN am Pico W ist langsam oder instabil → `cyw43_arch_init()` startet mit **`CYW43_COUNTRY_WORLDWIDE`**; Zielland über `cyw43_arch_init_with_country()` setzen
+- Sporadische Abstürze im Netzwerkcode des Pico W → lwIP ist nicht threadsicher; Aufrufe mit `cyw43_arch_lwip_begin()`/`_end()` klammern (ausser aus lwIP-Callbacks)
+- Erste `printf`-Ausgaben über USB fehlen → der Host verbindet sich nach dem Programmstart; `PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS` setzen oder `stdio_usb_connected()` abfragen
+- Eigene Daten am Ende des Flash verschwinden nach dem Bluetooth-Pairing → **BTstack belegt die letzten zwei Flash-Sektoren** (`PICO_FLASH_BANK_STORAGE_OFFSET`)
+- RP2350 auf RISC-V umgeschaltet, `double`-Rechnung wird langsam → dort gibt es **keine optimierte Doppelgenauigkeit**; die DCP-Beschleunigung ist Arm-only
 - `lspci` zeigt gar nichts, `dmesg` meldet «Link Down» → Link-Training gescheitert; FFC-Richtung, ZIF-Konnektor, Kontakte unter Lupe prüfen
 - 7B-Modell auf der CPU «zu langsam» → unter 3B bleiben und quantisieren; mehr RAM löst es nicht, der Engpass ist die Rechenkapazität
 - Beschleuniger oder Adapter nach `full-upgrade` verschwunden → Kernelmodul passt nicht mehr; Header nachziehen und `dkms autoinstall`

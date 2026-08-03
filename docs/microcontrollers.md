@@ -27,7 +27,8 @@ Quelle: **Offizielle Raspberry-Pi-Dokumentation, «Microcontrollers»**
 11. [Errata, die man als Fehler im eigenen Code sucht](#errata-die-man-als-fehler-im-eigenen-code-sucht)
 12. [Flash zur Laufzeit beschreiben](#flash-zur-laufzeit-beschreiben)
 13. [Stromsparen – und warum der Debugger es verhindert](#stromsparen--und-warum-der-debugger-es-verhindert)
-14. [Probleme, die das SDK bereits gelöst hat](#probleme-die-das-sdk-bereits-gelöst-hat)
+14. [Der Pico W als Funkknoten am Pi](#der-pico-w-als-funkknoten-am-pi)
+15. [Probleme, die das SDK bereits gelöst hat](#probleme-die-das-sdk-bereits-gelöst-hat)
 
 ---
 
@@ -743,6 +744,116 @@ Störungshinweis aus `camera.md` im Hinterkopf, falls im selben Aufbau eine Kame
 
 ---
 
+## Der Pico W als Funkknoten am Pi
+
+Die naheliegendste Rolle eines Pico W in einem Pi-Projekt ist der **drahtlose Aussenposten**:
+Sensorik dort, wo kein Kabel hinkommt, Daten per WLAN oder BLE zum Pi. Vier Entscheidungen
+fallen dabei früh.
+
+### 1. Die Nebenläufigkeitsarchitektur – die erste und folgenreichste Wahl
+
+| Variante | Verhalten | Wofür |
+|----------|-----------|-------|
+| **`poll`** | 🔴 **nicht** multicore-/threadsicher; `cyw43_arch_poll()` muss regelmässig aus der Hauptschleife kommen | Einfache Einzelkernprogramme |
+| **`threadsafe_background`** | Multicore- und threadsicher; Treiber und Netzwerkstapel laufen **in einem niederpriorisierten IRQ** | Der übliche Fall |
+| **`freertos`** | Multicore-/tasksicher; eigener FreeRTOS-Task, blockierende Socket-API (`NO_SYS=0`) | Wenn ohnehin ein RTOS läuft |
+
+> 🔴 **lwIP ist nicht threadsicher.** Aufrufe in den Stapel müssen mit
+> `cyw43_arch_lwip_begin()` und `cyw43_arch_lwip_end()` geklammert werden – **ausser** sie
+> kommen aus einem lwIP-Callback heraus. Wer die Klammerung vergisst, bekommt keinen
+> Compilerfehler, sondern sporadische Abstürze unter Last.
+
+> ⚠️ **lwIP-Callbacks laufen im IRQ-Kontext** (niedrige Priorität, ähnlich einem
+> Alarm-Callback). Was dort passiert, unterliegt denselben Regeln wie jeder ISR: kurz
+> bleiben, nicht blockieren, keine RTOS-Aufrufe, die im IRQ verboten sind.
+
+➜ **Die Wahl `poll` ist verlockend und meist die falsche.** Sie spart Komplexität nur so
+lange, wie das Programm einkernig und ohne Interrupts bleibt. Sobald ein zweiter Kern die
+Sensorik übernimmt – der übliche Grund, überhaupt einen Pico zu nehmen – ist
+`threadsafe_background` die richtige Grundlage.
+
+### 2. 🔴 Der Ländercode, den fast niemand setzt
+
+`cyw43_arch_init()` initialisiert mit **`CYW43_COUNTRY_WORLDWIDE`**, und die Dokumentation
+sagt dazu unmissverständlich: *«Worldwide settings may not give the best performance.»*
+
+```c
+cyw43_arch_init_with_country(CYW43_COUNTRY_SWITZERLAND);   // oder _GERMANY, _UK, …
+```
+
+Alternativ dauerhaft über `PICO_CYW43_ARCH_DEFAULT_COUNTRY_CODE`.
+
+➜ **Das ist zugleich eine Leistungs- und eine Regulierungsfrage.** Der Weltweit-Code wählt
+den kleinsten gemeinsamen Nenner an Kanälen und Sendeleistung. Für ein Produkt gehört der
+Zielmarkt gesetzt – dieselbe Logik wie beim Funkzulassungsabschnitt zu RM2 oben und wie
+beim `wpa_country` auf der Linux-Seite (`setup-provisioning.md`).
+
+### 3. Die Sendeleistungsverwaltung ist ein eigener Regler
+
+Getrennt von den Schlafmodi weiter oben hat der Funkchip seine eigene Stufe:
+
+| Modus | Bedeutung |
+|-------|-----------|
+| `CYW43_NONE_PM` | keine Sparfunktion |
+| `CYW43_PERFORMANCE_PM` (**Vorgabe**) | PM2 – spart, wenn eine Weile nichts läuft, bei hohem Durchsatz |
+| `CYW43_AGGRESSIVE_PM` | PM1 – spart stärker, **senkt den Durchsatz** |
+
+⚠️ Muss **nach** `cyw43_wifi_set_up()` gesetzt werden.
+
+➜ **Für einen Sensorknoten, der alle paar Minuten ein paar Bytes schickt, ist
+`CYW43_AGGRESSIVE_PM` fast immer richtig** – der Durchsatzverlust ist irrelevant, die
+Ersparnis nicht. Für einen Kamerastrom ist er falsch.
+
+### 4. 🔴 Die Verbindungsleiter – vier Zustände, nicht zwei
+
+«Verbunden» ist beim WLAN kein einzelner Zustand. `cyw43_tcpip_link_status()` liefert:
+
+| Wert | Bedeutung | Was zu tun ist |
+|------|-----------|----------------|
+| `CYW43_LINK_DOWN` | kein Funk | Verbindung starten |
+| `CYW43_LINK_JOIN` | **mit dem AP verbunden – aber noch ohne IP** | warten; DHCP läuft |
+| `CYW43_LINK_NOIP` | verbunden, **DHCP hat nichts geliefert** | DHCP-Server, Adressbereich prüfen |
+| `CYW43_LINK_UP` | verbunden **mit** IP-Adresse | betriebsbereit |
+| `CYW43_LINK_FAIL` | Verbindung fehlgeschlagen | allgemeiner Fehler |
+| `CYW43_LINK_NONET` | **kein passendes SSID gefunden** | ausser Reichweite, AP aus, oder Tippfehler |
+| `CYW43_LINK_BADAUTH` | **Authentifizierung fehlgeschlagen** | falsches Passwort oder falscher Auth-Typ |
+
+> ➜ **Die Unterscheidung `JOIN` gegen `UP` ist der häufigste Grund für «es verbindet sich,
+> aber nichts geht».** Wer nach dem erfolgreichen Verbinden sofort einen Socket öffnet,
+> arbeitet ohne IP-Adresse. Der Zustand muss bis `CYW43_LINK_UP` abgewartet werden.
+
+⚠️ `cyw43_wifi_link_status()` kennt nur die Funkseite und meldet `JOIN` bereits als Erfolg;
+`cyw43_tcpip_link_status()` ist die Obermenge inklusive IP-Zustand. **Für die Frage «kann
+ich jetzt senden» ist die zweite die richtige.**
+
+➜ Diese Leiter ist das Gegenstück zur Diagnosekette auf der Linux-Seite
+(`remote-access.md`): erst Funk, dann Adresse, dann Dienst. Dieselbe Reihenfolge, nur mit
+anderen Werkzeugnamen.
+
+### Verschlüsselte Verbindungen zum Pi
+
+`pico_mbedtls` bindet mbedTLS ein und nutzt dabei die Hardware, sofern vorhanden:
+
+| Beschleunigung | RP2040 | RP2350 |
+|----------------|--------|--------|
+| Entropiequelle aus `get_rand_64()` | ✅ | ✅ |
+| **SHA-256 in Hardware** | 🔴 nein | ✅ (`MBEDTLS_SHA256_ALT`) |
+
+➜ **TLS auf einem RP2040 ist Softwarearbeit.** Wer einen Knoten baut, der regelmässig
+verschlüsselt zum Pi spricht, hat auf dem RP2350 einen spürbaren Vorteil – zusätzlich zu
+den Sicherheitsfunktionen aus dem Vergleich weiter oben.
+
+⚠️ **Zufallszahlen: `pico_rand` ist ein PRNG**, gespeist aus mehreren Entropiequellen
+(Ringoszillator, Zeitgeber, Bus-Zähler, RAM-Inhalt beim Start) – **kein echter
+Zufallsgenerator**. Einen TRNG in Hardware hat erst der RP2350. Für kryptografische
+Schlüssel ist der Unterschied erheblich.
+
+> ⚠️ Der Ringoszillator als Entropiequelle **darf nicht genutzt werden, wenn der Prozessor
+> selbst aus dem ROSC getaktet wird** – dann ist die «zufällige» Quelle mit dem Verbraucher
+> korreliert.
+
+---
+
 ## Probleme, die das SDK bereits gelöst hat
 
 Mehrere der Fallen aus dieser Referenz haben eine fertige Antwort in einer
@@ -755,6 +866,11 @@ SDK-Bibliothek. Wer sie kennt, schreibt den Workaround nicht selbst.
 | **BOOTSEL-Taste unerreichbar im Gehäuse** | **`pico_bootsel_via_double_reset`** – zweimaliges schnelles Zurücksetzen führt in den BOOTSEL-Modus |
 | **Neu flashen ohne Anfassen** | **`pico_usb_reset`** – Rücksetzen über die USB-Schnittstelle; bei `pico_stdio_usb` ohnehin enthalten |
 | **Daten zwischen den Kernen** | **`queue`** aus `pico_util` – multicore- und interruptsicher, **nicht** die FIFOs (siehe unten) |
+| 🔴 **Die ersten `printf` über USB fehlen** | Der Host verbindet sich erst nach dem Programmstart; alles davor geht verloren. **`PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS`** lässt `stdio_init_all()` auf die Verbindung warten. Zur Laufzeit prüft `stdio_usb_connected()` |
+
+⚠️ **`pico_stdio_usb` beansprucht die USB-Schnittstelle vollständig** – eigene
+Device- oder Host-Anwendungen sind damit ausgeschlossen. Wird `tinyusb_device` oder
+`tinyusb_host` dazugelinkt, zieht sich die Bibliothek automatisch zurück.
 
 ### 🔴 Die Inter-Core-FIFOs gehören nicht dir
 
@@ -807,6 +923,53 @@ Der AON-Timer bietet zwei Sorten von Funktionen: mit **Kalenderdatum** (`struct 
 
 ➜ **Die Regel: die Zeitdarstellung nehmen, die der Chip ohnehin führt.** Das ist eine der
 wenigen Stellen, an denen dieselbe API auf beiden Generationen unterschiedlich teuer ist.
+
+### 🔴 Bluetooth belegt das Ende des Flash
+
+Nutzt ein Projekt BTstack, legt dessen Speicherabstraktion die Bindungsschlüssel in
+**zwei Flash-Sektoren am Ende des Bausteins** ab (auf dem RP2350 A2 drei Sektoren vom Ende
+entfernt, wegen Errata RP2350-E10).
+
+> 🔴 **Das kollidiert mit jedem eigenen Konfigurations- oder Messwertspeicher, der «ganz
+> hinten im Flash» abgelegt wird** – eine sehr verbreitete Wahl, weil dort nie Programmcode
+> liegt. Das Fehlerbild: Nach dem ersten Bluetooth-Pairing sind die eigenen Daten weg, oder
+> die Kopplung überlebt einen Neustart nicht. Steuerbar über
+> `PICO_FLASH_BANK_STORAGE_OFFSET`.
+
+### Gleitkomma – und was die RISC-V-Umschaltung kostet
+
+Die Implementierung ist wählbar (`none`, `compiler`, `pico`), voreingestellt ist `pico`
+mit handoptimierten Routinen aus Bootrom und SDK. Auf dem RP2350 nutzt `pico_double` die
+**DCP-Befehle** des Doppel-Koprozessors.
+
+> 🔴 **Auf RISC-V gibt es keine dieser Optimierungen für doppelte Genauigkeit** –
+> `pico_double pico` ist dort gleichbedeutend mit `compiler`.
+>
+> ➜ Das ist die versteckte Rechnung hinter der Architekturumschaltung aus dem Abschnitt
+> ganz oben: Der Wechsel auf Hazard3 kostet nicht nur einzelne Sicherheitsfunktionen,
+> sondern auch die beschleunigte `double`-Arithmetik. Für Regelungstechnik oder
+> Signalverarbeitung mit `double` ist das der entscheidende Punkt.
+
+`none` ist die dritte Wahl und unterschätzt: Damit lösen Gleitkommaoperationen einen Panic
+aus – **eine wirksame Prüfung, dass sich in eine Echtzeitschleife keine `float`-Arithmetik
+eingeschlichen hat.**
+
+### Wo Code und Daten liegen
+
+Weil das Programm normalerweise **aus dem Flash** läuft (XIP), unterliegt jeder Aufruf der
+Latenz des externen Bausteins. Für zeitkritische Teile gibt es Platzierungsmakros:
+
+| Makro | Wirkung |
+|-------|---------|
+| `__time_critical_func(name)` | Funktion ins RAM – gegen XIP-Latenz |
+| `__not_in_flash_func(name)` | dasselbe, semantisch «darf nicht im Flash liegen» (z.B. Code, der Flash beschreibt) |
+| `__in_scratch_x` / `__in_scratch_y` | in eine der beiden separaten SRAM-Bänke |
+| `__uninitialized_ram(name)` | **überlebt einen Reset** (wird nicht genullt) |
+
+➜ **`__in_scratch_x`/`_y` sind der Trick gegen Buskonflikte:** Greift nur ein Kern auf eine
+Bank zu, kann es dort keine Wartezyklen durch den anderen geben. Für die zeitkritische
+Schleife eines Kerns ist das die passende Ablage – und die Ergänzung zu den PIO- und
+DMA-Mitteln, mit denen man die CPU aus dem Zeitverhalten heraushält.
 
 ---
 
