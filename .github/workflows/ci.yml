@@ -26,6 +26,27 @@ jobs:
       # Prüft das eingecheckte Archiv gegen die Quelldateien, bevor
       # der Build es überschreibt. Schlägt fehl, wenn jemand eine
       # Referenz geändert, aber build-skill.sh nicht ausgeführt hat.
+      # Der Linter auf die Skripte, die die Gates unten fahren. Bis hierher
+      # entschied `validate-skill.py` ueber rot oder gruen, ohne selbst durch
+      # ein Gate zu gehen — ein Pruefskript ohne eigene Pruefung.
+      #
+      # Ruff exakt gepinnt, nicht mit Obergrenze: fuer `ruff check` genuegte
+      # eine, weil der Regelsatz in `select` steht, fuer `ruff format --check`
+      # nicht — dort ist das Ergebnis selbst das Kriterium, und jede Version,
+      # die am Formatter dreht, faerbt unberuehrten Code rot. 0.16.1 ist die
+      # Portfolio-Version.
+      - name: Ruff installieren
+        run: pip install "ruff==0.16.1"
+
+      - name: Lint
+        run: ruff check scripts/
+
+      # Zweites, eigenstaendiges Gate. Ein gruenes `ruff check` belegt kein
+      # gruenes Format — die beiden pruefen Verschiedenes. Eigener Schritt,
+      # damit im Log steht, welches der beiden ausgeloest hat.
+      - name: Format
+        run: ruff format --check scripts/
+
       - name: Validate committed skill archive
         run: python3 scripts/validate-skill.py
 

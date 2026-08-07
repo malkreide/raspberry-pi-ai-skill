@@ -111,11 +111,15 @@ def check_skill_references(mapping: dict[str, str]) -> None:
     if not path.is_file():
         return
 
-    refs = set(re.findall(rf"{re.escape(MOUNT_PREFIX)}[A-Za-z0-9_./-]*\.md", path.read_text(encoding="utf-8")))
+    refs = set(
+        re.findall(
+            rf"{re.escape(MOUNT_PREFIX)}[A-Za-z0-9_./-]*\.md", path.read_text(encoding="utf-8")
+        )
+    )
     if not refs:
         notes.append("SKILL.md referenziert keine Dateien unter " + MOUNT_PREFIX)
     for ref in sorted(refs):
-        rel = ref[len(MOUNT_PREFIX):]
+        rel = ref[len(MOUNT_PREFIX) :]
         if rel not in mapping:
             fail(f"SKILL.md referenziert '{rel}', das Manifest packt diese Datei nicht.")
 
