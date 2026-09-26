@@ -33,10 +33,10 @@ jobs:
       # Ruff exakt gepinnt, nicht mit Obergrenze: fuer `ruff check` genuegte
       # eine, weil der Regelsatz in `select` steht, fuer `ruff format --check`
       # nicht — dort ist das Ergebnis selbst das Kriterium, und jede Version,
-      # die am Formatter dreht, faerbt unberuehrten Code rot. 0.16.1 ist die
-      # Portfolio-Version.
+      # die am Formatter dreht, faerbt unberuehrten Code rot. Die Zahl steht
+      # nur in der Zeile darunter, nicht in diesem Kommentar.
       - name: Ruff installieren
-        run: pip install "ruff==0.16.1"
+        run: pip install "ruff==0.16.9"
 
       - name: Lint
         run: ruff check scripts/
